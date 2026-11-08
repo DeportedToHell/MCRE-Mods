@@ -1,0 +1,15 @@
+Mouse Tweaks for Horizon
+A port of Mouse Tweaks to Horizon (Minecraft: Java Edition 26.3 rewritten in
+Rust) as a native mod.
+
+Mouse Tweaks
+Copyright (c) 2023, Ivan Molodetskikh
+https://github.com/YaLTeR/MouseTweaks
+Licensed under the BSD 3-Clause License (LICENSE).
+
+This port rewrites Mouse Tweaks' logic (Main.java, Config.java) in Rust for
+Horizon's native mod API, from the original's commit
+e8ecd08ed94192f6f19d3cbb630707c8670a4d66, and is distributed under the same
+licence. Its settings live on a Horizon settings page instead of the
+MouseTweaks.cfg file. It is not affiliated with Ivan Molodetskikh, Mojang or
+Microsoft.

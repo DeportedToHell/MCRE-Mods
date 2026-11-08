@@ -1,0 +1,117 @@
+[mod]
+id = "mousetweaks"
+version = "1.0.1"
+priority = 100
+
+# Built for this Nightly: besides the hook points it uses the game's own
+# inventory code (the container screens' press, drag, release and wheel,
+# where Horizon's own inventory tweaks are called; the slot layout; the menu
+# engine's predicted clicks and slot rules).
+[compatibility]
+horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "mousetweaks"
+source = "runtime.rs"
+
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "mousetweaks_glue"
+source = "glue.rs"
+
+[[injection]]
+id = "list"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "list.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+[[injection]]
+id = "settings"
+hook = "settings"
+hook_version = 1
+kind = "HEAD"
+helper = "settings.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "buttons", ty = "&mut Vec<String>", value = "&mut *buttons" },
+]
+
+[[injection]]
+id = "click"
+hook = "settings_click"
+hook_version = 1
+kind = "HEAD"
+helper = "click.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "button", ty = "usize", value = "button" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+# `AbstractContainerScreen.mouseClicked`: the press on a slot, before the
+# screen clicks it (after the recipe book, the sort buttons and a press
+# outside the window had theirs).
+[[injection]]
+id = "press"
+target = "horizon_client::game::tweaks::Game<'_>::tweak_press"
+kind = "HEAD"
+cancellable = true
+helper = "press.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "slot", ty = "Option<usize>", value = "slot" },
+  { name = "right", ty = "bool", value = "right" },
+]
+
+# `mouseDragged`: every cursor move over a container screen.
+[[injection]]
+id = "drag"
+target = "horizon_client::game::Game<'_>::inventory_drag_move"
+kind = "HEAD"
+helper = "drag.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+# `mouseReleased`.
+[[injection]]
+id = "release"
+target = "horizon_client::game::Game<'_>::inventory_mouse_release"
+kind = "HEAD"
+helper = "release.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "right", ty = "bool", value = "right" },
+]
+
+# `mouseScrolled`, after a bundle under the cursor had its turn.
+[[injection]]
+id = "scroll"
+target = "horizon_client::game::tweaks::Game<'_>::tweak_scroll"
+kind = "HEAD"
+cancellable = true
+helper = "scroll.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "delta", ty = "f32", value = "delta" },
+  { name = "slot", ty = "Option<usize>", value = "slot" },
+]

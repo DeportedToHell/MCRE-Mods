@@ -1,0 +1,10 @@
+# Runs the mod's own tests: `cargo test`. The game builds the mod from mixins/ instead.
+[package]
+name = "mousetweaks-horizon"
+version = "1.0.1"
+edition = "2024"
+license = "BSD-3-Clause"
+publish = false
+
+[lib]
+path = "mixins/mousetweaks/runtime.rs"
