@@ -1,0 +1,17 @@
+Zoomify for Horizon
+A port of Zoomify to Horizon (Minecraft: Java Edition 26.3 rewritten in Rust)
+as a native mod.
+
+Zoomify
+Copyright (C) isXander
+https://github.com/isXander/Zoomify
+SPDX-License-Identifier: LGPL-3.0-or-later
+Licensed under the GNU Lesser General Public License, version 3 or later
+(LICENSE), which supplements the GNU General Public License, version 3
+(COPYING).
+
+This port rewrites Zoomify's logic in Rust for Horizon's native mod API and is
+distributed under the same licence. The zoom, scroll and transition maths
+follow the original (the exponential transitions use the continuous form of
+its formulas); the YACL config screen is replaced by a Horizon settings page.
+It is not affiliated with isXander, Mojang or Microsoft.

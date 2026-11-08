@@ -1,0 +1,182 @@
+[mod]
+id = "zoomify"
+version = "1.0.1"
+priority = 100
+
+# Built for this Nightly: besides the hook points it changes what the mouse
+# reads, the hand's field of view and the spyglass overlay, inside the game.
+[compatibility]
+horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "zoomify"
+source = "runtime.rs"
+
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "zoomify_glue"
+source = "glue.rs"
+
+[[injection]]
+id = "list"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "list.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+[[injection]]
+id = "settings"
+hook = "settings"
+hook_version = 1
+kind = "HEAD"
+helper = "settings.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "buttons", ty = "&mut Vec<String>", value = "&mut *buttons" },
+]
+
+[[injection]]
+id = "click"
+hook = "settings_click"
+hook_version = 1
+kind = "HEAD"
+helper = "click.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "button", ty = "usize", value = "button" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "elapsed", ty = "std::time::Duration", value = "elapsed" },
+]
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "key.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "scroll"
+hook = "mouse_scrolling"
+hook_version = 1
+kind = "HEAD"
+helper = "scroll.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "accumulated", ty = "[i32; 2]", value = "accumulated" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+# The world's field of view (`Camera.calculateFov`): divided as the original
+# divides it, with no floor at 1° (the `compute_fov` hook keeps 1..179), so
+# every scroll step up to 500x shows.
+[[injection]]
+id = "fov"
+target = "horizon_client::game::fov::Game<'_>::fov_degrees"
+kind = "RETURN"
+helper = "fov.rs"
+bindings = [
+  { name = "value", ty = "f32", value = "$value" },
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "fov_modifier"
+hook = "compute_fov_modifier"
+hook_version = 1
+kind = "HEAD"
+helper = "fov_modifier.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "player", ty = "&horizon_client::camera::FovPlayer", value = "player" },
+  { name = "modifier", ty = "&mut f32", value = "&mut *modifier" },
+]
+
+[[injection]]
+id = "layer"
+hook = "gui_layer_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "layer.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "commands"
+hook = "commands"
+hook_version = 1
+kind = "HEAD"
+helper = "commands.rs"
+bindings = [
+  { name = "commands", ty = "&mut Vec<&'static str>", value = "&mut *commands" },
+]
+
+[[injection]]
+id = "command"
+hook = "command"
+hook_version = 1
+kind = "HEAD"
+helper = "command.rs"
+bindings = [
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+# What the mouse reads (the original's MouseMixin on `turnPlayer`).
+[[injection]]
+id = "look"
+target = "horizon_client::game::Game<'_>::look_options"
+kind = "RETURN"
+helper = "look.rs"
+bindings = [
+  { name = "look", ty = "LookOptions", value = "$value" },
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+# The hand's field of view (`Camera.calculateHudFov`).
+[[injection]]
+id = "hand"
+target = "horizon_client::game::fov::Game<'_>::hud_fov_degrees"
+kind = "RETURN"
+helper = "hand.rs"
+bindings = [
+  { name = "value", ty = "f32", value = "$value" },
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+# The spyglass overlay (`Hud.extractCameraOverlays`).
+[[injection]]
+id = "spyglass"
+target = "horizon_client::game::fov::Game<'_>::draw_spyglass"
+kind = "HEAD"
+cancellable = true
+helper = "spyglass.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+]
