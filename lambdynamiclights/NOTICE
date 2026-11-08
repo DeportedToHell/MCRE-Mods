@@ -1,0 +1,26 @@
+LambDynamicLights for Horizon
+
+Original authors: LambdAurora <email@lambdaurora.dev>, the author of
+LambDynamicLights (https://github.com/LambdAurora/LambDynamicLights, branch
+26.3, commit b9c8a46, version 4.13.0). This port is a derivative work of it
+and is under the same licence, the Lambda License (LICENSE).
+
+Changes (Lambda License 2.2): the mod is rewritten in Rust as a Horizon
+native mod (horizon-mixins bundle). Its light reaches the world through
+Horizon's dynamic light shader (the 16 sources nearest the camera, one light
+level less per block) instead of chunk rebuilds, so sources are drawn at 0.72
+of their level and half a block over a living entity's feet, fitted to the
+original's falloff (an option keeps Horizon's own reach or a shorter one); the item and entity light
+source data is the original's own, built in, and not read from resource
+packs; per-entity switches are a list on the settings page plus the
+/lambdynamiclights command; fireflies, the warden's sonic boom, end gateway
+beams, display entities, falling blocks, minecarts, the compatibility layers
+and the performance and debugging options are not ported.
+
+Sharing a game built with this mod (a binary) needs LambdAurora's written
+approval (Lambda License, section 3). The sources here may be shared under
+the Lambda License.
+
+Made for Horizon (https://github.com/horizon-rust/horizon, MIT) with
+horizon-mixins (https://github.com/horizon-rust/horizon-mixins, MIT).
+Minecraft is a trademark of Mojang Synergies AB.
