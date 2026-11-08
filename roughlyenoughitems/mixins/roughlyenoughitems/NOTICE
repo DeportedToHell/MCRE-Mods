@@ -1,0 +1,26 @@
+Roughly Enough Items for Horizon
+A port of Roughly Enough Items (REI) to Horizon (Minecraft: Java Edition 26.3
+rewritten in Rust) as a native mod.
+
+Roughly Enough Items
+Copyright (c) 2018-2023 shedaniel
+https://github.com/shedaniel/RoughlyEnoughItems (branch 26.3)
+Licensed under the MIT License (LICENSE).
+
+The GUI textures in mixins/roughlyenoughitems/sprites.rs are REI's own
+(runtime/src/main/resources/assets/roughlyenoughitems/textures/gui, MIT),
+converted to runs of pixels by tools/sprites.mjs. Buttons use the game's own
+button sprites in the light theme, REI's dark twins in the dark one.
+
+This port rewrites REI's entry list, favorites, display history, search
+grammar, recipe screen (with the tag category and the choose-page popup), its
+config screen and the default plugin's categories in Rust for Horizon's native
+mod API, from the game's own item and recipe tables. Changes from the original:
+no plugin API (Horizon has no Java mods to register categories); the "+" button
+moves crafting recipes only; the information category and the input methods are
+not ported. The config screen shows every option REI shows; those whose part of
+REI is not ported (the composite recipe screen, panel boundaries, category and
+entry filtering, collapsible-entry editing, inventory search, the vanilla
+recipe book and effects switches, cheat grabbing, the performance and debug
+screens) keep their defaults and cannot be changed. It is not affiliated with
+shedaniel, Mojang or Microsoft.

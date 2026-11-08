@@ -1,0 +1,10 @@
+# Runs the mod's own tests: `cargo test`. The game builds the mod from mixins/ instead.
+[package]
+name = "roughlyenoughitems-horizon"
+version = "1.0.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[lib]
+path = "mixins/roughlyenoughitems/runtime.rs"
