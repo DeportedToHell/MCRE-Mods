@@ -13,7 +13,7 @@ use std::sync::Mutex;
 
 pub const ID: &str = "zoomify";
 pub const NAME: &str = "Zoomify";
-pub const VERSION: &str = "1.0.1";
+pub const VERSION: &str = "1.1.0";
 pub const UNBOUND: &str = "key.keyboard.unknown";
 /// The mod's keys: name and default (the original's C and F6; scroll keys
 /// unbound).
@@ -497,9 +497,10 @@ pub struct Settings {
     pub key_behaviour: KeyBehaviour,
     pub keybind_scrolling: bool,
     pub relative_sensitivity: u32,
-    /// The cinematic camera while zooming (the original's percentage, on or
-    /// off here).
-    pub cinematic_camera: bool,
+    /// The cinematic camera while zooming: the original's percentage of
+    /// vanilla's smoothing, 0 for off (any other amount glides as vanilla's
+    /// cinematic camera does here).
+    pub cinematic_camera: u32,
     pub spyglass: Spyglass,
     pub overlay: Overlay,
     pub sounds: Sounds,
@@ -526,7 +527,7 @@ impl Default for Settings {
             key_behaviour: KeyBehaviour::Hold,
             keybind_scrolling: false,
             relative_sensitivity: 100,
-            cinematic_camera: false,
+            cinematic_camera: 0,
             spyglass: Spyglass::Combine,
             overlay: Overlay::Holding,
             sounds: Sounds::WithOverlay,
@@ -543,9 +544,10 @@ fn next<T: PartialEq + Copy>(list: &[T], now: T) -> T {
     list[i % list.len()]
 }
 
-const SPYGLASS: [Spyglass; 4] = [Spyglass::Combine, Spyglass::Override, Spyglass::OnlyHolding, Spyglass::OnlyCarrying];
-const OVERLAY: [Overlay; 4] = [Overlay::Never, Overlay::Holding, Overlay::Carrying, Overlay::Always];
-const SOUNDS: [Sounds; 4] = [Sounds::Never, Sounds::Always, Sounds::OnlySpyglass, Sounds::WithOverlay];
+/// The enums in the original's order (its config screen cycles them so).
+pub const SPYGLASS: [Spyglass; 4] = [Spyglass::Combine, Spyglass::Override, Spyglass::OnlyHolding, Spyglass::OnlyCarrying];
+pub const OVERLAY: [Overlay; 4] = [Overlay::Never, Overlay::Holding, Overlay::Carrying, Overlay::Always];
+pub const SOUNDS: [Sounds; 4] = [Sounds::Never, Sounds::Always, Sounds::OnlySpyglass, Sounds::WithOverlay];
 
 /// The settings page's preset buttons, after the settings.
 pub const PRESETS: usize = 3;
@@ -553,6 +555,14 @@ pub const PRESETS: usize = 3;
 pub const ROWS: usize = 22;
 
 impl Settings {
+    /// The original's presets (`Presets`): Default, OptiFine, OK Zoomer,
+    /// each over the defaults.
+    pub fn preset(i: usize) -> Settings {
+        let mut s = Settings::default();
+        s.click(ROWS + i.min(PRESETS - 1));
+        s
+    }
+
     pub fn regular(&self) -> Config {
         // Zoomify: lerp(smoothness / 100, 1.0, 0.1).
         let rate = 1.0 + f64::from(self.scroll_smoothness) / 100.0 * (0.1 - 1.0);
@@ -615,7 +625,12 @@ impl Settings {
         };
         s.keybind_scrolling = flag("keybind_scrolling", s.keybind_scrolling);
         s.relative_sensitivity = int("relative_sensitivity", s.relative_sensitivity, 0, 150);
-        s.cinematic_camera = flag("cinematic_camera", s.cinematic_camera);
+        // A percentage now; 1.0's on and off read as 100 and 0.
+        s.cinematic_camera = match get("cinematic_camera").as_deref().map(str::trim) {
+            Some("true") => 100,
+            Some("false") => 0,
+            _ => int("cinematic_camera", s.cinematic_camera, 0, 250),
+        };
         s.spyglass = match get("spyglass").as_deref().map(str::trim) {
             Some("override") => Spyglass::Override,
             Some("only_holding") => Spyglass::OnlyHolding,
@@ -747,7 +762,7 @@ impl Settings {
             format!("{}: {}", t("Запоминать шаги колеса", "Remember Zoom Steps"), on(self.retain_zoom_steps)),
             format!("{}: {}", t("Колесо клавишами", "Keybind Scrolling"), on(self.keybind_scrolling)),
             format!("{}: {}%", t("Относительная чувствительность", "Relative Sensitivity"), self.relative_sensitivity),
-            format!("{}: {}", t("Кинокамера при зуме", "Cinematic Camera"), on(self.cinematic_camera)),
+            format!("{}: {}", t("Кинокамера при зуме", "Cinematic Camera"), on(self.cinematic_camera > 0)),
             format!("{}: {}", t("Подзорная труба", "Spyglass"), spyglass),
             format!("{}: {}", t("Оверлей трубы", "Spyglass Overlay"), overlay),
             format!("{}: {}", t("Звуки трубы", "Spyglass Sounds"), sounds),
@@ -782,7 +797,7 @@ impl Settings {
             11 => self.retain_zoom_steps = !self.retain_zoom_steps,
             12 => self.keybind_scrolling = !self.keybind_scrolling,
             13 => self.relative_sensitivity = next(&SENSITIVITY, self.relative_sensitivity),
-            14 => self.cinematic_camera = !self.cinematic_camera,
+            14 => self.cinematic_camera = if self.cinematic_camera > 0 { 0 } else { 100 },
             15 => self.spyglass = next(&SPYGLASS, self.spyglass),
             16 => self.overlay = next(&OVERLAY, self.overlay),
             17 => self.sounds = next(&SOUNDS, self.sounds),
@@ -799,7 +814,7 @@ impl Settings {
                     zoom_out_transition: Transition::Instant,
                     scroll_zoom: false,
                     relative_sensitivity: 0,
-                    cinematic_camera: true,
+                    cinematic_camera: 100,
                     ..Settings::default()
                 }
             }
@@ -983,7 +998,7 @@ impl Zoom {
 
     /// The cinematic camera is on while zooming (`smoothCameraIfZoom`).
     pub fn smooth_camera(&self, s: &Settings, original: bool) -> bool {
-        original || self.secondary || (self.zooming && s.cinematic_camera)
+        original || self.secondary || (self.zooming && s.cinematic_camera > 0)
     }
 }
 
@@ -1166,7 +1181,8 @@ mod tests {
         let mut s = Settings::default();
         s.click(23);
         assert_eq!(s.zoom_in_transition, Transition::Instant);
-        assert!(!s.scroll_zoom && s.cinematic_camera);
+        assert!(!s.scroll_zoom && s.cinematic_camera == 100);
+        assert_eq!(Settings::preset(1), s);
         let mut z = Zoom::new(&s);
         z.frame(&s, held(), 0.016);
         assert!((z.divisor - 4.0).abs() < 1e-9);

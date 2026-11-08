@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 pub const ID: &str = "roughlyenoughitems";
 pub const NAME: &str = "Roughly Enough Items";
-pub const VERSION: &str = "1.0.1";
+pub const VERSION: &str = "1.1.0";
 
 /// Russian labels when the game's language is Russian, English otherwise.
 pub fn russian(language: &str) -> bool {
@@ -1794,6 +1794,8 @@ pub fn tr(ru: bool, key: &str) -> &'static str {
         "search_options" => ("Search options...", "Search options..."),
         "value_default" => ("%s (Default)", "%s (Default)"),
         "configure" => ("Configure...", "Configure..."),
+        // Mod Menu's `modmenu.configure`: the page's button to the config screen.
+        "modmenu_configure" => ("Configure...", "Настройки..."),
         "details" => ("Details...", "Details..."),
         "reload" => ("Reload...", "Reload..."),
         "requires_level" => ("Load Level First!", "Load Level First!"),

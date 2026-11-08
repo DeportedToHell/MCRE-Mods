@@ -1,8 +1,8 @@
 // Packs the mod into <out>/<id>-<version>.hnmod: `node tools/package.mjs [out]`.
 // The bundle is horizon-native.json and mixins/<id>/ (its .rs and .toml files,
-// LICENSE and NOTICE), zipped with fixed dates so the same source always gives
-// the same file.
-import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
+// LICENSE, NOTICE and data/), zipped with fixed dates so the same source always
+// gives the same file.
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { deflateRawSync } from "node:zlib";
 import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
@@ -23,6 +23,17 @@ const allowed = /\.(rs|toml)$|^(LICENSE|NOTICE)/;
 for (const name of readdirSync(join(root, "mixins", id)).sort()) {
   if (allowed.test(name)) files.push([`mixins/${id}/${name}`, readFileSync(join(root, "mixins", id, name))]);
 }
+// The bundle's data (`native_data!`): every file under mixins/<id>/data/.
+const data = (rel) => {
+  const dir = join(root, "mixins", id, rel);
+  if (!existsSync(dir)) return;
+  for (const e of readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+    const r = `${rel}/${e.name}`;
+    if (e.isDirectory()) data(r);
+    else files.push([`mixins/${id}/${r}`, readFileSync(join(root, "mixins", id, r))]);
+  }
+};
+data("data");
 
 const table = new Uint32Array(256).map((_, n) => {
   let c = n;

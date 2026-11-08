@@ -14,7 +14,7 @@
 /// The mod's id (its settings folder), name, version and command.
 pub const ID: &str = "pickupnotifier";
 pub const NAME: &str = "Pick Up Notifier";
-pub const VERSION: &str = "1.0.0";
+pub const VERSION: &str = "1.1.0";
 pub const COMMAND: &str = "pickupnotifier";
 pub const DESCRIPTION: &str = "Items, experience and arrows you pick up, listed in a corner of the screen. /pickupnotifier opens the settings.";
 
@@ -445,7 +445,54 @@ fn by_name<T: Copy>(all: &[T], name: impl Fn(T) -> &'static str, v: &str) -> Opt
     all.iter().copied().find(|x| name(*x) == v)
 }
 
+/// Java's `Double.toString` for the plain numbers here: `0.5`, `1.0`.
+pub fn java_double(v: f64) -> String {
+    let s = format!("{v}");
+    if s.contains(['.', 'e', 'i', 'N']) { s } else { format!("{s}.0") }
+}
+
 impl Setting {
+    /// An enum option's values as stored (the original's constants in lower
+    /// case), in the original's order; none for the others.
+    pub fn choices(self) -> &'static [&'static str] {
+        match self {
+            Setting::Combine => &["always", "never", "exclude_named"],
+            Setting::MoveOut => &["none", "horizontal", "vertical", "all"],
+            Setting::Amount => &["off", "sprite", "text", "both"],
+            Setting::Background => &["none", "chat", "tooltip"],
+            Setting::Corner => &[
+                "top_left",
+                "top_center",
+                "top_right",
+                "center_left",
+                "center",
+                "center_right",
+                "bottom_left",
+                "bottom_center",
+                "bottom_right",
+            ],
+            Setting::TextColor => &[
+                "black",
+                "dark_blue",
+                "dark_green",
+                "dark_aqua",
+                "dark_red",
+                "dark_purple",
+                "gold",
+                "gray",
+                "dark_gray",
+                "blue",
+                "green",
+                "aqua",
+                "red",
+                "light_purple",
+                "yellow",
+                "white",
+            ],
+            _ => &[],
+        }
+    }
+
     /// Its file in the mod's settings folder; none for the page's actions.
     pub fn key(self) -> Option<&'static str> {
         Some(match self {
@@ -619,7 +666,7 @@ impl Config {
             Setting::Corner => anchor_name(self.corner).to_owned(),
             Setting::OffsetX => self.offset_x.to_string(),
             Setting::OffsetY => self.offset_y.to_string(),
-            Setting::MaxHeight => format!("{:.1}", self.max_height),
+            Setting::MaxHeight => java_double(self.max_height),
             Setting::DisplayScale => self.display_scale.to_string(),
             Setting::Amount => amount_name(self.amount).to_owned(),
             Setting::InventoryCount => b(self.inventory_count),

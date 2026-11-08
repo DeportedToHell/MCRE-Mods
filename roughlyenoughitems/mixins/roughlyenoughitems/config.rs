@@ -5,7 +5,9 @@
 // `ConfigEntriesListWidget`, `ConfigGroupWidget`, `ConfigOptionWidget`,
 // `ConfigOptionValueWidget`) and the groups' previews. It edits a copy of the
 // settings; Done keeps it, Cancel and Escape drop it. Opened by the gear button
-// and the gear menu's "More Options...".
+// and the gear menu's "More Options..." over the container screen, and by Mod
+// Menu's Configure and the mod's page over the Options screen
+// (`roughlyenoughitems_options`).
 use super::Game;
 use super::roughlyenoughitems::{self as rei, CATEGORIES, Group, Opt, OptKind, Preview, Rect, inside};
 use super::roughlyenoughitems_glue::{self as glue, Action, State};
@@ -110,7 +112,21 @@ enum CHit {
     PreviewTab(usize),
 }
 
+/// What the screen is drawn over.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Host {
+    /// A container screen (the gear, "More Options..."), dimmed under it.
+    Container,
+    /// The Options screen (Mod Menu's Configure, the mod's page): vanilla's
+    /// menu background over the world (`in_world`) or the title's panorama.
+    Options { in_world: bool },
+}
+
 pub(super) struct ConfigScreen {
+    host: Host,
+    /// A world is open and a container screen was (`cleanRequiresLevel`):
+    /// the previews show and the options that need a level work.
+    level: bool,
     /// The values being edited, by option id; a keybind's is its modifiers.
     pending: HashMap<&'static str, String>,
     /// The keybinds' keys being edited, by key name.
@@ -131,7 +147,22 @@ pub(super) struct ConfigScreen {
 }
 
 impl ConfigScreen {
+    /// Over a container screen: always in a level.
     pub(super) fn new(game: &Game<'_>) -> ConfigScreen {
+        ConfigScreen::hosted(game, Host::Container, true)
+    }
+
+    /// Over the Options screen, from the world (`in_world`) or the title.
+    pub(super) fn over_options(game: &Game<'_>, in_world: bool, level: bool) -> ConfigScreen {
+        ConfigScreen::hosted(game, Host::Options { in_world }, level)
+    }
+
+    /// Drawn over the Options screen.
+    pub(super) fn on_options(&self) -> bool {
+        matches!(self.host, Host::Options { .. })
+    }
+
+    fn hosted(game: &Game<'_>, host: Host, level: bool) -> ConfigScreen {
         let mut pending = HashMap::new();
         let mut keys = HashMap::new();
         for o in all_options() {
@@ -149,6 +180,8 @@ impl ConfigScreen {
         field.max_length = 9000;
         field.focused = false;
         ConfigScreen {
+            host,
+            level,
             pending,
             keys,
             category: 0,
@@ -170,6 +203,10 @@ impl ConfigScreen {
     }
     fn is(&self, id: &str, token: &str) -> bool {
         self.value(id) == token
+    }
+    /// The option needs a level and there is none: "Load Level First!".
+    fn locked(&self, o: &Opt) -> bool {
+        o.level && !self.level
     }
 }
 
@@ -457,7 +494,8 @@ fn tooltip_size(game: &Game<'_>, lines: &[Text]) -> (f32, f32) {
 }
 
 fn place(game: &Game<'_>, c: &ConfigScreen, ru: bool, v: &GroupView, gw: f32) -> Place {
-    if !v.preview {
+    // Only in a level (`ConfigGroupWidget`).
+    if !v.preview || !c.level {
         return Place::None;
     }
     let half = (gw * 6.0 / 10.0).floor() - 2.0;
@@ -521,6 +559,10 @@ fn choice_label(c: &ConfigScreen, ru: bool, o: &Opt, token: &str) -> String {
 
 /// What an option's value shows (`ConfigOptionValueWidget`), at most `max` wide.
 fn value_text(game: &Game<'_>, c: &ConfigScreen, ru: bool, o: &Opt, max: f32) -> String {
+    // The requires-level dummy: red, no "(Default)".
+    if c.locked(o) {
+        return format!("§c{}", rei::tr(ru, "requires_level"));
+    }
     let with_default = |value: String, is_default: bool| -> String {
         let dots = width(game, "...");
         if is_default {
@@ -613,6 +655,8 @@ fn icon(i: usize) -> &'static Sprite {
 pub(super) fn draw(game: &Game<'_>, batch: &mut HudBatch, s: &mut State) -> Option<Vec<(String, u32)>> {
     let mut c = s.config.take()?;
     let saved = glue::settings(game, s);
+    // The buttons follow the saved theme, wherever the screen is drawn.
+    super::roughlyenoughitems_view::set_dark(saved.dark);
     let tip = c.draw(game, batch, s.ru, saved);
     s.config = Some(c);
     tip
@@ -641,9 +685,19 @@ impl ConfigScreen {
         let cursor = game.cursor;
         let (w, h) = (batch.width, batch.height);
         let mut tip = None;
-        // The game's in-world menu background.
-        batch.fill_gradient(&game.gui.atlas, (0.0, 0.0, w, h), argb(0xc010_1010), argb(0xd010_1010));
-        fill(game, batch, [0.0, 0.0, w, h], 0x4000_0000);
+        match self.host {
+            // The game's in-world menu background.
+            Host::Container => {
+                batch.fill_gradient(&game.gui.atlas, (0.0, 0.0, w, h), argb(0xc010_1010), argb(0xd010_1010));
+                fill(game, batch, [0.0, 0.0, w, h], 0x4000_0000);
+            }
+            // `Screen.extractBackground`: the blur over the world or the
+            // panorama, then the menu background.
+            Host::Options { in_world } => {
+                game.native_apply_screen_blur();
+                horizon_client::ui::menu_background(batch, &game.gui.atlas, 0.0, 0.0, w, h, in_world);
+            }
+        }
         // The title.
         let title = rei::tr(ru, "config_title");
         let tw = width(game, title);
@@ -1009,17 +1063,19 @@ impl ConfigScreen {
         let tx = x + rw - 8.0 - vw;
         let label = [tx - 1.0, y - 5.0, vw + 2.0, 14.0];
         let hovered = inside(cursor, label) && inside(cursor, clip);
+        let locked = self.locked(o);
         text(game, batch, &value, tx, y, VALUE, true);
         if hovered {
-            underline(game, batch, tx, y, vw, VALUE, true);
+            underline(game, batch, tx, y, vw, if locked { 0xffff_5555 } else { VALUE }, true);
         }
         blit(game, batch, &sprites::CFG_SELECTOR, x + rw - 7.0, y + 1.5, 0.5);
         if clickable(o)
+            && !locked
             && let Some(r) = intersect(label, clip)
         {
             self.hits.push((r, CHit::Value(o, label)));
         }
-        if hovered && o.fixed {
+        if hovered && o.fixed && !locked {
             return Some(vec![(rei::tr(ru, "not_ported").to_owned(), 0xffaa_aaaa)]);
         }
         None

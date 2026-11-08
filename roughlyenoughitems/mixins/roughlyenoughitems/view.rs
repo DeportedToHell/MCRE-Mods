@@ -44,6 +44,12 @@ fn dark() -> bool {
     DARK.with(std::cell::Cell::get)
 }
 
+/// The theme the buttons are drawn in (the config screen over the Options
+/// screen, where no overlay frame sets it).
+pub(super) fn set_dark(on: bool) {
+    DARK.with(|d| d.set(on));
+}
+
 /// The light sprite, or its dark twin in the dark theme.
 fn th(light: &'static Sprite, dark_twin: &'static Sprite) -> &'static Sprite {
     if dark() { dark_twin } else { light }

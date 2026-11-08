@@ -1,0 +1,311 @@
+[mod]
+id = "modmenu"
+version = "1.1.0"
+# Above Roughly Enough Items and Just Enough Items: while the mods screen is
+# open its input hooks run first and take every event.
+priority = 200
+
+# Built for this Nightly: besides the hook points it adds its button to the
+# title screen's and the pause menu's own button lists and hides those screens
+# under its own.
+[compatibility]
+horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "modmenu"
+source = "runtime.rs"
+
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "modmenu_glue"
+source = "glue.rs"
+
+[[module]]
+id = "view"
+file = "crates/horizon-client/src/game.rs"
+name = "modmenu_view"
+source = "view.rs"
+
+[[module]]
+id = "sprites"
+file = "crates/horizon-client/src/game.rs"
+name = "modmenu_sprites"
+source = "sprites.rs"
+
+# What the title screen's Mods button needs, beside the title's own code (the
+# title is in the client library, which can't reach the game's modules).
+[[module]]
+id = "title"
+file = "crates/horizon-client/src/title.rs"
+name = "modmenu_title"
+source = "title.rs"
+visibility = "pub"
+
+# Options > Mods: the mod's row and its key (Open Mod Menu).
+[[injection]]
+id = "list"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "h_list.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+# Once a frame: opens and closes the screen, runs what the screen asked for.
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "h_frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+# The mods screen over the title screen or the pause menu, the title's mod
+# count and the Mods icon buttons.
+[[injection]]
+id = "render"
+hook = "screen_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_render.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+]
+
+# Open Mod Menu, the mod's key, anywhere.
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "press"
+hook = "screen_mouse_button_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_press.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "release"
+hook = "screen_mouse_button_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_release.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "drag"
+hook = "screen_mouse_dragged_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_drag.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "scroll"
+hook = "screen_mouse_scrolled_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_scroll.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "scroll", ty = "[f64; 2]", value = "scroll" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_pressed"
+hook = "screen_key_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_pressed.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_released"
+hook = "screen_key_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_released.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "char"
+hook = "screen_char_typed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_char.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "c", ty = "char", value = "c" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+# Typing over the title screen: its own screens keep a key's text on the key,
+# so the characters come here instead of the char hook.
+[[injection]]
+id = "title_edit"
+target = "horizon_client::game::clipboard::Game<'_>::title_edit"
+kind = "HEAD"
+cancellable = true
+helper = "h_title_edit.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "typed", ty = "Option<&str>", value = "typed" },
+  { name = "backspace", ty = "bool", value = "backspace" },
+]
+
+# The title screen's buttons with the Mods button (`MixinTitleScreen`).
+[[injection]]
+id = "title_buttons"
+target = "horizon_client_lib::title::Title::buttons"
+kind = "HEAD"
+cancellable = true
+helper = "h_title_buttons.rs"
+bindings = [
+  { name = "title", ty = "&crate::title::Title", value = "&*self" },
+  { name = "w", ty = "f32", value = "w" },
+  { name = "h", ty = "f32", value = "h" },
+]
+
+# The Mods button clicked.
+[[injection]]
+id = "title_click"
+target = "horizon_client_lib::title::Title::click"
+kind = "HEAD"
+cancellable = true
+helper = "h_title_click.rs"
+bindings = [
+  { name = "title", ty = "&mut crate::title::Title", value = "&mut *self" },
+  { name = "x", ty = "f32", value = "x" },
+  { name = "y", ty = "f32", value = "y" },
+  { name = "size", ty = "(f32, f32)", value = "size" },
+]
+
+# Enter or Space on the focused Mods button.
+[[injection]]
+id = "title_confirm"
+target = "horizon_client_lib::title::Title::confirm_key_size"
+kind = "HEAD"
+cancellable = true
+helper = "h_title_confirm.rs"
+bindings = [
+  { name = "title", ty = "&mut crate::title::Title", value = "&mut *self" },
+]
+
+# The Mods button drawn, on the startup screen too (before the game is up):
+# its icon and the mod count after the version.
+[[injection]]
+id = "title_button"
+target = "horizon_client_lib::title::Button::draw_label"
+kind = "HEAD"
+helper = "h_title_button.rs"
+bindings = [
+  { name = "button", ty = "&crate::title::Button", value = "&*self" },
+  { name = "batch", ty = "&mut crate::hud::HudBatch", value = "&mut *batch" },
+  { name = "atlas", ty = "&crate::hud::HudAtlas", value = "atlas" },
+]
+
+# The title screen stays hidden under the mods screen.
+[[injection]]
+id = "title_cover"
+target = "horizon_client_lib::title::Title::draw_with_items"
+kind = "HEAD"
+cancellable = true
+helper = "h_title_cover.rs"
+bindings = []
+
+# The pause menu's buttons with the Mods button (`MixinPauseScreen`).
+[[injection]]
+id = "pause_buttons"
+target = "horizon_client::game::screens::pause_buttons"
+kind = "RETURN"
+helper = "h_pause_buttons.rs"
+bindings = [
+  { name = "buttons", ty = "Vec<(f32, f32, f32, &'static str, u8, bool)>", value = "$value" },
+  { name = "w", ty = "f32", value = "w" },
+  { name = "h", ty = "f32", value = "h" },
+  { name = "links", ty = "bool", value = "links" },
+  { name = "additions", ty = "bool", value = "additions" },
+  { name = "split", ty = "bool", value = "split" },
+]
+
+# The pause menu's icon row, moved for the Mods icon.
+[[injection]]
+id = "pause_icons"
+target = "horizon_client::game::screens::pause_icons"
+kind = "RETURN"
+helper = "h_pause_icons.rs"
+bindings = [
+  { name = "icons", ty = "[(f32, f32, &'static str); 4]", value = "$value" },
+  { name = "w", ty = "f32", value = "w" },
+  { name = "h", ty = "f32", value = "h" },
+  { name = "links", ty = "bool", value = "links" },
+  { name = "additions", ty = "bool", value = "additions" },
+  { name = "split", ty = "bool", value = "split" },
+]
+
+# The pause menu's Mods button pressed.
+[[injection]]
+id = "pause_action"
+target = "horizon_client::game::screens::Game<'_>::execute_pause_action"
+kind = "HEAD"
+cancellable = true
+helper = "h_pause_action.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "hit", ty = "u8", value = "hit" },
+]
+
+# The pause menu stays hidden under the mods screen.
+[[injection]]
+id = "pause_cover"
+target = "horizon_client::game::screens::Game<'_>::draw_pause_menu"
+kind = "HEAD"
+cancellable = true
+helper = "h_pause_cover.rs"
+bindings = []

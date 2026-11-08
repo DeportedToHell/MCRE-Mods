@@ -9,6 +9,7 @@
 use super::justenoughitems::{
     self as jei, Bookmarks, Category, Index, Lookup, Query, Recipe, Settings, Stack,
 };
+use super::justenoughitems_options::Opened;
 use super::{Game, Screen};
 use horizon_client::clipboard::Clipboard as _;
 use horizon_client::items::ItemStack;
@@ -239,9 +240,20 @@ pub(super) fn settings(game: &Game<'_>, state: &mut State) -> Settings {
 fn set_setting(game: &Game<'_>, state: &mut State, key: &str, on: bool) {
     let mut s = settings(game, state);
     s.set(key, on);
-    game.native_set_setting(jei::ID, key, if on { "true" } else { "false" });
-    MOD_NAME.with(|c| c.set(s.mod_name));
-    state.settings = Some(s);
+    set_settings(game, state, s);
+}
+
+/// Keeps new settings (the config screen's, a switch's): every key whose
+/// value changed is written.
+pub(super) fn set_settings(game: &Game<'_>, state: &mut State, new: Settings) {
+    let old = settings(game, state).stored();
+    for (key, value) in new.stored() {
+        if !old.contains(&(key, value)) {
+            game.native_set_setting(jei::ID, key, value);
+        }
+    }
+    MOD_NAME.with(|c| c.set(new.mod_name));
+    state.settings = Some(new);
     state.filtered = None;
 }
 
@@ -960,6 +972,9 @@ fn act(game: &mut Game<'_>, action: Action) {
                 game.clipboard.set(&text);
             }
         }
+        // The config button: JEI's config screen, over the Options screen
+        // opened on JEI's page; closing it goes back to the container screen
+        // (Java's config screen has it as its parent).
         Action::OpenSettings => {
             game.list_native_mods();
             if let Some(index) = game
@@ -970,7 +985,11 @@ fn act(game: &mut Game<'_>, action: Action) {
                 .position(|entry| entry.id == jei::ID && entry.native.is_some())
             {
                 with(|s| s.recipes.close());
+                game.mod_browser_closed();
+                game.panel.recipes_settings_return = Some(game.screen);
                 game.open_options_at(false, horizon_client::options_ui::Page::NativeMod(index));
+                game.native_settings_refresh(index);
+                super::justenoughitems_options::open(game, Opened::ConfigButton);
             }
         }
     }
@@ -1580,12 +1599,14 @@ pub(super) fn mods(game: &Game<'_>, mods: &mut Vec<super::native_hooks::NativeMo
     });
 }
 
-/// The settings page's buttons.
+/// The settings page's buttons: Mod Menu's "Configure..." first (JEI's config
+/// screen), then the switches and the bookmarks.
 pub(super) fn settings_buttons(game: &mut Game<'_>, mod_id: &str, buttons: &mut Vec<String>) {
     if mod_id != jei::ID {
         return;
     }
     let ru = jei::russian(&horizon_client::lang::code());
+    buttons.push(jei::tr(ru, "modmenu_configure").to_owned());
     let game: &Game<'_> = game;
     with(|st| {
         let s = settings(game, st);
@@ -1602,6 +1623,13 @@ pub(super) fn settings_click(game: &mut Game<'_>, mod_id: &str, button: usize) {
     if mod_id != jei::ID {
         return;
     }
+    // The first button and Mod Menu's Configure: JEI's config screen.
+    if button == 0 || button == super::justenoughitems_options::MODMENU_CONFIGURE {
+        let mode = if button == 0 { Opened::Page } else { Opened::ModMenu };
+        super::justenoughitems_options::open(game, mode);
+        return;
+    }
+    let button = button - 1;
     let game: &Game<'_> = game;
     with(|st| {
         if let Some(key) = Settings::KEYS.get(button) {

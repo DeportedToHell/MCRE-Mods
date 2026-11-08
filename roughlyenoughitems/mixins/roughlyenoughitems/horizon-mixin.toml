@@ -1,11 +1,12 @@
 [mod]
 id = "roughlyenoughitems"
-version = "1.0.1"
+version = "1.1.0"
 priority = 100
 
 # Built for this Nightly: besides the hook points it draws in place of the
-# game's item panel (`draw_mod_browser`) and uses the game's own inventory,
-# recipe and tooltip code.
+# game's item panel (`draw_mod_browser`), hides the Options screen under its
+# config screen (`draw_options`) and uses the game's own inventory, recipe and
+# tooltip code.
 [compatibility]
 horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
 
@@ -38,6 +39,14 @@ id = "sprites"
 file = "crates/horizon-client/src/game.rs"
 name = "roughlyenoughitems_sprites"
 source = "sprites.rs"
+
+# The config screen over the Options screen (Mod Menu's Configure, the
+# page's first button), the icon and Mod Menu's metadata.
+[[module]]
+id = "options"
+file = "crates/horizon-client/src/game.rs"
+name = "roughlyenoughitems_options"
+source = "options.rs"
 
 # Options > Mods: the mod's row, keys and settings page.
 [[injection]]
@@ -172,6 +181,54 @@ bindings = [
   { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
   { name = "c", ty = "char", value = "c" },
   { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "drag"
+hook = "screen_mouse_dragged_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_drag.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_released"
+hook = "screen_key_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_released.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+# REI's config screen over the Options screen, while it is open on REI's page.
+[[injection]]
+id = "render"
+hook = "screen_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_render.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+]
+
+# The Options screen stays hidden under it.
+[[injection]]
+id = "options_cover"
+target = "horizon_client::game::options::Game<'_>::draw_options"
+kind = "HEAD"
+cancellable = true
+helper = "h_options_cover.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
 ]
 
 # The mod's name at the foot of item tooltips.

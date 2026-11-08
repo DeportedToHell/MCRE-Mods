@@ -11,7 +11,7 @@ use std::sync::Mutex;
 
 pub const ID: &str = "smoothswapping";
 pub const NAME: &str = "Smooth Swapping";
-pub const VERSION: &str = "1.0.0";
+pub const VERSION: &str = "1.1.0";
 
 pub fn russian(language: &str) -> bool {
     language.starts_with("ru")
@@ -27,12 +27,16 @@ pub fn description(ru: bool) -> &'static str {
 
 // ---- the animation curve ---------------------------------------------------
 
-/// The curves the settings offer in place of the original's curve editor.
-/// Each is the editor's own kind of curve: points between the fixed (0, 0)
-/// and (1, 1), joined by the same Catmull-Rom spline.
+/// A point of the curve, (x, y): x is the flight's time, y how far along its
+/// way it is drawn, both 0 to 1 between the fixed ends.
+pub type Point = (f64, f64);
+
+/// Named curves the mod's page steps through (the config screen's editor
+/// makes any other). Each is the editor's own kind of curve: points between
+/// the fixed (0, 0) and (1, 1), joined by the same Catmull-Rom spline.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Curve {
-    /// The original's default (no points of its own).
+    /// The original's default (no points of its own, as Reset leaves it).
     Original,
     Linear,
     Smooth,
@@ -79,47 +83,33 @@ impl Curve {
         }
     }
 
-    /// The editor's points between (0, 0) and (1, 1), by x.
-    pub fn points(self) -> &'static [(f64, f64)] {
+    /// The editor's points between (0, 0) and (1, 1), by x. Linear is as
+    /// straight as the spline goes (its ends ease a little).
+    pub fn points(self) -> Vec<Point> {
         match self {
-            Curve::Original | Curve::Linear => &[],
-            Curve::Smooth => &[(0.3, 0.12), (0.7, 0.88)],
-            Curve::FastStart => &[(0.2, 0.5), (0.5, 0.85)],
-            Curve::SlowStart => &[(0.5, 0.15), (0.8, 0.5)],
-            Curve::Spring => &[(0.65, 1.08)],
+            Curve::Original => vec![],
+            Curve::Linear => vec![(0.25, 0.25), (0.5, 0.5), (0.75, 0.75)],
+            Curve::Smooth => vec![(0.3, 0.12), (0.7, 0.88)],
+            Curve::FastStart => vec![(0.2, 0.5), (0.5, 0.85)],
+            Curve::SlowStart => vec![(0.5, 0.15), (0.8, 0.5)],
+            Curve::Spring => vec![(0.65, 1.08)],
         }
     }
 
-    /// How far along its way a flight is drawn at time `t` (0 to 1).
-    pub fn ease(self, t: f64) -> f64 {
-        match self {
-            Curve::Linear => t.clamp(0.0, 1.0),
-            _ => catmull_rom(self.points(), t),
-        }
+    /// The named curve these points are, if any.
+    pub fn of(points: &[Point]) -> Option<Curve> {
+        Curve::ALL.into_iter().find(|c| {
+            let own = c.points();
+            own.len() == points.len()
+                && own.iter().zip(points).all(|(a, b)| (a.0 - b.0).abs() < 1e-4 && (a.1 - b.1).abs() < 1e-4)
+        })
     }
+
 }
 
-/// The original's `CatmullRomWidget.getProgress`: a uniform Catmull-Rom
-/// spline (alpha 0, tension 0) through (0, 0) twice, `points`, then (1, 1)
-/// twice; `t` picks the segment by x and goes through it linearly. At t = 1,
-/// which no segment's [x1, x2) holds, the last segment ends (the original
-/// fell back to the first).
-pub fn catmull_rom(points: &[(f64, f64)], t: f64) -> f64 {
-    let mut p = vec![(0.0, 0.0), (0.0, 0.0)];
-    p.extend_from_slice(points);
-    p.push((1.0, 1.0));
-    p.push((1.0, 1.0));
-    let t = t.clamp(0.0, 1.0);
-    let mut seg = p.len() - 3;
-    for i in 1..p.len() - 2 {
-        if t >= p[i].0 && t < p[i + 1].0 {
-            seg = i;
-            break;
-        }
-    }
-    let (y0, y1, y2, y3) = (p[seg - 1].1, p[seg].1, p[seg + 1].1, p[seg + 2].1);
-    let span = p[seg + 1].0 - p[seg].0;
-    let u = if span > 0.0 { (t - p[seg].0) / span } else { 0.0 };
+/// The original's `CatmullRomSpline` segment from `y1` to `y2` (alpha 0,
+/// tension 0) at `u` (0 to 1), on one axis: `a u^3 + b u^2 + c u + d`.
+fn segment(y0: f64, y1: f64, y2: f64, y3: f64, u: f64) -> f64 {
     // m1 = (p2 - p1) + ((p1 - p0) / t01 - (p2 - p0) / (t01 + t12)) * t12, with
     // every t 1 (alpha 0), and m2 likewise.
     let m1 = (y2 - y1) + ((y1 - y0) - (y2 - y0) / 2.0);
@@ -129,17 +119,56 @@ pub fn catmull_rom(points: &[(f64, f64)], t: f64) -> f64 {
     a * u * u * u + b * u * u + m1 * u + y1
 }
 
+/// The editor's whole list: (0, 0) twice, `points`, then (1, 1) twice.
+pub fn with_ends(points: &[Point]) -> Vec<Point> {
+    let mut p = vec![(0.0, 0.0), (0.0, 0.0)];
+    p.extend_from_slice(points);
+    p.push((1.0, 1.0));
+    p.push((1.0, 1.0));
+    p
+}
+
+/// `Segment.getPoint`: the spline from `p[1]` to `p[2]` at `u`, both axes,
+/// as the editor draws it.
+pub fn spline_point(p: [Point; 4], u: f64) -> Point {
+    (segment(p[0].0, p[1].0, p[2].0, p[3].0, u), segment(p[0].1, p[1].1, p[2].1, p[3].1, u))
+}
+
+/// The original's `CatmullRomWidget.getProgress`: a uniform Catmull-Rom
+/// spline (alpha 0, tension 0) through (0, 0) twice, `points`, then (1, 1)
+/// twice; `t` picks the segment by x and goes through it linearly. At t = 1,
+/// which no segment's [x1, x2) holds, the last segment ends (the original
+/// fell back to the first).
+pub fn catmull_rom(points: &[Point], t: f64) -> f64 {
+    let p = with_ends(points);
+    let t = t.clamp(0.0, 1.0);
+    let mut seg = p.len() - 3;
+    for i in 1..p.len() - 2 {
+        if t >= p[i].0 && t < p[i + 1].0 {
+            seg = i;
+            break;
+        }
+    }
+    let span = p[seg + 1].0 - p[seg].0;
+    let u = if span > 0.0 { (t - p[seg].0) / span } else { 0.0 };
+    segment(p[seg - 1].1, p[seg].1, p[seg + 1].1, p[seg + 2].1, u)
+}
+
 // ---- settings --------------------------------------------------------------
 
-/// The animation speed in percent: the original's slider runs from 10 to
-/// 500, 100 by default.
+/// The speeds in percent the mod's page steps through (the config screen's
+/// slider sets any ten from 10 to 500).
 pub const SPEEDS: [u32; 8] = [25, 50, 75, 100, 150, 200, 300, 500];
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+/// The original's `Config`, and the port's own Fly to the cursor.
+#[derive(Clone, PartialEq, Debug)]
 pub struct Settings {
-    /// An index into `SPEEDS`.
-    pub speed: usize,
-    pub curve: Curve,
+    /// `toggleMod`: off, nothing flies.
+    pub enabled: bool,
+    /// `animationSpeed` in percent: 10 to 500, 100 by default.
+    pub speed: u32,
+    /// `curvePoints`: the curve's points between the fixed ends, by x.
+    pub points: Vec<Point>,
     /// Items taken into the cursor fly to it (several at once: a double
     /// click gathering a kind).
     pub to_cursor: bool,
@@ -148,42 +177,77 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Settings {
-            speed: 3,
-            curve: Curve::Original,
+            enabled: true,
+            speed: 100,
+            points: Vec::new(),
             to_cursor: true,
         }
     }
 }
 
+/// "x,y;x,y" as the settings keep the points (floats, as `Config` saves them).
+fn format_points(points: &[Point]) -> String {
+    points
+        .iter()
+        .map(|&(x, y)| format!("{},{}", x as f32, y as f32))
+        .collect::<Vec<_>>()
+        .join(";")
+}
+
+fn parse_points(s: &str) -> Vec<Point> {
+    let mut points: Vec<Point> = s
+        .split(';')
+        .filter_map(|p| {
+            let (x, y) = p.split_once(',')?;
+            let (x, y) = (x.trim().parse::<f32>().ok()?, y.trim().parse::<f32>().ok()?);
+            (x.is_finite() && y.is_finite()).then_some((f64::from(x), f64::from(y)))
+        })
+        .collect();
+    points.sort_by(|a, b| a.0.total_cmp(&b.0));
+    points
+}
+
 impl Settings {
     pub fn read(get: impl Fn(&str) -> Option<String>) -> Settings {
         let mut s = Settings::default();
-        if let Some(i) = get("speed").and_then(|v| v.parse::<u32>().ok()) {
-            if let Some(p) = SPEEDS.iter().position(|&v| v == i) {
-                s.speed = p;
-            }
+        let flag = |key: &str| match get(key).as_deref().map(str::trim) {
+            Some("true") => Some(true),
+            Some("false") => Some(false),
+            _ => None,
+        };
+        if let Some(on) = flag("toggle_mod") {
+            s.enabled = on;
         }
-        if let Some(c) = get("curve") {
-            if let Some(c) = Curve::ALL.iter().find(|x| x.stored() == c) {
-                s.curve = *c;
-            }
+        // `Codec.intRange(10, 500)`.
+        if let Some(v) = get("speed").and_then(|v| v.trim().parse::<u32>().ok()).filter(|v| (10..=500).contains(v)) {
+            s.speed = v;
         }
-        match get("to_cursor").as_deref() {
-            Some("true") => s.to_cursor = true,
-            Some("false") => s.to_cursor = false,
-            _ => {}
+        match get("curve").as_deref().map(str::trim) {
+            Some("custom") => s.points = get("curve_points").map(|v| parse_points(&v)).unwrap_or_default(),
+            Some(name) => {
+                if let Some(c) = Curve::ALL.iter().find(|c| c.stored() == name) {
+                    s.points = c.points();
+                }
+            }
+            None => {}
+        }
+        if let Some(on) = flag("to_cursor") {
+            s.to_cursor = on;
         }
         s
     }
 
     pub fn stored(&self) -> Vec<(&'static str, String)> {
         vec![
-            ("speed", SPEEDS[self.speed].to_string()),
-            ("curve", self.curve.stored().to_string()),
+            ("toggle_mod", self.enabled.to_string()),
+            ("speed", self.speed.to_string()),
+            ("curve", Curve::of(&self.points).map_or("custom", Curve::stored).to_string()),
+            ("curve_points", format_points(&self.points)),
             ("to_cursor", self.to_cursor.to_string()),
         ]
     }
 
+    /// The page's buttons after its first.
     pub fn labels(&self, ru: bool) -> Vec<String> {
         let on = |b: bool| match (b, ru) {
             (true, true) => "вкл",
@@ -191,28 +255,35 @@ impl Settings {
             (true, false) => "On",
             (false, false) => "Off",
         };
-        let speed = SPEEDS[self.speed];
+        let custom = if ru { "своя" } else { "Custom" };
+        let curve = Curve::of(&self.points).map_or(custom, |c| c.label(ru));
+        let speed = self.speed;
         if ru {
             vec![
                 format!("Скорость анимации: {speed}%"),
-                format!("Кривая: {}", self.curve.label(true)),
+                format!("Кривая: {curve}"),
                 format!("Полёт в курсор: {}", on(self.to_cursor)),
             ]
         } else {
             vec![
                 format!("Animation speed: {speed}%"),
-                format!("Curve: {}", self.curve.label(false)),
+                format!("Curve: {curve}"),
                 format!("Fly to the cursor: {}", on(self.to_cursor)),
             ]
         }
     }
 
+    /// A click on the page's button `button` (after its first): the next
+    /// speed, the next named curve, Fly to the cursor.
     pub fn click(&mut self, button: usize) {
         match button {
-            0 => self.speed = (self.speed + 1) % SPEEDS.len(),
+            0 => self.speed = SPEEDS.into_iter().find(|&v| v > self.speed).unwrap_or(SPEEDS[0]),
             1 => {
-                let i = Curve::ALL.iter().position(|c| *c == self.curve).unwrap_or(0);
-                self.curve = Curve::ALL[(i + 1) % Curve::ALL.len()];
+                let next = match Curve::of(&self.points).and_then(|c| Curve::ALL.iter().position(|x| *x == c)) {
+                    Some(i) => Curve::ALL[(i + 1) % Curve::ALL.len()],
+                    None => Curve::Original,
+                };
+                self.points = next.points();
             }
             2 => self.to_cursor = !self.to_cursor,
             _ => {}
@@ -222,15 +293,21 @@ impl Settings {
     /// Progress per millisecond. The original moves a flight a tenth of its
     /// way each tick at 100%: half a second.
     pub fn rate_per_ms(&self) -> f64 {
-        f64::from(SPEEDS[self.speed]) / 100.0 / 500.0
+        f64::from(self.speed) / 100.0 / 500.0
     }
 }
 
 static SETTINGS: Mutex<Option<Settings>> = Mutex::new(None);
 
+/// The settings, read once from the game's store.
 pub fn settings(get: impl Fn(&str) -> Option<String>) -> Settings {
+    with_settings(get, Settings::clone)
+}
+
+/// `f` on the settings, read once from the game's store, without a copy.
+pub fn with_settings<R>(get: impl Fn(&str) -> Option<String>, f: impl FnOnce(&Settings) -> R) -> R {
     let mut kept = SETTINGS.lock().unwrap_or_else(|e| e.into_inner());
-    *kept.get_or_insert_with(|| Settings::read(get))
+    f(kept.get_or_insert_with(|| Settings::read(get)))
 }
 
 pub fn set_settings(settings: Settings) {
@@ -377,9 +454,9 @@ pub fn shown_count(count: u32, incoming: u32) -> u32 {
 }
 
 /// Where a flight is drawn at `progress` (0 to 1), from and to being the
-/// slots' top left corners.
-pub fn position(from: [f32; 2], to: [f32; 2], progress: f64, curve: Curve) -> [f32; 2] {
-    let e = curve.ease(progress) as f32;
+/// slots' top left corners, along the curve through `points`.
+pub fn position(from: [f32; 2], to: [f32; 2], progress: f64, points: &[Point]) -> [f32; 2] {
+    let e = catmull_rom(points, progress) as f32;
     [from[0] + (to[0] - from[0]) * e, from[1] + (to[1] - from[1]) * e]
 }
 
@@ -397,25 +474,25 @@ mod tests {
         for i in 0..=20 {
             let u = f64::from(i) / 20.0;
             let want = -u * u * u + 1.5 * u * u + 0.5 * u;
-            assert!((Curve::Original.ease(u) - want).abs() < 1e-12, "{u}");
+            assert!((catmull_rom(&Curve::Original.points(), u) - want).abs() < 1e-12, "{u}");
         }
     }
 
     #[test]
     fn every_curve_starts_at_0_and_lands_at_1() {
         for c in Curve::ALL {
-            assert!(c.ease(0.0).abs() < 1e-12, "{c:?}");
-            assert!((c.ease(1.0) - 1.0).abs() < 1e-12, "{c:?}");
+            assert!(catmull_rom(&c.points(), 0.0).abs() < 1e-12, "{c:?}");
+            assert!((catmull_rom(&c.points(), 1.0) - 1.0).abs() < 1e-12, "{c:?}");
             if c != Curve::Spring {
                 let mut last = 0.0;
                 for i in 0..=200 {
-                    let y = c.ease(f64::from(i) / 200.0);
+                    let y = catmull_rom(&c.points(), f64::from(i) / 200.0);
                     assert!(y >= last - 1e-9, "{c:?} at {i}");
                     last = y;
                 }
             }
         }
-        assert!(Curve::Spring.ease(0.85) > 1.0);
+        assert!(catmull_rom(&Curve::Spring.points(), 0.85) > 1.0);
     }
 
     #[test]
@@ -514,18 +591,60 @@ mod tests {
     #[test]
     fn speed_and_settings() {
         let s = Settings::default();
-        assert_eq!(SPEEDS[s.speed], 100);
+        assert_eq!(s.speed, 100);
         assert!((s.rate_per_ms() * 500.0 - 1.0).abs() < 1e-12);
-        let mut t = s;
+        let mut t = s.clone();
         t.click(0);
         t.click(1);
         t.click(2);
+        assert_eq!((t.speed, Curve::of(&t.points)), (150, Some(Curve::Linear)));
         let stored: HashMap<_, _> = t.stored().into_iter().collect();
         assert_eq!(Settings::read(|k| stored.get(k).cloned()), t);
         assert_eq!(t.labels(true).len(), 3);
+        // A speed the slider set steps on to the next preset; the last wraps.
+        t.speed = 130;
+        t.click(0);
+        assert_eq!(t.speed, 150);
+        t.speed = 500;
+        t.click(0);
+        assert_eq!(t.speed, 25);
         assert_eq!(shown_count(64, 24), 40);
         assert_eq!(shown_count(16, 16), 0);
-        assert_eq!(position([0.0, 0.0], [18.0, 36.0], 1.0, Curve::Original), [18.0, 36.0]);
-        assert_eq!(position([0.0, 0.0], [18.0, 36.0], 0.0, Curve::Spring), [0.0, 0.0]);
+        assert_eq!(position([0.0, 0.0], [18.0, 36.0], 1.0, &[]), [18.0, 36.0]);
+        assert_eq!(position([0.0, 0.0], [18.0, 36.0], 0.0, &Curve::Spring.points()), [0.0, 0.0]);
+    }
+
+    #[test]
+    fn edited_curves_keep_their_points() {
+        // The editor's own points: kept as floats, read back sorted.
+        let mut s = Settings { enabled: false, speed: 230, ..Settings::default() };
+        s.points = vec![(0.6, 0.9), (0.2, 0.1)];
+        let stored: HashMap<_, _> = s.stored().into_iter().collect();
+        assert_eq!(stored["curve"], "custom");
+        let back = Settings::read(|k| stored.get(k).cloned());
+        assert!(!back.enabled);
+        assert_eq!(back.speed, 230);
+        assert_eq!(back.points.len(), 2);
+        assert!((back.points[0].0 - 0.2).abs() < 1e-6 && (back.points[1].1 - 0.9).abs() < 1e-6);
+        // A custom curve steps on to the first named one; junk is ignored.
+        s.click(1);
+        assert_eq!(Curve::of(&s.points), Some(Curve::Original));
+        let junk = Settings::read(|k| (k != "curve").then(|| "junk".to_owned()).or(Some("custom".into())));
+        assert_eq!(junk, Settings::default());
+        // The old named curves still read.
+        let old = Settings::read(|k| (k == "curve").then(|| "smooth".to_owned()));
+        assert_eq!(Curve::of(&old.points), Some(Curve::Smooth));
+    }
+
+    #[test]
+    fn the_editor_draws_the_same_spline() {
+        // Its segments, both axes, pass through their points.
+        let p = with_ends(&[(0.4, 0.7)]);
+        for i in 1..p.len() - 2 {
+            let seg = [p[i - 1], p[i], p[i + 1], p[i + 2]];
+            let (a, b) = (spline_point(seg, 0.0), spline_point(seg, 1.0));
+            assert!((a.0 - p[i].0).abs() < 1e-12 && (a.1 - p[i].1).abs() < 1e-12);
+            assert!((b.0 - p[i + 1].0).abs() < 1e-12 && (b.1 - p[i + 1].1).abs() < 1e-12);
+        }
     }
 }

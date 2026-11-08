@@ -1499,7 +1499,10 @@ pub(super) fn frame(game: &mut Game<'_>) {
     if !open {
         with(|s| {
             s.recipes.close();
-            s.config = None;
+            // The config screen over the Options screen stays.
+            if s.config.as_ref().is_some_and(|c| !c.on_options()) {
+                s.config = None;
+            }
             s.menu = None;
             s.press = None;
             s.choose = None;
@@ -1519,6 +1522,11 @@ pub(super) fn frame(game: &mut Game<'_>) {
         });
     }
     COVERED.with(|c| c.set(open && with(|s| s.recipes.is_open() || s.config.is_some()).unwrap_or(false)));
+    run_pending(game);
+}
+
+/// Does what the screen hooks and the config screen asked for.
+pub(super) fn run_pending(game: &mut Game<'_>) {
     let actions = with(|s| std::mem::take(&mut s.pending)).unwrap_or_default();
     for action in actions {
         act(game, action);
@@ -2415,7 +2423,9 @@ pub(super) fn char_typed(game: &Game<'_>, screen: &NativeScreenView<'_>, c: char
 pub(super) fn closed() {
     with(|s| {
         s.recipes.close();
-        s.config = None;
+        if s.config.as_ref().is_some_and(|c| !c.on_options()) {
+            s.config = None;
+        }
         s.menu = None;
         s.press = None;
         s.choose = None;
@@ -2460,12 +2470,14 @@ pub(super) fn mods(game: &Game<'_>, mods: &mut Vec<super::native_hooks::NativeMo
     });
 }
 
-/// The settings page's buttons.
+/// The settings page's buttons: Mod Menu's "Configure..." first (REI's config
+/// screen), then the switches and the favorites.
 pub(super) fn settings_buttons(game: &mut Game<'_>, mod_id: &str, buttons: &mut Vec<String>) {
     if mod_id != rei::ID {
         return;
     }
     let ru = rei::russian(&horizon_client::lang::code());
+    buttons.push(rei::tr(ru, "modmenu_configure").to_owned());
     let game: &Game<'_> = game;
     with(|st| {
         let s = settings(game, st);
@@ -2482,6 +2494,12 @@ pub(super) fn settings_click(game: &mut Game<'_>, mod_id: &str, button: usize) {
     if mod_id != rei::ID {
         return;
     }
+    // The first button and Mod Menu's Configure: REI's config screen.
+    if button == 0 || button == super::roughlyenoughitems_options::MODMENU_CONFIGURE {
+        super::roughlyenoughitems_options::open(game, button != 0);
+        return;
+    }
+    let button = button - 1;
     let game: &Game<'_> = game;
     with(|st| {
         if let Some(key) = Settings::KEYS.get(button) {

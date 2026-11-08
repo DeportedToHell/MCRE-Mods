@@ -64,8 +64,12 @@ fn russian(game: &Game<'_>) -> bool {
 /// The screens whose slots `draw_inventory` draws: the player's inventory,
 /// containers, furnaces, crafting tables, mounts and mod machines. Not the
 /// creative screen (as the original) nor the stations, which draw their own.
+/// Toggle Mod off (`toggleMod`), nothing flies.
 fn tracked(game: &Game<'_>) -> bool {
-    game.screen == Screen::Inventory && game.station.is_none() && game.native_on(ss::ID)
+    game.screen == Screen::Inventory
+        && game.station.is_none()
+        && game.native_on(ss::ID)
+        && ss::with_settings(|key| game.native_setting(ss::ID, key), |s| s.enabled)
 }
 
 /// The slots whose stack the game computes: the crafting result, a
@@ -98,7 +102,7 @@ fn held(protos: &mut Vec<ItemStack>, stack: &Option<ItemStack>) -> ss::Held {
 
 // ---- the hooks -------------------------------------------------------------
 
-pub(crate) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
+pub(super) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
     mods.push(NativeMod {
         id: ss::ID.into(),
         title: format!("{} {}", ss::NAME, ss::VERSION),
@@ -107,26 +111,36 @@ pub(crate) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
     });
 }
 
-pub(crate) fn page(game: &Game<'_>, mod_id: &str, labels: &mut Vec<String>) {
+/// The mod's page: Configure... (Mod Menu's `modmenu.configure`) opens the
+/// config screen, then the speed, the curve and Fly to the cursor.
+pub(super) fn page(game: &Game<'_>, mod_id: &str, labels: &mut Vec<String>) {
     if mod_id == ss::ID {
-        labels.extend(settings(game).labels(russian(game)));
+        let ru = russian(game);
+        labels.push(if ru { "Настройки..." } else { "Configure..." }.to_owned());
+        labels.extend(settings(game).labels(ru));
     }
 }
 
-pub(crate) fn page_click(game: &Game<'_>, mod_id: &str, button: usize) {
+/// A click on the page: its first button, or Mod Menu's Configure, opens
+/// the config screen; the others change their setting.
+pub(super) fn page_click(game: &Game<'_>, mod_id: &str, button: usize) {
     if mod_id != ss::ID {
         return;
     }
+    if button == 0 || button == super::smoothswapping_screen::MODMENU_CONFIGURE {
+        super::smoothswapping_screen::open(game, button != 0);
+        return;
+    }
     let mut s = settings(game);
-    s.click(button);
-    ss::set_settings(s);
+    s.click(button - 1);
+    ss::set_settings(s.clone());
     for (key, value) in s.stored() {
         game.native_set_setting(ss::ID, key, &value);
     }
 }
 
 /// Each frame: its time, for the flights.
-pub(crate) fn frame(elapsed: Duration) {
+pub(super) fn frame(elapsed: Duration) {
     let mut st = state();
     st.frame += 1;
     // A long frame (a world loading) moves a flight no further than 100 ms.
@@ -135,7 +149,7 @@ pub(crate) fn frame(elapsed: Duration) {
 
 /// Before the slots are drawn: the flights move on, and what changed since
 /// the last frame starts new ones.
-pub(crate) fn detect(game: &mut Game<'_>) {
+pub(super) fn detect(game: &mut Game<'_>) {
     if !tracked(game) {
         let mut st = state();
         st.seen = None;
@@ -236,7 +250,7 @@ pub(crate) fn detect(game: &mut Game<'_>) {
 /// A slot's item, before the game draws it: a destination shows only what
 /// has landed. True when this took the drawing (the caller then draws
 /// nothing).
-pub(crate) fn slot(
+pub(super) fn slot(
     game: &Game<'_>,
     batch: &mut HudBatch,
     slot: usize,
@@ -268,16 +282,16 @@ pub(crate) fn slot(
 
 /// Over the slots, under the held stack and the tooltips: the flying stacks,
 /// each with its count.
-pub(crate) fn draw(game: &Game<'_>, batch: &mut HudBatch) {
+pub(super) fn draw(game: &Game<'_>, batch: &mut HudBatch) {
     if !tracked(game) {
         return;
     }
-    let curve = settings(game).curve;
+    let points = settings(game).points;
     let (ox, oy) = game.inventory_origin(batch);
     let flying: Vec<(ItemStack, [f32; 2])> = state()
         .flights
         .iter()
-        .map(|f| (f.stack.clone(), ss::position(f.from, f.to, f.progress, curve)))
+        .map(|f| (f.stack.clone(), ss::position(f.from, f.to, f.progress, &points)))
         .collect();
     for (stack, [x, y]) in flying {
         game.draw_item(batch, &stack, ox + x, oy + y);

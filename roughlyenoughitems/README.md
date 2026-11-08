@@ -40,6 +40,9 @@ game's container screens.
   Ctrl/Shift/Alt, Cancel and Done. Light and dark theme, recipe borders, larger tabs and arrows, zoom
   (also Ctrl+wheel over the list), ordering, focus mode, search modes, cheats when creative, the
   favorites hint, clickable recipe arrows on the inventory, crafting table, furnaces and brewing stand.
+- The same config screen from **Mod Menu** (Configure) and from "Configure..." on Options > Mods >
+  Roughly Enough Items, over the title screen or the pause menu, as REI's Mod Menu entry opens it
+  ("Load Level First!" and no previews outside a world, as in REI). Mod Menu shows REI's icon.
 - The mod's name at the foot of item tooltips, blue and italic, as REI adds it.
 - The main switches are also on Options > Mods > Roughly Enough Items, with the keys. Russian labels
   where REI has them when the game is in Russian.
@@ -66,8 +69,10 @@ mixins/roughlyenoughitems/
   glue.rs                      the game's items and recipes, mouse and keys, giving and moving items
   view.rs                      drawing
   config.rs                    REI's config screen
+  options.rs                   the config screen over the Options screen (Mod Menu), the icon and Mod Menu's metadata
   sprites.rs                   REI's textures as pixel runs (made by tools/sprites.mjs)
   h_*.rs                       one small helper per injection
+  data/icon.png                REI's icon, for Mod Menu
   LICENSE, NOTICE
 tools/check.sh                 stages the mod on the pinned Horizon source and cargo-checks the game
 tools/package.mjs              makes the .hnmod

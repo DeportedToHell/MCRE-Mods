@@ -12,7 +12,7 @@ use std::sync::Mutex;
 
 pub const ID: &str = "mousetweaks";
 pub const NAME: &str = "Mouse Tweaks";
-pub const VERSION: &str = "1.0.1";
+pub const VERSION: &str = "1.1.0";
 
 pub fn russian(language: &str) -> bool {
     language.starts_with("ru")
@@ -222,49 +222,70 @@ impl Settings {
         ]
     }
 
-    pub fn labels(&self, ru: bool) -> Vec<String> {
+    /// Row `row`'s name: `ConfigScreen`'s caption of its button (the page
+    /// lists the rows in this order).
+    pub fn caption(row: usize, ru: bool) -> &'static str {
         let t = |r: &'static str, e: &'static str| if ru { r } else { e };
-        let on = |v: bool| if v { t("вкл", "ON") } else { t("выкл", "OFF") };
-        let order = match self.order {
-            SearchOrder::FirstToLast => t("с первого слота", "First to Last"),
-            SearchOrder::LastToFirst => t("с последнего слота", "Last to First"),
-        };
-        let direction = match self.direction {
-            Direction::Normal => t("вниз — отдать, вверх — забрать", "Down to Push, Up to Pull"),
-            Direction::Inverted => t("вверх — отдать, вниз — забрать", "Up to Push, Down to Pull"),
-            Direction::PositionAware => t("по положению инвентаря", "Inventory Position Aware"),
-            Direction::PositionAwareInverted => t(
-                "по положению инвентаря, наоборот",
-                "Inventory Position Aware, Inverted",
-            ),
-        };
-        let scaling = match self.scaling {
-            Scaling::Proportional => t(
-                "сколько щелчков колеса, столько предметов",
-                "Multiple Wheel Clicks Move Multiple Items",
-            ),
-            Scaling::AlwaysOne => t(
-                "всегда один предмет (для macOS)",
-                "Always Move One Item (macOS Compatibility)",
-            ),
-        };
-        vec![
-            format!("{}: {}", t("ПКМ-протяжка", "RMB Tweak"), on(self.rmb)),
-            format!("{}: {}", t("ЛКМ-протяжка с предметом", "LMB Tweak With Item"), on(self.lmb_with_item)),
-            format!(
-                "{}: {}",
-                t("ЛКМ-протяжка без предмета", "LMB Tweak Without Item"),
-                on(self.lmb_without_item)
-            ),
-            format!("{}: {}", t("Колесо", "Wheel Tweak"), on(self.wheel)),
-            format!("{}: {}", t("Колесо ищет", "Wheel Tweak Search Order"), order),
-            format!("{}: {}", t("Колесо", "Scroll Direction"), direction),
-            format!("{}: {}", t("Шаг колеса", "Scroll Scaling"), scaling),
-        ]
+        match row {
+            0 => t("ПКМ-протяжка", "RMB Tweak"),
+            1 => t("ЛКМ с предметом", "LMB Tweak With Item"),
+            2 => t("ЛКМ без предмета", "LMB Tweak Without Item"),
+            3 => t("Колесо мыши", "Wheel Tweak"),
+            4 => t("Порядок поиска", "Wheel Tweak Search Order"),
+            5 => t("Направление", "Scroll Direction"),
+            _ => t("Шаг колеса", "Scroll Scaling"),
+        }
     }
 
-    /// A click on row `row`: the toggle flips, a choice moves on.
-    pub fn click(&mut self, row: usize) {
+    /// Row `row`'s value: `Ok` of a switch (the game's ON and OFF), else
+    /// the choice's text.
+    pub fn value(&self, row: usize, ru: bool) -> Result<bool, &'static str> {
+        let t = |r: &'static str, e: &'static str| if ru { r } else { e };
+        match row {
+            0 => Ok(self.rmb),
+            1 => Ok(self.lmb_with_item),
+            2 => Ok(self.lmb_without_item),
+            3 => Ok(self.wheel),
+            4 => Err(match self.order {
+                SearchOrder::FirstToLast => t("С первого слота", "First to Last"),
+                SearchOrder::LastToFirst => t("С последнего слота", "Last to First"),
+            }),
+            5 => Err(match self.direction {
+                Direction::Normal => t("Вниз — отдать, вверх — забрать", "Down to Push, Up to Pull"),
+                Direction::Inverted => t("Вверх — отдать, вниз — забрать", "Up to Push, Down to Pull"),
+                Direction::PositionAware => t("По положению инвентаря", "Inventory Position Aware"),
+                Direction::PositionAwareInverted => {
+                    t("По положению инвентаря, наоборот", "Inventory Position Aware, Inverted")
+                }
+            }),
+            _ => Err(match self.scaling {
+                Scaling::Proportional => {
+                    t("Сколько щелчков, столько предметов", "Multiple Wheel Clicks Move Multiple Items")
+                }
+                Scaling::AlwaysOne => t("Всегда один предмет (для macOS)", "Always Move One Item (macOS Compatibility)"),
+            }),
+        }
+    }
+
+    /// The page's buttons after its first: "RMB Tweak: ON", one per row.
+    pub fn labels(&self, ru: bool) -> Vec<String> {
+        (0..Self::ROWS)
+            .map(|row| {
+                let value = match self.value(row, ru) {
+                    Ok(true) if ru => "Вкл",
+                    Ok(true) => "ON",
+                    Ok(false) if ru => "Выкл",
+                    Ok(false) => "OFF",
+                    Err(text) => text,
+                };
+                format!("{}: {value}", Self::caption(row, ru))
+            })
+            .collect()
+    }
+
+    /// Row `row`'s button pressed (`CycleButton.onPress`): a switch flips, a
+    /// choice moves on, or back with `back` (Shift held, the wheel up).
+    pub fn cycle(&mut self, row: usize, back: bool) {
         match row {
             0 => self.rmb = !self.rmb,
             1 => self.lmb_with_item = !self.lmb_with_item,
@@ -277,8 +298,9 @@ impl Settings {
                 }
             }
             5 => {
+                let n = Direction::ALL.len();
                 let i = Direction::ALL.iter().position(|d| *d == self.direction).unwrap_or(0);
-                self.direction = Direction::ALL[(i + 1) % Direction::ALL.len()];
+                self.direction = Direction::ALL[if back { (i + n - 1) % n } else { (i + 1) % n }];
             }
             6 => {
                 self.scaling = match self.scaling {
@@ -288,6 +310,11 @@ impl Settings {
             }
             _ => {}
         }
+    }
+
+    /// A click on row `row` of the page: the toggle flips, a choice moves on.
+    pub fn click(&mut self, row: usize) {
+        self.cycle(row, false);
     }
 }
 
@@ -1348,5 +1375,13 @@ mod tests {
             s.click(5);
         }
         assert_eq!(s.direction, Direction::Inverted, "the direction cycles through four");
+        s.cycle(5, true);
+        assert_eq!(s.direction, Direction::Normal, "Shift or the wheel up goes back");
+        s.cycle(5, true);
+        assert_eq!(s.direction, Direction::PositionAwareInverted);
+        let d = Settings::default();
+        assert_eq!(d.labels(false)[0], "RMB Tweak: ON");
+        assert_eq!(d.value(4, false), Err("Last to First"));
+        assert_eq!(d.value(3, true), Ok(true));
     }
 }

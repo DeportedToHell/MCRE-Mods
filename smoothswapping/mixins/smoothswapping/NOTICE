@@ -4,10 +4,13 @@ in Rust) as a native mod.
 
 Smooth Swapping
 Copyright (c) 2023 Schauweg
+Original authors: Schauweg and Riflusso (its current maintainer)
 https://github.com/Schauweg/Smooth-Swapping
 Licensed under the GNU Lesser General Public License, version 3 (LICENSE).
 
 This port rewrites Smooth Swapping's logic in Rust for Horizon's native mod
-API and is distributed under the same licence. The animation curve is the
-original's Catmull-Rom spline; the curve editor is replaced by preset curves.
-It is not affiliated with Schauweg, Mojang or Microsoft.
+API and is distributed under the same licence, published with the
+permission of Schauweg and Riflusso. The animation curve is the original's
+Catmull-Rom spline, and the config screen (the curve editor and the test
+inventory included) is the original's, redrawn with the game's widgets.
+It is not affiliated with Schauweg, Riflusso, Mojang or Microsoft.

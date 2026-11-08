@@ -10,8 +10,15 @@ Licensed under the GNU Lesser General Public License, version 3 or later
 (LICENSE), which supplements the GNU General Public License, version 3
 (COPYING).
 
+YetAnotherConfigLib (YACL)
+Copyright (C) isXander
+https://github.com/isXander/YetAnotherConfigLib
+SPDX-License-Identifier: LGPL-3.0-or-later
+
 This port rewrites Zoomify's logic in Rust for Horizon's native mod API and is
 distributed under the same licence. The zoom, scroll and transition maths
 follow the original (the exponential transitions use the continuous form of
-its formulas); the YACL config screen is replaced by a Horizon settings page.
+its formulas). Its config screen is Zoomify's YACL screen redrawn as YACL 3.9.7
+draws it, with YACL's texts and its reset glyph; data/icon.png and the demo
+pictures in data/demo are Zoomify's own (assets/zoomify).
 It is not affiliated with isXander, Mojang or Microsoft.

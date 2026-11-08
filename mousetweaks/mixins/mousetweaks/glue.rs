@@ -246,7 +246,7 @@ impl mt::Menu for View<'_, '_> {
 
 // ---- the hooks -------------------------------------------------------------
 
-pub(crate) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
+pub(super) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
     mods.push(NativeMod {
         id: mt::ID.into(),
         title: format!("{} {}", mt::NAME, mt::VERSION),
@@ -255,18 +255,28 @@ pub(crate) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
     });
 }
 
-pub(crate) fn page(game: &Game<'_>, mod_id: &str, labels: &mut Vec<String>) {
+/// The mod's page: Configure... (Mod Menu's `modmenu.configure`) opens the
+/// options screen, then a button per option.
+pub(super) fn page(game: &Game<'_>, mod_id: &str, labels: &mut Vec<String>) {
     if mod_id == mt::ID {
-        labels.extend(settings(game).labels(russian(game)));
+        let ru = russian(game);
+        labels.push(if ru { "Настройки..." } else { "Configure..." }.to_owned());
+        labels.extend(settings(game).labels(ru));
     }
 }
 
-pub(crate) fn page_click(game: &Game<'_>, mod_id: &str, button: usize) {
+/// A click on the page: its first button, or Mod Menu's Configure, opens
+/// the options screen; the others change their option.
+pub(super) fn page_click(game: &Game<'_>, mod_id: &str, button: usize) {
     if mod_id != mt::ID {
         return;
     }
+    if button == 0 || button == super::mousetweaks_screen::MODMENU_CONFIGURE {
+        super::mousetweaks_screen::open(game, button != 0);
+        return;
+    }
     let mut s = settings(game);
-    s.click(button);
+    s.click(button - 1);
     mt::set_settings(s);
     for (key, value) in s.stored() {
         game.native_set_setting(mt::ID, key, &value);
@@ -274,7 +284,7 @@ pub(crate) fn page_click(game: &Game<'_>, mod_id: &str, button: usize) {
 }
 
 /// Each frame: with no container screen open the state is dropped.
-pub(crate) fn frame(game: &Game<'_>) {
+pub(super) fn frame(game: &Game<'_>) {
     if !matches!(game.screen, Screen::Inventory | Screen::Creative) {
         tweaks().update_screen(None);
     }
@@ -283,7 +293,7 @@ pub(crate) fn frame(game: &Game<'_>) {
 /// A left or right press on a container screen, before the screen clicks
 /// (`slot` is the slot under the cursor). True when Mouse Tweaks is on: the
 /// press then goes on to the screen, and Horizon's own tweaks stay out.
-pub(crate) fn press(game: &mut Game<'_>, slot: Option<usize>, right: bool) -> bool {
+pub(super) fn press(game: &mut Game<'_>, slot: Option<usize>, right: bool) -> bool {
     if !game.native_on(mt::ID) {
         return false;
     }
@@ -301,7 +311,7 @@ pub(crate) fn press(game: &mut Game<'_>, slot: Option<usize>, right: bool) -> bo
 
 /// The cursor moved over a container screen: a drag goes on while a button
 /// is held.
-pub(crate) fn drag(game: &mut Game<'_>) {
+pub(super) fn drag(game: &mut Game<'_>) {
     if !game.native_on(mt::ID) {
         return;
     }
@@ -322,7 +332,7 @@ pub(crate) fn drag(game: &mut Game<'_>) {
 }
 
 /// A button let go over a container screen.
-pub(crate) fn release(game: &Game<'_>, right: bool) {
+pub(super) fn release(game: &Game<'_>, right: bool) {
     if game.native_on(mt::ID) {
         tweaks().release(right);
     }
@@ -331,7 +341,7 @@ pub(crate) fn release(game: &Game<'_>, right: bool) {
 /// The wheel over a container screen, after a bundle under the cursor had
 /// its turn. None when Mouse Tweaks is off (Horizon's own tweaks decide);
 /// else whether it took the wheel.
-pub(crate) fn scroll(game: &mut Game<'_>, delta: f32, slot: Option<usize>) -> Option<bool> {
+pub(super) fn scroll(game: &mut Game<'_>, delta: f32, slot: Option<usize>) -> Option<bool> {
     if !game.native_on(mt::ID) {
         return None;
     }

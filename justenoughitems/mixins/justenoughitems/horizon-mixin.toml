@@ -1,6 +1,6 @@
 [mod]
 id = "justenoughitems"
-version = "1.0.0"
+version = "1.1.0"
 priority = 100
 
 # Built for this Nightly: besides the hook points it draws in place of the
@@ -32,6 +32,25 @@ id = "sprites"
 file = "crates/horizon-client/src/game.rs"
 name = "justenoughitems_sprites"
 source = "sprites.rs"
+
+[[module]]
+id = "config_sprites"
+file = "crates/horizon-client/src/game.rs"
+name = "justenoughitems_config_sprites"
+source = "config_sprites.rs"
+
+# JEI's config screen (MezzConfig GUI's) and its place over the Options screen.
+[[module]]
+id = "config"
+file = "crates/horizon-client/src/game.rs"
+name = "justenoughitems_config"
+source = "config.rs"
+
+[[module]]
+id = "options"
+file = "crates/horizon-client/src/game.rs"
+name = "justenoughitems_options"
+source = "options.rs"
 
 # Options > Mods: the mod's row, keys and settings page.
 [[injection]]
@@ -190,3 +209,52 @@ bindings = [
   { name = "cancel", ty = "&mut bool", value = "&mut *cancel" },
 ]
 
+
+# The pointer dragged with a button held, and keys let go: the config screen's.
+[[injection]]
+id = "drag"
+hook = "screen_mouse_dragged_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_drag.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_released"
+hook = "screen_key_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_released.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+# JEI's config screen over the Options screen, while it is open on JEI's page.
+[[injection]]
+id = "render"
+hook = "screen_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_render.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+]
+
+# The Options screen stays hidden under it.
+[[injection]]
+id = "options_cover"
+target = "horizon_client::game::options::Game<'_>::draw_options"
+kind = "HEAD"
+cancellable = true
+helper = "h_options_cover.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]

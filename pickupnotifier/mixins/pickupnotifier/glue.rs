@@ -81,7 +81,7 @@ fn forget(id: i32) {
 }
 
 /// The options, read the first time they are needed.
-fn config(game: &Game<'_>) -> pun::Config {
+pub(super) fn config(game: &Game<'_>) -> pun::Config {
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         s.config
@@ -91,7 +91,7 @@ fn config(game: &Game<'_>) -> pun::Config {
 }
 
 /// Keeps `config` and writes the settings that changed to their files.
-fn store(game: &Game<'_>, config: pun::Config, changed: &[pun::Setting]) {
+pub(super) fn store(game: &Game<'_>, config: pun::Config, changed: &[pun::Setting]) {
     for s in changed {
         if let Some(key) = s.key() {
             game.native_set_setting(pun::ID, key, &config.value(*s));
@@ -101,7 +101,7 @@ fn store(game: &Game<'_>, config: pun::Config, changed: &[pun::Setting]) {
 }
 
 /// Russian labels when the game is in Russian.
-fn ru() -> bool {
+pub(super) fn ru() -> bool {
     horizon_client::lang::code().starts_with("ru")
 }
 
@@ -552,6 +552,8 @@ pub(super) fn page(game: &mut Game<'_>, mod_id: &str, buttons: &mut Vec<String>)
     }
     let cfg = config(game);
     let ru = ru();
+    // Mod Menu's "Configure..." first: the original's config screen.
+    buttons.push(if ru { "Настройки..." } else { "Configure..." }.to_owned());
     buttons.extend(pun::PAGE.iter().map(|s| cfg.label(*s, ru)));
 }
 
@@ -560,7 +562,12 @@ pub(super) fn click(game: &mut Game<'_>, mod_id: &str, button: usize) {
     if mod_id != pun::ID {
         return;
     }
-    let Some(&setting) = pun::PAGE.get(button) else {
+    // The first button and Mod Menu's Configure: the config screen.
+    if button == 0 || button == super::pickupnotifier_config::MODMENU_CONFIGURE {
+        super::pickupnotifier_config::open(game, button != 0);
+        return;
+    }
+    let Some(&setting) = pun::PAGE.get(button - 1) else {
         return;
     };
     let mut cfg = config(game);

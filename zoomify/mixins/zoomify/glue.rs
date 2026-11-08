@@ -73,7 +73,7 @@ fn spyglass_state(game: &Game<'_>) -> Option<zf::SpyglassState> {
     })
 }
 
-/// Options > Mods > Zoomify, as `/zoomify` opens it.
+/// `/zoomify`: the config screen over Options > Mods > Zoomify.
 fn open_settings(game: &mut Game<'_>) {
     let Some(i) = game
         .settings
@@ -86,11 +86,14 @@ fn open_settings(game: &mut Game<'_>) {
     };
     game.open_options_at(false, horizon_client::options_ui::Page::NativeMod(i));
     game.native_settings_refresh(i);
+    // As the original's command, the config screen itself; closing it goes
+    // back to the game.
+    super::zoomify_screen::open(game, true);
 }
 
 // ---- the hooks -------------------------------------------------------------
 
-pub(crate) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
+pub(super) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
     let ru = russian(game);
     mods.push(NativeMod {
         id: zf::ID.into(),
@@ -103,14 +106,26 @@ pub(crate) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
     });
 }
 
-pub(crate) fn page(game: &Game<'_>, mod_id: &str, labels: &mut Vec<String>) {
+/// The settings page: first the config screen's button (Mod Menu's
+/// "Configure..."), then the settings and the presets.
+pub(super) fn page(game: &Game<'_>, mod_id: &str, labels: &mut Vec<String>) {
     if mod_id == zf::ID {
+        labels.push(super::zoomify_screen::configure_label().to_string());
         labels.extend(settings(game).labels(russian(game)));
     }
 }
 
-pub(crate) fn page_click(game: &Game<'_>, mod_id: &str, button: usize) {
+pub(super) fn page_click(game: &Game<'_>, mod_id: &str, button: usize) {
     if mod_id != zf::ID {
+        return;
+    }
+    // Mod Menu's Configure, or the page's first button: the config screen.
+    if button == super::zoomify_screen::MODMENU_CONFIGURE || button == 0 {
+        super::zoomify_screen::open(game, button != 0);
+        return;
+    }
+    let button = button - 1;
+    if button >= zf::ROWS + zf::PRESETS {
         return;
     }
     let mut s = settings(game);
@@ -123,7 +138,7 @@ pub(crate) fn page_click(game: &Game<'_>, mod_id: &str, button: usize) {
 
 /// A key went down or up (any screen): the zoom key's state and the presses
 /// the game counts while playing, as a `KeyMapping` does.
-pub(crate) fn key(game: &Game<'_>, key: &str, pressed: bool) {
+pub(super) fn key(game: &Game<'_>, key: &str, pressed: bool) {
     if !game.native_on(zf::ID) || key == zf::UNBOUND {
         return;
     }
@@ -148,7 +163,8 @@ pub(crate) fn key(game: &Game<'_>, key: &str, pressed: bool) {
 
 /// Each frame: the original's tick (keys, spyglass, sounds), then its zoom
 /// divisor; `/zoomify`'s settings once the chat has closed.
-pub(crate) fn frame(game: &mut Game<'_>, elapsed: Duration) {
+pub(super) fn frame(game: &mut Game<'_>, elapsed: Duration) {
+    super::zoomify_screen::frame(game);
     let s = settings(game);
     if !game.native_on(zf::ID) {
         zf::with_zoom(&s, |z| *z = zf::Zoom::new(&s));
@@ -196,7 +212,7 @@ pub(crate) fn frame(game: &mut Game<'_>, elapsed: Duration) {
 }
 
 /// The wheel while playing: while zooming it zooms, and the hotbar stays.
-pub(crate) fn scrolling(game: &Game<'_>, accumulated: [i32; 2], canceled: &mut bool) {
+pub(super) fn scrolling(game: &Game<'_>, accumulated: [i32; 2], canceled: &mut bool) {
     if !game.native_on(zf::ID) {
         return;
     }
@@ -225,7 +241,7 @@ pub(crate) fn scrolling(game: &Game<'_>, accumulated: [i32; 2], canceled: &mut b
 const MIN_FOV: f32 = 0.01;
 
 /// The world's field of view (`Camera.calculateFov`'s result), divided.
-pub(crate) fn fov(game: &Game<'_>, value: f32) -> f32 {
+pub(super) fn fov(game: &Game<'_>, value: f32) -> f32 {
     let d = divisor(game);
     if d > 1.0 && value.is_finite() && value > 0.0 {
         (value / d as f32).max(MIN_FOV)
@@ -236,7 +252,7 @@ pub(crate) fn fov(game: &Game<'_>, value: f32) -> f32 {
 
 /// The hand's field of view (`Camera.calculateHudFov`), divided too unless
 /// the setting is off.
-pub(crate) fn hand_fov(game: &Game<'_>, value: f32) -> f32 {
+pub(super) fn hand_fov(game: &Game<'_>, value: f32) -> f32 {
     if !game.native_on(zf::ID) || !settings(game).affect_hand_fov {
         return value;
     }
@@ -250,7 +266,7 @@ pub(crate) fn hand_fov(game: &Game<'_>, value: f32) -> f32 {
 
 /// The spyglass's own zoom (`getFieldOfViewModifier`'s 0.1) is 1 when
 /// Zoomify zooms for it.
-pub(crate) fn fov_modifier(game: &Game<'_>, player: &FovPlayer, modifier: &mut f32) {
+pub(super) fn fov_modifier(game: &Game<'_>, player: &FovPlayer, modifier: &mut f32) {
     if !game.native_on(zf::ID) || settings(game).spyglass == zf::Spyglass::Combine {
         return;
     }
@@ -262,7 +278,7 @@ pub(crate) fn fov_modifier(game: &Game<'_>, player: &FovPlayer, modifier: &mut f
 /// What the mouse reads (`MouseHandler.turnPlayer`): the sensitivity over
 /// the zoom, the cinematic camera while zooming, and no spyglass slowdown
 /// when Zoomify zooms for the spyglass.
-pub(crate) fn look(game: &Game<'_>, mut look: LookOptions) -> LookOptions {
+pub(super) fn look(game: &Game<'_>, mut look: LookOptions) -> LookOptions {
     if !game.native_on(zf::ID) {
         return look;
     }
@@ -278,7 +294,7 @@ pub(crate) fn look(game: &Game<'_>, mut look: LookOptions) -> LookOptions {
 }
 
 /// The HUD while the secondary zoom is on: hidden, as with F1.
-pub(crate) fn gui_layer(game: &Game<'_>, canceled: &mut bool) {
+pub(super) fn gui_layer(game: &Game<'_>, canceled: &mut bool) {
     if !game.native_on(zf::ID) {
         return;
     }
@@ -288,11 +304,11 @@ pub(crate) fn gui_layer(game: &Game<'_>, canceled: &mut bool) {
     }
 }
 
-pub(crate) fn commands(commands: &mut Vec<&'static str>) {
+pub(super) fn commands(commands: &mut Vec<&'static str>) {
     commands.push(zf::ID);
 }
 
-pub(crate) fn command(command: &str, ran: &mut bool) {
+pub(super) fn command(command: &str, ran: &mut bool) {
     if command.split_whitespace().next() == Some(zf::ID) {
         keys().open_settings = true;
         *ran = true;
@@ -301,7 +317,7 @@ pub(crate) fn command(command: &str, ran: &mut bool) {
 
 /// The spyglass overlay (`Hud.extractCameraOverlays`' `isScoping`), shown
 /// when Zoomify says: true when this drew it or hid it.
-pub(crate) fn spyglass(game: &mut Game<'_>, batch: &mut HudBatch) -> bool {
+pub(super) fn spyglass(game: &mut Game<'_>, batch: &mut HudBatch) -> bool {
     if !game.native_on(zf::ID) || !game.camera_type.first_person() {
         return false;
     }

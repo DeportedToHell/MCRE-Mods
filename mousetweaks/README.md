@@ -19,7 +19,11 @@ The original's tweaks and all seven of its options:
   the merchant, stonecutter and loom lists.
 - While it is on, it replaces Horizon's built-in Extras > Mouse Tweaks.
 
-Settings: Options > Mods > Mouse Tweaks. Russian labels when the game is in Russian.
+- **Mouse Tweaks' own options screen**, as in Java ("Mouse Tweaks Options"): Mod Menu's Configure button,
+  or Options > Mods > Mouse Tweaks > **Configure...**. The original's layout and buttons (Shift-click or
+  the wheel steps a choice back), Done or Escape to leave; every change is kept at once, as the original
+  saves on closing. The page's buttons under Configure... change the same options. Russian labels when
+  the game is in Russian.
 
 Every action is an ordinary slot click, so it works on servers too.
 
@@ -40,9 +44,12 @@ mixins/mousetweaks/
   horizon-mixin.toml           modules and injections
   runtime.rs                   the tweaks, no game types (unit tests)
   glue.rs                      the game's menu as the tweaks see it
+  screen.rs                    the options screen (`ConfigScreen`), Mod Menu's Configure
+  data/icon.png                the mod's icon, for Mod Menu
   *.rs                         one small helper per injection
   LICENSE, NOTICE
 Cargo.toml                     runs runtime.rs's tests
+tools/                         check.sh (build into Horizon), package.mjs (make the .hnmod)
 ```
 
 The `.hnmod` file is a zip of `horizon-native.json` and `mixins/`.
@@ -60,11 +67,13 @@ BSD 3-Clause License, as the original ([LICENSE](LICENSE), [NOTICE](NOTICE)).
 
 This port rewrites Mouse Tweaks' logic (`Main.java`, `Config.java`, original commit
 `e8ecd08ed94192f6f19d3cbb630707c8670a4d66`) in Rust for Horizon's native mod API. Its settings live on a
-Horizon settings page instead of `MouseTweaks.cfg`. Not affiliated with Ivan Molodetskikh, Mojang or
+Horizon settings page instead of `MouseTweaks.cfg`; its options screen is `ConfigScreen.java`'s, without
+the Debug Mode row (the port keeps no debug log). Not affiliated with Ivan Molodetskikh, Mojang or
 Microsoft.
 
 ---
 
 **По-русски.** Порт Mouse Tweaks для Horizon: протяжка правой кнопкой (по одному предмету в слот),
 протяжка левой (собрать одинаковые, с Shift — быстро переложить), колесо над слотом перекладывает
-предметы по одному. Настройки: Настройки > Моды > Mouse Tweaks.
+предметы по одному. Настройки: кнопка настроек мода в Mod Menu или Настройки > Моды > Mouse Tweaks >
+«Настройки...» — экран настроек как в оригинале.

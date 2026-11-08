@@ -33,6 +33,11 @@ screens.
   pages.
 - The mod's name at the foot of JEI's item tooltips, blue and italic, as JEI adds it.
 - The overlays keep clear of the recipe book, the inventory's effect bars and the toasts.
+- **JEI's config screen** (MezzConfig GUI's, as JEI 26.3 opens it): from the config button, from Mod
+  Menu's Configure and from the first button of Options > Mods > Just Enough Items: the category tree,
+  search, check boxes and drop-down lists with reset buttons, Undo, the info panel; the window and the
+  category column resize. It shows the settings this port has (lists, bookmark placement, search bar
+  position, the search prefixes' modes, cheat mode).
 - Settings on Options > Mods > Just Enough Items; keys there too. Russian labels when the game is in
   Russian.
 
@@ -55,6 +60,9 @@ horizon-native.json            bundle manifest (id, version, pinned Horizon and 
 mixins/justenoughitems/
   horizon-mixin.toml           modules and injections
   runtime.rs                   search, lists, recipe lookups, settings: no game types (unit tests)
+  config.rs, options.rs        JEI's config screen (MezzConfig GUI's) and its place over the Options screen
+  config_sprites.rs            MezzConfig GUI's textures and JEI's icon (made by tools/configsprites.mjs)
+  data/icon.png                the icon Mod Menu shows
   glue.rs                      the game's items and recipes, mouse and keys, giving and moving items
   view.rs                      drawing
   sprites.rs                   JEI's sprites as pixel runs (made by tools/sprites.mjs)

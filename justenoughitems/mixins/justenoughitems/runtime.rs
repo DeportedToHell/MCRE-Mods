@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 pub const ID: &str = "justenoughitems";
 pub const NAME: &str = "Just Enough Items";
-pub const VERSION: &str = "1.0.0";
+pub const VERSION: &str = "1.1.0";
 
 /// Russian labels when the game's language is Russian, English otherwise.
 pub fn russian(language: &str) -> bool {
@@ -30,6 +30,22 @@ pub enum Mode {
     RequirePrefix,
     /// Never; its prefix is an ordinary character.
     Disabled,
+}
+
+impl Mode {
+    /// In JEI's order (`SearchMode`).
+    pub const ALL: [Mode; 3] = [Mode::Enabled, Mode::RequirePrefix, Mode::Disabled];
+    /// The settings file's word: JEI's value name in lower case.
+    pub fn name(self) -> &'static str {
+        match self {
+            Mode::Enabled => "enabled",
+            Mode::RequirePrefix => "require_prefix",
+            Mode::Disabled => "disabled",
+        }
+    }
+    pub fn parse(s: &str) -> Option<Mode> {
+        Mode::ALL.into_iter().find(|m| m.name() == s.trim())
+    }
 }
 
 /// Where a search word looks.
@@ -645,30 +661,41 @@ pub struct Settings {
     pub bookmarks_front: bool,
     /// The mod's name at the foot of item tooltips, blue and italic.
     pub mod_name: bool,
-    /// Plain words search tooltips too.
-    pub tooltip_search: bool,
     /// The search box sits in the middle of the screen's foot.
     pub center_search: bool,
     /// The tag (#) and list badges on recipe slots with several items.
     pub badges: bool,
+    /// How each prefixed source takes part in a search (JEI's Search >
+    /// Matching): `@` mod name, `$` tag, `#` tooltip, `&` id, `%` creative tab.
+    pub search_mod_name: Mode,
+    pub search_tag: Mode,
+    pub search_tooltip: Mode,
+    pub search_identifier: Mode,
+    pub search_creative_tab: Mode,
 }
 
 impl Default for Settings {
     fn default() -> Self {
+        let m = Modes::default();
         Settings {
             overlay: true,
             cheat: false,
             bookmarks: true,
             bookmarks_front: false,
             mod_name: true,
-            tooltip_search: true,
             center_search: false,
             badges: true,
+            search_mod_name: m.mod_name,
+            search_tag: m.tag,
+            search_tooltip: m.tooltip,
+            search_identifier: m.identifier,
+            search_creative_tab: m.creative_tab,
         }
     }
 }
 
 impl Settings {
+    /// The switches of the mod's settings page.
     pub const KEYS: [&'static str; 8] = [
         "overlay",
         "cheat",
@@ -679,6 +706,9 @@ impl Settings {
         "center_search",
         "badges",
     ];
+    /// The search modes' keys in the settings file.
+    pub const MODE_KEYS: [&'static str; 5] =
+        ["search_mod_name", "search_tag", "search_tooltip", "search_identifier", "search_creative_tab"];
     /// Reads the settings, `get` giving one key's stored value.
     pub fn read(get: impl Fn(&str) -> Option<String>) -> Settings {
         let d = Settings::default();
@@ -687,16 +717,24 @@ impl Settings {
             Some("false") => false,
             _ => default,
         };
-        Settings {
+        let mut s = Settings {
             overlay: flag("overlay", d.overlay),
             cheat: flag("cheat", d.cheat),
             bookmarks: flag("bookmarks", d.bookmarks),
             bookmarks_front: flag("bookmarks_front", d.bookmarks_front),
             mod_name: flag("mod_name", d.mod_name),
-            tooltip_search: flag("tooltip_search", d.tooltip_search),
             center_search: flag("center_search", d.center_search),
             badges: flag("badges", d.badges),
+            ..d
+        };
+        // 1.0.0 kept the tooltip's mode as an on/off "tooltip_search".
+        s.set("tooltip_search", flag("tooltip_search", d.search_tooltip == Mode::Enabled));
+        for key in Settings::MODE_KEYS {
+            if let Some(mode) = get(key).as_deref().and_then(Mode::parse) {
+                s.set_mode(key, mode);
+            }
         }
+        s
     }
     pub fn get(&self, key: &str) -> bool {
         match key {
@@ -705,7 +743,7 @@ impl Settings {
             "bookmarks" => self.bookmarks,
             "bookmarks_front" => self.bookmarks_front,
             "mod_name" => self.mod_name,
-            "tooltip_search" => self.tooltip_search,
+            "tooltip_search" => self.search_tooltip == Mode::Enabled,
             "center_search" => self.center_search,
             "badges" => self.badges,
             _ => false,
@@ -718,19 +756,46 @@ impl Settings {
             "bookmarks" => self.bookmarks = on,
             "bookmarks_front" => self.bookmarks_front = on,
             "mod_name" => self.mod_name = on,
-            "tooltip_search" => self.tooltip_search = on,
+            "tooltip_search" => self.search_tooltip = if on { Mode::Enabled } else { Mode::RequirePrefix },
             "center_search" => self.center_search = on,
             "badges" => self.badges = on,
             _ => {}
         }
     }
+    /// A search source's mode, by its key in `MODE_KEYS`.
+    pub fn mode(&self, key: &str) -> Mode {
+        match key {
+            "search_mod_name" => self.search_mod_name,
+            "search_tag" => self.search_tag,
+            "search_tooltip" => self.search_tooltip,
+            "search_identifier" => self.search_identifier,
+            _ => self.search_creative_tab,
+        }
+    }
+    pub fn set_mode(&mut self, key: &str, mode: Mode) {
+        match key {
+            "search_mod_name" => self.search_mod_name = mode,
+            "search_tag" => self.search_tag = mode,
+            "search_tooltip" => self.search_tooltip = mode,
+            "search_identifier" => self.search_identifier = mode,
+            "search_creative_tab" => self.search_creative_tab = mode,
+            _ => {}
+        }
+    }
+    /// Every stored key with its value as the settings file keeps it.
+    pub fn stored(&self) -> Vec<(&'static str, &'static str)> {
+        let word = |on: bool| if on { "true" } else { "false" };
+        let mut out: Vec<(&'static str, &'static str)> = Settings::KEYS.iter().map(|&k| (k, word(self.get(k)))).collect();
+        out.extend(Settings::MODE_KEYS.iter().map(|&k| (k, self.mode(k).name())));
+        out
+    }
     pub fn modes(&self) -> Modes {
         Modes {
-            tooltip: if self.tooltip_search {
-                Mode::Enabled
-            } else {
-                Mode::RequirePrefix
-            },
+            mod_name: self.search_mod_name,
+            tooltip: self.search_tooltip,
+            tag: self.search_tag,
+            creative_tab: self.search_creative_tab,
+            identifier: self.search_identifier,
             ..Modes::default()
         }
     }
@@ -833,6 +898,7 @@ pub fn tr(ru: bool, key: &str) -> &'static str {
             "Item and recipe viewer: every item beside container screens, its recipes and uses.",
             "Просмотр предметов и рецептов: все предметы рядом с инвентарём, их рецепты и применение.",
         ),
+        "modmenu_configure" => ("Configure...", "Настройки..."),
         "on" => ("ON", "ВКЛ"),
         "off" => ("OFF", "ВЫКЛ"),
         "overlay" => ("Ingredient list", "Список ингредиентов"),
@@ -1028,7 +1094,7 @@ mod tests {
         assert!(!Query::parse("oak plank", &m).matches(&log, &m));
         // Tooltips are searched without the prefix by default.
         assert!(Query::parse("building", &m).matches(&log, &m));
-        let m2 = Settings { tooltip_search: false, ..Settings::default() }.modes();
+        let m2 = Settings { search_tooltip: Mode::RequirePrefix, ..Settings::default() }.modes();
         assert!(!Query::parse("building", &m2).matches(&log, &m2));
         assert!(Query::parse("#building", &m2).matches(&log, &m2));
     }

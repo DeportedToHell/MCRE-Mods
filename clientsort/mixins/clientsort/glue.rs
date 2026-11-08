@@ -9,9 +9,10 @@ use horizon_client::hud::HudBatch;
 use horizon_client::items::{ItemStack, Items};
 use horizon_client::menu::Input;
 use horizon_client::mod_api::{NativeMod, NativeScreenView};
+use horizon_client::sound_engine::{Attenuation, MASTER, SoundEngine, SoundInstance, Sounds as _};
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 /// An operation under way: its clicks, played as the interval allows, each
 /// checked against the slot and the cursor it expects.
@@ -25,9 +26,14 @@ struct Job {
     next: usize,
     interval: u32,
     budget: f32,
+    /// The clicks' sound (ClientSort's interaction sound), when it plays.
+    sound: Option<cs::SoundPitch>,
 }
 
 static JOB: Mutex<Option<Job>> = Mutex::new(None);
+/// `SoundManager`: when the next sound may start, and the last one, held to
+/// be stopped when sounds may not overlap.
+static SOUND: Mutex<(Option<Instant>, Option<u64>)> = Mutex::new((None, None));
 /// A mouse button whose press ClientSort took: its release is taken too.
 static SWALLOWED: Mutex<Option<i32>> = Mutex::new(None);
 
@@ -62,7 +68,7 @@ fn storage_menu(menu: &str) -> bool {
         )
 }
 
-fn settings(game: &Game<'_>) -> cs::Settings {
+pub(super) fn settings(game: &Game<'_>) -> cs::Settings {
     cs::settings(|key| game.native_setting(cs::ID, key))
 }
 
@@ -92,10 +98,14 @@ fn view(game: &Game<'_>, batch: &HudBatch) -> Option<View> {
     }
     let slots = game.slots();
     let known = |i: usize| slots.contains(&i) && Game::menu_slot_index(&menu, i).is_some();
-    let main: Vec<usize> = (9..36).collect();
+    let mut main: Vec<usize> = (9..36).collect();
     let hotbar: Vec<usize> = (0..9).collect();
     if !main.iter().chain(&hotbar).all(|&i| known(i)) {
         return None;
+    }
+    // The hotbar as part of the main inventory, after it as in the menu.
+    if settings(game).hotbar == cs::HotbarScope::Inventory {
+        main.extend_from_slice(&hotbar);
     }
     let mut container: Vec<usize> = if storage_menu(&menu) {
         slots.iter().copied().filter(|i| (300..500).contains(i)).collect()
@@ -125,13 +135,13 @@ fn view(game: &Game<'_>, batch: &HudBatch) -> Option<View> {
 /// inventory, the container's arrows pointing down and the player's up. A
 /// short container (a hopper) shows as many of its buttons as fit above the
 /// player's.
-fn buttons(view: &View) -> Vec<Button> {
+fn buttons(view: &View, ops: &[cs::Op; 4]) -> Vec<Button> {
     let mut out = Vec::new();
     let other = !view.container.is_empty();
     if other {
         let room = ((view.main_top - view.container_top + 1.0) / cs::BUTTON_STEP).floor();
         let fit = room.max(1.0) as usize;
-        for (i, &op) in cs::group_ops(true).iter().enumerate().take(fit) {
+        for (i, &op) in cs::group_ops(true, ops).iter().enumerate().take(fit) {
             out.push(Button {
                 group: cs::Group::Container,
                 op,
@@ -140,7 +150,7 @@ fn buttons(view: &View) -> Vec<Button> {
             });
         }
     }
-    for (i, &op) in cs::group_ops(other).iter().enumerate() {
+    for (i, &op) in cs::group_ops(other, ops).iter().enumerate() {
         out.push(Button {
             group: cs::Group::Main,
             op,
@@ -158,7 +168,7 @@ fn hovered(game: &Game<'_>, batch: &HudBatch, view: &View, settings: &cs::Settin
         Some(cs::Group::Container)
     } else if view.main.contains(&slot) {
         Some(cs::Group::Main)
-    } else if settings.hotbar && view.hotbar.contains(&slot) {
+    } else if settings.hotbar == cs::HotbarScope::Hotbar && view.hotbar.contains(&slot) {
         Some(cs::Group::Hotbar)
     } else {
         None
@@ -180,16 +190,9 @@ fn max_stack(items: &Items, stack: &ItemStack) -> u32 {
     patched.unwrap_or_else(|| items.get(&stack.item).map_or(64, |i| i.max_stack))
 }
 
-/// ClientSort's type matching tags: these restock by item, whatever their
-/// damage and enchantments.
-const BY_TYPE: [&str; 3] = [
-    "minecraft:enchantable/weapon",
-    "minecraft:enchantable/mining",
-    "minecraft:enchantable/armor",
-];
-
 fn plan_stack(
     items: &Items,
+    settings: &cs::Settings,
     stack: &ItemStack,
     protos: &mut Vec<ItemStack>,
     item_ids: &mut HashMap<String, u32>,
@@ -212,13 +215,18 @@ fn plan_stack(
         bundle: id == "minecraft:bundle" || (id.starts_with("minecraft:") && id.ends_with("_bundle")),
         boxed: id == "minecraft:shulker_box"
             || (id.starts_with("minecraft:") && id.ends_with("_shulker_box")),
-        by_type: BY_TYPE.iter().any(|tag| items.item_in_tag(tag, id)),
+        by_type: settings.always_match_by_type
+            || settings.type_match_tags.iter().any(|tag| items.item_in_tag(&cs::full_id(tag), id)),
     }
 }
 
 /// What the sort orders compare of each kind of stack.
-fn keys(game: &Game<'_>, protos: &[ItemStack]) -> Vec<cs::Key> {
+fn keys(game: &Game<'_>, settings: &cs::Settings, protos: &[ItemStack]) -> Vec<cs::Key> {
     let items = game.items();
+    // The sort order overrides: an item's first place in each list.
+    let place = |on: bool, list: &[String], item: &str| {
+        on.then(|| list.iter().position(|id| cs::full_id(id.trim()) == item)).flatten()
+    };
     let registry: HashMap<&str, usize> = items
         .registry_order
         .iter()
@@ -234,6 +242,8 @@ fn keys(game: &Game<'_>, protos: &[ItemStack]) -> Vec<cs::Key> {
             custom: p.custom_name().is_some(),
             damage: p.damage,
             tie: format!("{}{:?}", p.item, p.extra),
+            start: place(settings.use_start_overrides, &settings.start_items, &p.item),
+            end: place(settings.use_end_overrides, &settings.end_items, &p.item),
         })
         .collect()
 }
@@ -241,6 +251,10 @@ fn keys(game: &Game<'_>, protos: &[ItemStack]) -> Vec<cs::Key> {
 /// Plans `op` on `group` and starts it. True when ClientSort took the input
 /// (an operation started, had nothing to do, or one is still running).
 fn start(game: &mut Game<'_>, op: cs::Op, group: cs::Group, order: cs::Order) -> bool {
+    // ClientSort's "none" order: no sort, and the input goes on.
+    if op == cs::Op::Sort && order == cs::Order::None {
+        return false;
+    }
     if JOB.lock().unwrap_or_else(|e| e.into_inner()).is_some() {
         return true;
     }
@@ -273,7 +287,7 @@ fn start(game: &mut Game<'_>, op: cs::Op, group: cs::Group, order: cs::Order) ->
         let items = game.items();
         found
             .iter()
-            .map(|s| s.as_ref().map(|s| plan_stack(items, s, &mut protos, &mut item_ids)))
+            .map(|s| s.as_ref().map(|s| plan_stack(items, &settings, s, &mut protos, &mut item_ids)))
             .collect()
     };
     let refuse = ids.iter().map(|&i| view.shulker && i >= 300).collect();
@@ -283,21 +297,25 @@ fn start(game: &mut Game<'_>, op: cs::Op, group: cs::Group, order: cs::Order) ->
     match op {
         cs::Op::Sort => {
             plan.collect(&o);
-            let keys = keys(game, &protos);
+            let keys = keys(game, &settings, &protos);
             let target = cs::sort_order(&plan.slots, &o, &keys, order);
             plan.sort(&o, &target);
         }
         cs::Op::StackFill => plan.fill(&o, &rest),
         cs::Op::MatchTransfer => {
-            let from = plan.matching(&o, &rest, settings.match_type);
-            plan.transfer(&from, &rest, true);
+            let from = plan.matching(&o, &rest, true);
+            plan.transfer(&from, &rest, settings.transfer_reverse);
         }
-        cs::Op::Transfer => plan.transfer(&o, &rest, true),
+        cs::Op::Transfer => plan.transfer(&o, &rest, settings.transfer_reverse),
     }
     if plan.broken || plan.steps.is_empty() {
         return true;
     }
     let interval = settings.interval_ms(game.has_singleplayer_server());
+    // Sounds without server acceleration, the pitch climbing over the clicks.
+    let wanted = if op == cs::Op::Sort { settings.play_sound_sort } else { settings.play_sound_other };
+    let sound = (wanted && interval > 0 && settings.sound_volume > 0.0)
+        .then(|| cs::SoundPitch::new(&settings, plan.steps.len()));
     *JOB.lock().unwrap_or_else(|e| e.into_inner()) = Some(Job {
         window: view.window,
         ids,
@@ -306,6 +324,7 @@ fn start(game: &mut Game<'_>, op: cs::Op, group: cs::Group, order: cs::Order) ->
         next: 0,
         interval,
         budget: 0.0,
+        sound,
     });
     if interval == 0 {
         run(game, usize::MAX);
@@ -348,9 +367,45 @@ fn run(game: &mut Game<'_>, mut clicks: usize) {
         }
         job.next += 1;
         clicks -= 1;
+        if let Some(pitch) = job.sound.as_mut() {
+            let settings = settings(game);
+            let p = pitch.next(settings.sound_pitch_max);
+            play_sound(game, &settings, p);
+        }
     }
     if job.next < job.steps.len() {
         *lock = Some(job);
+    }
+}
+
+/// `SoundManager.play`: the interaction sound, at most once a sound
+/// interval, the last one stopped unless sounds may overlap.
+fn play_sound(game: &mut Game<'_>, settings: &cs::Settings, pitch: f32) {
+    let mut state = SOUND.lock().unwrap_or_else(|e| e.into_inner());
+    let now = Instant::now();
+    if state.0.is_some_and(|next| now < next) {
+        return;
+    }
+    state.0 = Some(now + Duration::from_millis(u64::from(settings.sound_interval)));
+    if let Some(last) = state.1.take() {
+        game.audio.stop_and_release(last);
+    }
+    let instance = SoundInstance::new(
+        &cs::full_id(&settings.interaction_sound),
+        MASTER,
+        settings.sound_volume,
+        pitch,
+        SoundEngine::unseeded(),
+        false,
+        0,
+        Attenuation::None,
+        [0.0; 3],
+        true,
+    );
+    let hold = !settings.allow_sound_overlap;
+    let (id, _) = game.audio.play_instance(instance, hold);
+    if hold {
+        state.1 = Some(id);
     }
 }
 
@@ -368,7 +423,7 @@ fn put_back(game: &mut Game<'_>, ids: &[usize]) {
 // ---- the hooks -------------------------------------------------------------
 
 /// The mod's row in Options > Mods, with its keys.
-pub(crate) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
+pub(super) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
     let ru = russian(game);
     mods.push(NativeMod {
         id: cs::ID.into(),
@@ -381,28 +436,47 @@ pub(crate) fn list(game: &Game<'_>, mods: &mut Vec<NativeMod>) {
     });
 }
 
-/// The mod's settings page.
-pub(crate) fn page(game: &Game<'_>, mod_id: &str, labels: &mut Vec<String>) {
+/// The mod's settings page: Configure... (ClientSort's own screen), then
+/// the first port's buttons.
+pub(super) fn page(game: &Game<'_>, mod_id: &str, labels: &mut Vec<String>) {
     if mod_id == cs::ID {
+        labels.push(super::clientsort_config::configure_label().into());
         labels.extend(settings(game).labels(russian(game)));
     }
 }
 
-/// A click on the settings page: change the setting and keep it.
-pub(crate) fn page_click(game: &Game<'_>, mod_id: &str, button: usize) {
+/// A click on the settings page: Configure... opens ClientSort's screen (and
+/// Mod Menu's Configure, `MODMENU_CONFIGURE`, does too); the others change
+/// a setting and keep it.
+pub(super) fn page_click(game: &mut Game<'_>, mod_id: &str, button: usize) {
     if mod_id != cs::ID {
         return;
     }
-    let mut s = settings(game);
-    s.click(button);
-    cs::set_settings(s);
-    for (key, value) in s.stored() {
-        game.native_set_setting(cs::ID, key, &value);
+    if button == super::clientsort_config::MODMENU_CONFIGURE {
+        super::clientsort_config::open(game, true);
+        return;
     }
+    if button == 0 {
+        super::clientsort_config::open(game, false);
+        return;
+    }
+    let mut s = settings(game);
+    s.click(button - 1);
+    save_settings(game, s);
+}
+
+/// Keeps `s` in the mod's folder and in memory.
+pub(super) fn save_settings(game: &Game<'_>, s: cs::Settings) {
+    for (key, value) in s.stored() {
+        if game.native_setting(cs::ID, key).as_deref() != Some(value.trim()) {
+            game.native_set_setting(cs::ID, key, &value);
+        }
+    }
+    cs::set_settings(s);
 }
 
 /// Each frame: the running operation's next clicks.
-pub(crate) fn frame(game: &mut Game<'_>, elapsed: Duration) {
+pub(super) fn frame(game: &mut Game<'_>, elapsed: Duration) {
     let due = {
         let mut lock = JOB.lock().unwrap_or_else(|e| e.into_inner());
         let Some(job) = lock.as_mut() else {
@@ -417,7 +491,7 @@ pub(crate) fn frame(game: &mut Game<'_>, elapsed: Duration) {
 
 /// A mouse button over a screen, before the screen sees it: a left press on
 /// a button, or an operation's key (the middle button sorts) over a slot.
-pub(crate) fn mouse(game: &mut Game<'_>, button: i32, pressed: bool, modifiers: u32, canceled: &mut bool) {
+pub(super) fn mouse(game: &mut Game<'_>, button: i32, pressed: bool, modifiers: u32, canceled: &mut bool) {
     if !pressed {
         let mut swallowed = SWALLOWED.lock().unwrap_or_else(|e| e.into_inner());
         if *swallowed == Some(button) {
@@ -436,12 +510,10 @@ pub(crate) fn mouse(game: &mut Game<'_>, button: i32, pressed: bool, modifiers: 
         return;
     };
     let settings = settings(game);
-    let order = settings
-        .order
-        .with_modifiers(modifiers & 1 != 0, modifiers & 2 != 0, modifiers & 4 != 0);
+    let order = settings.order_for(modifiers & 1 != 0, modifiers & 2 != 0, modifiers & 4 != 0);
     let at = [game.cursor.0, game.cursor.1];
     let pressed_button = (button == 0 && settings.buttons)
-        .then(|| buttons(&view).into_iter().find(|b| cs::inside(b.rect, at)))
+        .then(|| buttons(&view, &settings.button_ops).into_iter().find(|b| cs::inside(b.rect, at)))
         .flatten();
     let took = if let Some(b) = pressed_button {
         start(game, b.op, b.group, order);
@@ -464,7 +536,7 @@ pub(crate) fn mouse(game: &mut Game<'_>, button: i32, pressed: bool, modifiers: 
 }
 
 /// A key on any screen: an operation's key over a slot.
-pub(crate) fn key(game: &mut Game<'_>, key: &str, pressed: bool) {
+pub(super) fn key(game: &mut Game<'_>, key: &str, pressed: bool) {
     if !pressed || key == cs::UNBOUND || game.screen != Screen::Inventory {
         return;
     }
@@ -484,9 +556,7 @@ pub(crate) fn key(game: &mut Game<'_>, key: &str, pressed: bool) {
     let Some(group) = hovered(game, &batch, &view, &settings) else {
         return;
     };
-    let order = settings
-        .order
-        .with_modifiers(game.has_shift_down(), game.has_control_down(), game.has_alt_down());
+    let order = settings.order_for(game.has_shift_down(), game.has_control_down(), game.has_alt_down());
     start(game, op, group, order);
 }
 
@@ -499,14 +569,14 @@ fn shown(game: &Game<'_>) -> bool {
 
 /// Horizon's own sort buttons (Extras > Sorting) give way to ClientSort's
 /// where those show, as the Java game has only ClientSort's.
-pub(crate) fn hides_horizon_sort(game: &Game<'_>) -> bool {
+pub(super) fn hides_horizon_sort(game: &Game<'_>) -> bool {
     shown(game)
 }
 
 /// The buttons, drawn where Horizon draws its own sort buttons: after the
 /// slots, before the held stack and the tooltips, as a screen's widgets
 /// are in the Java game (an item's name covers them).
-pub(crate) fn draw(game: &Game<'_>, batch: &mut HudBatch) {
+pub(super) fn draw(game: &Game<'_>, batch: &mut HudBatch) {
     if !game.native_on(cs::ID) || !settings(game).buttons {
         return;
     }
@@ -514,7 +584,7 @@ pub(crate) fn draw(game: &Game<'_>, batch: &mut HudBatch) {
         return;
     };
     let at = [game.cursor.0, game.cursor.1];
-    for b in buttons(&view) {
+    for b in buttons(&view, &settings(game).button_ops) {
         let hover = cs::inside(b.rect, at);
         for &(x, y, w, argb) in cs::sprite(b.op, b.down, hover) {
             let rect = [b.rect[0] + f32::from(x), b.rect[1] + f32::from(y), f32::from(w), 1.0];
@@ -525,7 +595,7 @@ pub(crate) fn draw(game: &Game<'_>, batch: &mut HudBatch) {
 
 /// Over the finished screen: the hovered button's name, with the option on
 /// (off by default, as in ClientSort).
-pub(crate) fn render(game: &Game<'_>, batch: &mut HudBatch, screen: &NativeScreenView<'_>) {
+pub(super) fn render(game: &Game<'_>, batch: &mut HudBatch, screen: &NativeScreenView<'_>) {
     let settings = settings(game);
     if screen.id != "inventory" || !settings.buttons || !settings.tooltips || game.carried.is_some() {
         return;
@@ -533,7 +603,7 @@ pub(crate) fn render(game: &Game<'_>, batch: &mut HudBatch, screen: &NativeScree
     let Some(view) = view(game, batch) else {
         return;
     };
-    let Some(b) = buttons(&view).into_iter().find(|b| cs::inside(b.rect, screen.mouse)) else {
+    let Some(b) = buttons(&view, &settings.button_ops).into_iter().find(|b| cs::inside(b.rect, screen.mouse)) else {
         return;
     };
     let line = horizon_client::text::Text::literal(b.op.label(russian(game)));

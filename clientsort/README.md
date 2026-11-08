@@ -10,12 +10,17 @@ as a native mod (`.hnmod`).
   other inventory already holds) and **Transfer** (moves as much as fits).
 - **Middle click** over an inventory sorts it.
 - Sort order: the creative inventory's order by default; hold **Shift** for quantity, **Ctrl** for name
-  (A-Z), **Alt** for item ID.
-- The container, the main inventory and the hotbar are sorted on their own.
-- Keys for every operation, including **Fill Stacks**, in Options > Mods > ClientSort (unbound except
-  Sort).
-- Settings: buttons on/off, default order, click speed, hotbar as its own group, restock by item type
-  (ignoring damage and enchantments), button tooltips. Russian labels when the game is in Russian.
+  (A-Z), **Alt** for item ID (each one can be changed in the config screen).
+- The container, the main inventory and the hotbar are sorted on their own (by default).
+- Keys for every operation, including **Fill Stacks** (unbound except Sort).
+- **ClientSort's own config screen**, as in Java (Cloth Config): Mod Menu's Configure button, or
+  Options > Mods > ClientSort > **Configure...**. Tabs General, Sorting, Matching, Sounds, Keybinds and
+  Buttons, the search field, Reset on every row, tooltips, Cancel / Save & Quit and the "Changes Not
+  Saved" question. Its options: interaction interval and server acceleration (instant in single player),
+  hotbar scope (its own group, part of the inventory, or left alone), transfer reverse order, the
+  default, Shift, Ctrl and Alt sort orders, start and end items, matching by type and the type match
+  tags, the interaction sounds, the four keys, the buttons and their tooltips, the buttons' order.
+  Russian texts when the game is in Russian.
 - Horizon's own "≡" sort buttons are hidden while ClientSort's are shown.
 
 Every action is an ordinary container click, so it works on servers too.
@@ -37,9 +42,14 @@ mixins/clientsort/
   horizon-mixin.toml           modules and injections
   runtime.rs                   the mod's logic, no game types (unit tests)
   glue.rs                      reads and clicks the game's inventory
+  cloth.rs                     Cloth Config's config screen (reusable)
+  cloth_sprites.rs             Cloth Config's texture as pixels (tools/sprites.mjs makes it)
+  config.rs                    ClientSort's tabs and options in it, Mod Menu's Configure
+  data/icon.png                the mod's icon, for Mod Menu
   *.rs                         one small helper per injection
   LICENSE, NOTICE
 Cargo.toml                     runs runtime.rs's tests
+tools/                         check.sh (build into Horizon), package.mjs (make the .hnmod), sprites.mjs
 ```
 
 The `.hnmod` file is a zip of `horizon-native.json` and `mixins/`.
@@ -59,11 +69,16 @@ Apache License 2.0, as the original ([LICENSE](LICENSE), [NOTICE](NOTICE)).
 - The button sprites are ClientSort's own textures.
 
 This port rewrites ClientSort's logic in Rust for Horizon's native mod API. Changes from the original:
-the Fill Stacks button is a key only; settings live on Horizon's mod settings page. Not affiliated with
-TerminalMC, Mojang or Microsoft.
+the Fill Stacks button is a key only; the buttons keep ClientSort's default layout. The config screen
+leaves out what this port doesn't do: the Policies tab and the in-game editor (with its key and Cancel
+Auto Operation's), automatic operations and their delays, client fallback, creative sorting's cache,
+extra slots, bundles on old servers, debug info, and the buttons' anchor, justification, direction and
+offset. The config screen follows Cloth Config by shedaniel (LGPL-3.0) and draws its texture. Not
+affiliated with TerminalMC, Mojang or Microsoft.
 
 ---
 
 **По-русски.** Порт мода ClientSort для Horizon: кнопки сортировки, пополнения и переноса у каждого
 инвентаря, сортировка средней кнопкой мыши (Shift — по количеству, Ctrl — по алфавиту, Alt — по ID).
-Настройки: Настройки > Моды > ClientSort.
+Экран настроек как в Java (Cloth Config): кнопка «Настройки...» в Mod Menu или Настройки > Моды >
+ClientSort > «Настройки...» — вкладки Общие, Сортировка, Сопоставление, Звук, Назначение клавиш, Кнопки.

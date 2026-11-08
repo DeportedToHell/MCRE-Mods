@@ -13,7 +13,14 @@ ClientSort uses code from:
 
 The button sprites in mixins/clientsort/runtime.rs (module `sprites`) are
 ClientSort's own textures (assets/clientsort/textures/gui/sprites/widget),
-converted to rows of pixels.
+converted to rows of pixels. The icon in mixins/clientsort/data/icon.png is
+ClientSort's catalog icon.
+
+The config screen (mixins/clientsort/cloth.rs) follows Cloth Config by
+shedaniel (https://github.com/shedaniel/cloth-config, LGPL-3.0), rewritten in
+Rust; its sprites in mixins/clientsort/cloth_sprites.rs are Cloth Config's
+texture (assets/cloth-config2/textures/gui/cloth_config.png), converted to
+rows of pixels, and its texts are Cloth Config's and ClientSort's own.
 
 This port rewrites ClientSort's logic in Rust for Horizon's native mod API.
 It is not affiliated with TerminalMC, Mojang or Microsoft.

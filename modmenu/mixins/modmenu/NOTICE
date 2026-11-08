@@ -1,0 +1,25 @@
+Mod Menu for Horizon
+A port of Mod Menu to Horizon (Minecraft: Java Edition 26.3 rewritten in
+Rust) as a native mod.
+
+Mod Menu
+Copyright (c) 2018-2020 Prospector
+https://github.com/TerraformersMC/ModMenu (branch 26.3)
+Licensed under the MIT License (LICENSE).
+
+The textures in mixins/modmenu/sprites.rs are Mod Menu's own
+(src/main/resources/assets/modmenu, MIT), converted to runs of pixels by
+tools/sprites.mjs. Buttons, the search box, scroll bars and tooltips are the
+game's own widgets, as Mod Menu uses vanilla's.
+
+This port rewrites Mod Menu's title screen and pause menu buttons, its mods
+screen, its options screen and its strings in Rust for Horizon's native mod
+API. Changes from the original: the mods are Horizon's (the native mods built
+into the game and the content mods turned on, Minecraft and Horizon itself in
+place of Minecraft and Java), with names, authors, licences, links, icons and
+newer versions from Horizon's catalog instead of fabric.mod.json and Modrinth;
+Configure opens a mod's page on Horizon's Options > Mods; there are no parent
+and child mods (Horizon has none) and no drag and drop of mod files; the
+Children, Java Color and translation options are kept on the options screen
+but have nothing to change in Horizon. It is not affiliated with
+TerraformersMC, Prospector, Mojang or Microsoft.
