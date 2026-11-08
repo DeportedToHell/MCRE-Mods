@@ -1,0 +1,13 @@
+Smooth Swapping for Horizon
+A port of Smooth Swapping to Horizon (Minecraft: Java Edition 26.3 rewritten
+in Rust) as a native mod.
+
+Smooth Swapping
+Copyright (c) 2023 Schauweg
+https://github.com/Schauweg/Smooth-Swapping
+Licensed under the GNU Lesser General Public License, version 3 (LICENSE).
+
+This port rewrites Smooth Swapping's logic in Rust for Horizon's native mod
+API and is distributed under the same licence. The animation curve is the
+original's Catmull-Rom spline; the curve editor is replaced by preset curves.
+It is not affiliated with Schauweg, Mojang or Microsoft.
