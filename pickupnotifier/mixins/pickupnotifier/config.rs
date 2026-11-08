@@ -1056,16 +1056,21 @@ fn modmenu_json() -> String {
     )
 }
 
+/// The port's own icon, drawn by tools/icon.mjs.
+const ICON: &[u8] = horizon_client::native_data!("pickupnotifier", "icon.png");
+
 fn write_data(game: &Game<'_>) {
     let dir = game.native_data_dir(pun::ID);
     if std::fs::create_dir_all(&dir).is_err() {
         return;
     }
-    // No icon.png: the original's icon (`pack.png`) is one of its assets,
-    // which are All Rights Reserved (LICENSE-ASSETS.md), as NOTICE says.
+    // The port's own icon (tools/icon.mjs): the original's assets are All
+    // Rights Reserved (LICENSE-ASSETS.md), as NOTICE says.
     let meta = modmenu_json();
-    let path = dir.join("modmenu.json");
-    if std::fs::read(&path).ok().as_deref() != Some(meta.as_bytes()) {
-        let _ = std::fs::write(&path, meta.as_bytes());
+    for (name, bytes) in [("icon.png", ICON), ("modmenu.json", meta.as_bytes())] {
+        let path = dir.join(name);
+        if std::fs::read(&path).ok().as_deref() != Some(bytes) {
+            let _ = std::fs::write(&path, bytes);
+        }
     }
 }
