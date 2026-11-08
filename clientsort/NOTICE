@@ -1,0 +1,19 @@
+ClientSort for Horizon
+A port of ClientSort to Horizon (Minecraft: Java Edition 26.3 rewritten in Rust)
+as a native mod.
+
+ClientSort
+Copyright 2024-2026 TerminalMC
+https://github.com/TerminalMC/ClientSort
+Licensed under the Apache License, Version 2.0.
+
+ClientSort uses code from:
+- Mouse Wheelie by Siphalor (Apache-2.0): item comparison, client-side sorting.
+- Inventory Management by Roundaround (MIT): trigger buttons and their layout.
+
+The button sprites in mixins/clientsort/runtime.rs (module `sprites`) are
+ClientSort's own textures (assets/clientsort/textures/gui/sprites/widget),
+converted to rows of pixels.
+
+This port rewrites ClientSort's logic in Rust for Horizon's native mod API.
+It is not affiliated with TerminalMC, Mojang or Microsoft.
