@@ -1,0 +1,105 @@
+[mod]
+id = "smoothswapping"
+version = "1.0.0"
+priority = 100
+
+# Built for this Nightly: besides the hook points it uses the inventory
+# screen's own drawing (its slots, a slot's item, the sort buttons' place).
+[compatibility]
+horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "smoothswapping"
+source = "runtime.rs"
+
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "smoothswapping_glue"
+source = "glue.rs"
+
+[[injection]]
+id = "list"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "list.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+[[injection]]
+id = "settings"
+hook = "settings"
+hook_version = 1
+kind = "HEAD"
+helper = "settings.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "buttons", ty = "&mut Vec<String>", value = "&mut *buttons" },
+]
+
+[[injection]]
+id = "click"
+hook = "settings_click"
+hook_version = 1
+kind = "HEAD"
+helper = "click.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "button", ty = "usize", value = "button" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "elapsed", ty = "std::time::Duration", value = "elapsed" },
+]
+
+# Before the inventory screen draws its slots (the original's
+# `HandledScreen.render` HEAD).
+[[injection]]
+id = "detect"
+target = "horizon_client::game::Game<'_>::draw_inventory_slots"
+kind = "HEAD"
+helper = "detect.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+# A slot's item (the original's `DrawContext.drawItem` HEAD).
+[[injection]]
+id = "slot"
+target = "horizon_client::game::Game<'_>::draw_slot_item"
+kind = "HEAD"
+cancellable = true
+helper = "slot.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "slot", ty = "usize", value = "slot" },
+  { name = "stack", ty = "&Option<horizon_client::items::ItemStack>", value = "stack" },
+  { name = "x", ty = "f32", value = "x" },
+  { name = "y", ty = "f32", value = "y" },
+]
+
+# After the slots and their highlight, before the held stack and the
+# tooltips: where the screen draws its sort buttons.
+[[injection]]
+id = "draw"
+target = "horizon_client::game::tweaks::Game<'_>::draw_sort_buttons"
+kind = "HEAD"
+helper = "draw.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+]
