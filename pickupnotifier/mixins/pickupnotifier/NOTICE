@@ -1,0 +1,16 @@
+Pick Up Notifier for Horizon
+Copyright (c) 2026 its contributors.
+
+A Rust port of Pick Up Notifier by Fuzs (heyitsfuzs),
+https://github.com/Fuzss/pickupnotifier (branch 26.3.x, commit 4c828bd),
+whose code is under the Mozilla Public License 2.0. This port is under the
+same licence (LICENSE). The list's placement follows Puzzles Lib's
+AnchorPoint, also by Fuzs (https://github.com/Fuzss/puzzleslib, MPL-2.0).
+Thanks to TeamCoFH for the original idea (CoFH Core, Minecraft 1.6).
+
+The original's assets (All Rights Reserved) are not used. The experience orb
+and tooltip sprites are drawn from the player's own Minecraft resources.
+
+Made for Horizon (https://github.com/horizon-rust/horizon, MIT) with
+horizon-mixins (https://github.com/horizon-rust/horizon-mixins, MIT).
+Minecraft is a trademark of Mojang Synergies AB.
