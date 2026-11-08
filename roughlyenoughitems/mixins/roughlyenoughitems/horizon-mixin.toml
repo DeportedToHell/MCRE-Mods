@@ -1,6 +1,6 @@
 [mod]
 id = "roughlyenoughitems"
-version = "1.0.0"
+version = "1.0.1"
 priority = 100
 
 # Built for this Nightly: besides the hook points it draws in place of the

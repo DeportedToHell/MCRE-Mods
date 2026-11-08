@@ -403,7 +403,14 @@ pub(super) fn with<R>(f: impl FnOnce(&mut State) -> R) -> Option<R> {
 /// On, and not in Just Enough Items's way: both draw in the same place, so
 /// REI steps aside while JEI is on.
 pub(super) fn on(game: &Game<'_>) -> bool {
-    game.native_on(rei::ID) && !game.native_on("justenoughitems")
+    game.native_on(rei::ID) && !jei_running(game)
+}
+
+/// Just Enough Items is built into this game and switched on. A mod that is
+/// installed but not built has no line in `horizon-mods.txt` and so counts as
+/// "on" for `native_on`: only a built one (`native` set) can be in the way.
+fn jei_running(game: &Game<'_>) -> bool {
+    game.native_on("justenoughitems") && game.settings.mods.installed.iter().any(|m| m.id == "justenoughitems" && m.native.is_some())
 }
 
 /// The item as `/give` writes it, damage and count aside.
