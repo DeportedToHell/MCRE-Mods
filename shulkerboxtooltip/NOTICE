@@ -1,0 +1,21 @@
+Shulker Box Tooltip for Horizon
+A port of ShulkerBoxTooltip to Horizon (Minecraft: Java Edition 26.3 rewritten
+in Rust) as a native mod.
+
+ShulkerBoxTooltip
+Copyright (c) 2019 Yanis Guaye (MisterPeModder)
+https://github.com/MisterPeModder/ShulkerBoxTooltip (branch 26.3.x, 5.4.3)
+Licensed under the MIT License (LICENSE).
+
+The preview window's texture in mixins/shulkerboxtooltip/sprites.rs is
+ShulkerBoxTooltip's own (common/src/main/resources/assets/shulkerboxtooltip/
+textures/gui/sprites/shulker_box_tooltip.png, MIT), converted to runs of
+pixels by tools/sprites.mjs. The texts in mixins/shulkerboxtooltip/lang.rs are
+ShulkerBoxTooltip's English and Russian language files (MIT), made by
+tools/lang.mjs; the Russian of the eight lines its ru_ru.json lacks is this
+port's. The icon in mixins/shulkerboxtooltip/data/icon.png is
+ShulkerBoxTooltip's (assets/shulkerboxtooltip/icon.png).
+
+This port rewrites ShulkerBoxTooltip's previews, key hints, tooltip locking,
+ender chest synchronization and config screen in Rust for Horizon's native mod
+API. It is not affiliated with MisterPeModder, Mojang or Microsoft.

@@ -1,0 +1,31 @@
+First-person Model for Horizon
+A port of First-person Model (FirstPerson) to Horizon (Minecraft: Java
+Edition 26.3 rewritten in Rust) as a native mod.
+
+First-person Model
+Copyright (c) 2019 tr7zw
+https://github.com/tr7zw/FirstPersonModel (branch main, version 2.7.3)
+Licensed under the MIT License (LICENSE).
+
+TRender (the GUI library of its config screen, a fork of LibGui)
+Copyright (c) 2018-2021 The Cotton Project
+Copyright (c) 2025 tr7zw
+https://github.com/tr7zw/TRender
+Licensed under the MIT License.
+
+The textures in mixins/firstpersonmodel/sprites.rs are TRender's own
+(src/main/resources/assets/trender/textures, MIT), converted to pixels by
+tools/sprites.mjs; data/icon.png is First-person Model's icon. The panel, tab
+and scroll bar textures are drawn as the plain fills they are.
+
+This port rewrites First-person Model's logic (LogicHandler, its settings,
+the toggle key) and the effect of its mixins in Rust for Horizon's native mod
+API, and redraws its TRender config screen as TRender draws it. Changes from
+the original: the body is drawn by drawing Horizon's own player model a second
+time from a camera moved the other way, instead of extracting the camera
+entity moved; no API for other mods (PlayerAnimator, Freecam support); the
+"Auto Vanilla Hands" tab writes the list it shows (the original writes the
+"Disable Items" list there); a hidden layer is hidden only on your own body,
+not on other players drawn by the same renderer; the fishing line leaves the
+body's hand moved with the body. Not Enough Animations is not part of this
+port. It is not affiliated with tr7zw, Mojang or Microsoft.

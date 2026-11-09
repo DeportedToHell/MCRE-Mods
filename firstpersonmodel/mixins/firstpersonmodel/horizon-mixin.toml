@@ -1,0 +1,403 @@
+[mod]
+id = "firstpersonmodel"
+version = "1.0.0"
+priority = 100
+
+# Built for this Nightly: besides the hook points it draws the player's own
+# body in first person, inside the game's player and hand rendering.
+[compatibility]
+horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
+
+# The settings, the toggle and the original's LogicHandler.
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "firstpersonmodel"
+source = "runtime.rs"
+
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "firstpersonmodel_glue"
+source = "glue.rs"
+
+# The config screen: TRender's, as the original builds it.
+[[module]]
+id = "gui"
+file = "crates/horizon-client/src/game.rs"
+name = "firstpersonmodel_gui"
+source = "gui.rs"
+
+# TRender's textures.
+[[module]]
+id = "sprites"
+file = "crates/horizon-client/src/game.rs"
+name = "firstpersonmodel_sprites"
+source = "sprites.rs"
+
+# The config screen over the Options screen, the icon and Mod Menu's metadata.
+[[module]]
+id = "screen"
+file = "crates/horizon-client/src/game.rs"
+name = "firstpersonmodel_screen"
+source = "screen.rs"
+
+# What the body hides while it is drawn in first person, in the client
+# library beside the player model's poses.
+[[module]]
+id = "pose"
+file = "crates/horizon-client/src/mobs/anim.rs"
+name = "firstpersonmodel_pose"
+source = "pose.rs"
+visibility = "pub"
+
+[[injection]]
+id = "list"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "list.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+[[injection]]
+id = "settings"
+hook = "settings"
+hook_version = 1
+kind = "HEAD"
+helper = "settings.rs"
+bindings = [
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "buttons", ty = "&mut Vec<String>", value = "&mut *buttons" },
+]
+
+[[injection]]
+id = "click"
+hook = "settings_click"
+hook_version = 1
+kind = "HEAD"
+helper = "click.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "button", ty = "usize", value = "button" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "key.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+# The own body is in view in first person while the mod draws it
+# (the original's LevelExtractor.extractVisibleEntities).
+[[injection]]
+id = "in_view"
+target = "horizon_client::game::perspective::Game<'_>::own_body_in_view"
+kind = "RETURN"
+helper = "in_view.rs"
+bindings = [
+  { name = "value", ty = "bool", value = "$value" },
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+# The own body drawn moved behind the camera, its head hidden.
+[[injection]]
+id = "body"
+target = "horizon_client::game::perspective::Game<'_>::player_model_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "body.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "camera", ty = "glam::DVec3", value = "camera" },
+  { name = "alpha", ty = "f64", value = "alpha" },
+  { name = "out", ty = "&mut Vec<horizon_client::mesher::Vertex>", value = "&mut *out" },
+]
+
+# HumanoidModelMixin: the parts the body hides, the arms' tilt.
+[[injection]]
+id = "parts"
+target = "horizon_client::mobs::anim::player_model_visibility"
+kind = "RETURN"
+helper = "parts.rs"
+bindings = [
+  { name = "value", ty = "()", value = "$value" },
+  { name = "p", ty = "&mut Poses", value = "&mut *p" },
+  { name = "spectator", ty = "bool", value = "spectator" },
+]
+
+# The layers ("Show Layers", and the original's layer mixins).
+[[injection]]
+id = "armor"
+target = "horizon_client::game::armor_stands::Game<'_>::player_armor_layers"
+kind = "RETURN"
+helper = "armor.rs"
+bindings = [
+  { name = "value", ty = "Vec<(&Part, [f32; 4], u32, u32, bool)>", value = "$value" },
+]
+
+[[injection]]
+id = "held"
+target = "horizon_client::game::mob_blocks::Game<'_>::held_item_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "held.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "head"
+target = "horizon_client::game::mob_blocks::Game<'_>::head_item_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "head.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "wings"
+target = "horizon_client::game::perspective::Game<'_>::player_elytra_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "wings.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "cape"
+target = "horizon_client::game::perspective::Game<'_>::player_cape_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "cape.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "ears"
+target = "horizon_client::game::perspective::Game<'_>::player_ears_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "ears.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "parrots"
+target = "horizon_client::game::perspective::Game<'_>::shoulder_parrots_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "parrots.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "spin"
+target = "horizon_client::game::perspective::Game<'_>::spin_attack_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "spin.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "stuck"
+target = "horizon_client::game::perspective::Game<'_>::stuck_in_body_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "stuck.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "m", ty = "&Mob", value = "m" },
+  { name = "id", ty = "i32", value = "id" },
+  { name = "camera", ty = "glam::DVec3", value = "camera" },
+  { name = "partial", ty = "f32", value = "partial" },
+  { name = "light", ty = "u32", value = "light" },
+  { name = "out", ty = "&mut Vec<horizon_client::mesher::Vertex>", value = "&mut *out" },
+]
+
+# The vanilla first-person hands (HeldItemRendererMixin).
+[[injection]]
+id = "hand"
+hook = "render_hand"
+hook_version = 1
+kind = "HEAD"
+helper = "hand.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+# The vanilla hands' inverse arm height, raised while looking down (Dynamic
+# Mode): the equip displacement of FirstPersonHandsAndItemsRenderer.
+[[injection]]
+id = "arm_height"
+target = "horizon_client::first_person::equip_displacement"
+kind = "RETURN"
+helper = "arm_height.rs"
+bindings = [
+  { name = "value", ty = "f32", value = "$value" },
+]
+
+# "Always Both Hands": the empty off hand's arm, added to the hand pass right
+# after the hands (before the totem's activation).
+[[injection]]
+id = "both_hands"
+target = "horizon_client::game::totem::Game<'_>::item_activation_geometry"
+kind = "HEAD"
+helper = "both_hands.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "partial", ty = "f32", value = "partial" },
+  { name = "out", ty = "&mut Vec<Vertex>", value = "&mut *out" },
+]
+
+# The fishing line from the body's hand (FishingBobberRendererMixin).
+[[injection]]
+id = "rod"
+target = "horizon_client::game::fishing::Game<'_>::rod_hand_position"
+kind = "HEAD"
+cancellable = true
+helper = "rod.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
+  { name = "alpha", ty = "f64", value = "alpha" },
+]
+
+# The config screen over the Options screen, while it is open on the mod's page.
+[[injection]]
+id = "render"
+hook = "screen_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "render.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+]
+
+[[injection]]
+id = "cover"
+target = "horizon_client::game::options::Game<'_>::draw_options"
+kind = "HEAD"
+cancellable = true
+helper = "cover.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "press"
+hook = "screen_mouse_button_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "press.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "release"
+hook = "screen_mouse_button_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "release.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "drag"
+hook = "screen_mouse_dragged_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "drag.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "wheel"
+hook = "screen_mouse_scrolled_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "wheel.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "scroll", ty = "[f64; 2]", value = "scroll" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_pressed"
+hook = "screen_key_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "key_pressed.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_released"
+hook = "screen_key_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "key_released.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "char"
+hook = "screen_char_typed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "char.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "c", ty = "char", value = "c" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]

@@ -1,0 +1,24 @@
+BetterF3 for Horizon
+A port of BetterF3 to Horizon (Minecraft: Java Edition 26.3 rewritten in
+Rust) as a native mod.
+
+BetterF3
+Copyright (c) 2020 - 2026 cominixo / TreyRuffy
+https://github.com/TreyRuffy/BetterF3 (branch architectury/26.3, 20.0.0)
+Licensed under the MIT License (LICENSE).
+
+The texts in mixins/betterf3/data/lang (en_us.json, ru_ru.json) are
+BetterF3's own language files; the icon in mixins/betterf3/data/icon.png is
+BetterF3's icon (fabric/src/main/resources/icon.png).
+
+The config screens built with Cloth Config in BetterF3 follow Cloth Config by
+shedaniel (https://github.com/shedaniel/cloth-config, LGPL-3.0), rewritten in
+Rust (mixins/betterf3/cloth.rs); its error icon in
+mixins/betterf3/cloth_sprites.rs is part of Cloth Config's texture
+(assets/cloth-config2/textures/gui/cloth_config.png), converted to rows of
+pixels, and its texts are Cloth Config's own.
+
+This port rewrites BetterF3's modules, overlay and screens in Rust for
+Horizon's native mod API, reading the game's own data where BetterF3 reads
+Minecraft's. It is not affiliated with cominixo, TreyRuffy, Mojang or
+Microsoft.

@@ -1,0 +1,327 @@
+[mod]
+id = "shulkerboxtooltip"
+version = "1.0.0"
+priority = 100
+
+# Built for this Nightly: besides the hook points it draws the item tooltip
+# itself while a preview shows (`draw_stack_tooltip_with`), locks the
+# container screen's tooltip (`draw_slot_tooltip`, `slot_at`), widens the
+# bundle wheel (`bundle_scroll`), takes the vanilla container lines and a
+# shulker box's lore out of tooltips (`container_lines`, `lore_texts`) and
+# hides the Options screen under its config screen (`draw_options`).
+[compatibility]
+horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
+
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "shulkerboxtooltip"
+source = "runtime.rs"
+
+[[module]]
+id = "lang"
+file = "crates/horizon-client/src/game.rs"
+name = "shulkerboxtooltip_lang"
+source = "lang.rs"
+
+[[module]]
+id = "sprites"
+file = "crates/horizon-client/src/game.rs"
+name = "shulkerboxtooltip_sprites"
+source = "sprites.rs"
+
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "shulkerboxtooltip_glue"
+source = "glue.rs"
+
+# The config screen over the Options screen.
+[[module]]
+id = "screen"
+file = "crates/horizon-client/src/game.rs"
+name = "shulkerboxtooltip_screen"
+source = "screen.rs"
+
+# What the client library's tooltip code reads (it can't reach the game's modules).
+[[module]]
+id = "flags"
+file = "crates/horizon-client/src/item_tooltip.rs"
+name = "shulkerboxtooltip_flags"
+source = "flags.rs"
+visibility = "pub"
+
+[[injection]]
+id = "list"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "h_list.rs"
+bindings = [
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+[[injection]]
+id = "settings"
+hook = "settings"
+hook_version = 1
+kind = "HEAD"
+helper = "h_settings.rs"
+bindings = [
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "buttons", ty = "&mut Vec<String>", value = "&mut *buttons" },
+]
+
+[[injection]]
+id = "click"
+hook = "settings_click"
+hook_version = 1
+kind = "HEAD"
+helper = "h_click.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "button", ty = "usize", value = "button" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "h_frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+# An item's tooltip lines (`ItemStackMixin.onGetTooltip`).
+[[injection]]
+id = "tooltip"
+hook = "tooltip"
+hook_version = 1
+kind = "HEAD"
+helper = "h_tooltip.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "stack", ty = "&horizon_client::items::ItemStack", value = "stack" },
+  { name = "lines", ty = "&mut Vec<(horizon_client::text::Text, u32)>", value = "&mut *lines" },
+]
+
+# The mod's messages: the client's half and the host's.
+[[injection]]
+id = "from_server"
+hook = "net_from_server"
+hook_version = 1
+kind = "HEAD"
+helper = "h_from_server.rs"
+bindings = [
+  { name = "channel", ty = "&str", value = "channel" },
+  { name = "data", ty = "&[u8]", value = "data" },
+]
+
+[[injection]]
+id = "from_client"
+hook = "net_from_client"
+hook_version = 1
+kind = "HEAD"
+helper = "h_from_client.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "channel", ty = "&str", value = "channel" },
+  { name = "data", ty = "&[u8]", value = "data" },
+]
+
+[[injection]]
+id = "server_tick"
+hook = "server_tick"
+hook_version = 1
+kind = "HEAD"
+helper = "h_server_tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "phase", ty = "&horizon_client::mod_api::ServerTickPhase", value = "&phase" },
+]
+
+# The item tooltip while a preview shows (`ItemStackMixin.onGetTooltipData`
+# and `PreviewClientTooltipComponent`).
+[[injection]]
+id = "stack_tooltip"
+target = "horizon_client::game::stations::Game<'_>::draw_stack_tooltip_with"
+kind = "HEAD"
+cancellable = true
+helper = "h_stack_tooltip.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "stack", ty = "&horizon_client::items::ItemStack", value = "stack" },
+  { name = "creative", ty = "bool", value = "creative" },
+  { name = "x", ty = "f32", value = "x" },
+  { name = "y", ty = "f32", value = "y" },
+  { name = "after_name", ty = "&Vec<(horizon_client::text::Text, u32)>", value = "&after_name" },
+]
+
+# Locking the container screen's tooltip (`AbstractContainerScreenMixin`).
+[[injection]]
+id = "slot_tooltip"
+target = "horizon_client::game::stations::Game<'_>::draw_slot_tooltip"
+kind = "HEAD"
+cancellable = true
+helper = "h_slot_tooltip.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+]
+
+
+[[injection]]
+id = "slot_at"
+target = "horizon_client::game::Game<'_>::slot_at"
+kind = "HEAD"
+cancellable = true
+helper = "h_slot_at.rs"
+bindings = []
+
+# The bundle wheel (`BundleMouseActionsMixin`).
+[[injection]]
+id = "bundle_scroll"
+target = "horizon_client::game::bundles::Game<'_>::bundle_scroll"
+kind = "HEAD"
+cancellable = true
+helper = "h_bundle_scroll.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "x", ty = "f64", value = "x" },
+  { name = "y", ty = "f64", value = "y" },
+]
+
+# `ItemContainerContentsMixin` and `ItemStackMixin.removeLore`.
+[[injection]]
+id = "container_lines"
+target = "horizon_client_lib::item_tooltip::container_lines"
+kind = "HEAD"
+cancellable = true
+helper = "h_container_lines.rs"
+bindings = []
+
+[[injection]]
+id = "lore"
+target = "horizon_client_lib::item_tooltip::lore_texts"
+kind = "HEAD"
+cancellable = true
+helper = "h_lore.rs"
+bindings = [
+  { name = "stack", ty = "&crate::items::ItemStack", value = "stack" },
+]
+
+# The config screen: the Options screen hidden under it, its drawing and all
+# of the screen's input while it is open.
+[[injection]]
+id = "options_cover"
+target = "horizon_client::game::options::Game<'_>::draw_options"
+kind = "HEAD"
+cancellable = true
+helper = "h_options_cover.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "render"
+hook = "screen_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_render.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+]
+
+[[injection]]
+id = "press"
+hook = "screen_mouse_button_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_press.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "release"
+hook = "screen_mouse_button_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_release.rs"
+bindings = [
+  { name = "button", ty = "i32", value = "button" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "drag"
+hook = "screen_mouse_dragged_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_drag.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "scroll"
+hook = "screen_mouse_scrolled_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_scroll.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "scroll", ty = "[f64; 2]", value = "scroll" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key"
+hook = "screen_key_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_released"
+hook = "screen_key_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_released.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "char"
+hook = "screen_char_typed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_char.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "c", ty = "char", value = "c" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
