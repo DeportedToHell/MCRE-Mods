@@ -3,6 +3,8 @@
 A port of [Clumps](https://github.com/jaredlll08/Clumps) by Jaredlll08 to [Horizon](https://github.com/horizon-rust/horizon),
 the Rust rewrite of Minecraft: Java Edition 26.3, as a native mod (`.hnmod`). It behaves like Clumps 26.3.
 
+Ported by Kastromovskiy, with DeportedToHell.
+
 ## Features
 
 - **Experience orbs of any value clump together** into one orb worth all of them: when orbs come near each
@@ -29,8 +31,8 @@ Native mods are compiled into the game and are not sandboxed: build only code yo
 - Clumps keeps how many orbs of each value an orb took in; the port keeps the orb's total (Horizon's orbs have
   one value and a count). The experience is the same; Mending repairs with the whole orb at once rather than
   value by value, which can pick the damaged item to repair a little differently.
-- Clumps also lifts the player's pickup delay, so every orb in reach is collected the same tick. Horizon's
-  server keeps vanilla's two ticks between two orbs and offers a mod no way to change it yet; orbs that reach
+- Clumps also lifts the player's pickup delay, so the player collects an orb every tick (the game touches one
+  orb a tick). Horizon's server keeps vanilla's two ticks between two orbs and offers a mod no way to change it yet; orbs that reach
   the player mostly clump into one first anyway.
 - Clumps' API events for other Java mods (`ValueEvent`, `RepairEvent`) have no Horizon counterpart.
 
@@ -54,4 +56,4 @@ Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
 ## Licence
 
-MIT, as Clumps: see `LICENSE` and `NOTICE`. Not affiliated with Jaredlll08, Mojang or Microsoft.
+MIT, as Clumps (Jaredlll08; the port: Kastromovskiy and DeportedToHell): see `LICENSE` and `NOTICE`. Not affiliated with Jaredlll08, Mojang or Microsoft.

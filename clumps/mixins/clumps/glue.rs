@@ -1,5 +1,5 @@
 // Clumps in the game: experience orbs of any value clump together, and a
-// player collects every orb they touch at once (`MixinExperienceOrb`).
+// player collects a touched orb whole (`MixinExperienceOrb`).
 //
 // - `canMerge` (both forms): any orb takes in any other, not only one of its
 //   value and id slot: the game's merge question is answered yes.
@@ -8,9 +8,9 @@
 //   the merge is decided (after the other mods had their say), and refused
 //   when the clump would be worth more than an orb can hold.
 // - `playerTouch`: the whole orb taken at once, Mending repairing with it and
-//   the rest given. (Clumps also lifts the player's pickup delay, so every
-//   orb in reach goes the same tick; Horizon's server keeps its delay of two
-//   ticks between orbs, which the mod can't change.)
+//   the rest given. (Clumps also lifts the player's pickup delay, so an orb
+//   goes every tick; Horizon's server keeps its delay of two ticks between
+//   orbs, which the mod can't change.)
 //
 // Only on the server's `Game` (single player's server thread, a LAN host, a
 // dedicated server); as a client of a server the server decides.
@@ -64,7 +64,7 @@ pub(super) fn frame(game: &Game<'_>) {
   "description": "{}",
   "description_ru": "{}",
   "authors": ["Jaredlll08"],
-  "contributors": ["DeportedToHell"],
+  "contributors": ["Darkhax", "ChampionAsh5357", "Chloe Dawn", "FalseHonesty", "Griefed", "Hache_raw", "Paint_Ninja", "SkySom", "OathtakerPaladin", "Kastromovskiy (Horizon port)", "DeportedToHell"],
   "license": "MIT",
   "links": {{
     "homepage": "https://www.curseforge.com/minecraft/mc-mods/clumps",
