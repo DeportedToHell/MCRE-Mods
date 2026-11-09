@@ -1,0 +1,16 @@
+Clumps for Horizon
+A port of Clumps to Horizon (Minecraft: Java Edition 26.3 rewritten in Rust)
+as a native mod.
+
+Clumps
+Copyright (c) 2021 Jaredlll08
+https://github.com/jaredlll08/Clumps (branch 26.3)
+Licensed under the MIT License (LICENSE).
+
+The icon in mixins/clumps/data/icon.png is Clumps' own
+(common/src/main/resources/icon.png). The Russian description was written for
+this port.
+
+This port rewrites Clumps' experience orb mixin in Rust for Horizon's native
+mod API. It is not affiliated with Jaredlll08 (BlameJared), Mojang or
+Microsoft.

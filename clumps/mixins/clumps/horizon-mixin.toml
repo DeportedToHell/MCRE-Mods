@@ -1,0 +1,96 @@
+[mod]
+id = "clumps"
+version = "1.0.0"
+priority = 100
+
+# Built for this Nightly: besides the hook points it resolves a merge once
+# the merge hook's question is decided (at the RETURN of
+# `native_experience_orb_merge`).
+[compatibility]
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+
+# The names and the clump's arithmetic.
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "clumps"
+source = "runtime.rs"
+
+# Merging, the pickup, the mod's row and Mod Menu's files.
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "clumps_glue"
+source = "glue.rs"
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "h_frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "list"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "h_list.rs"
+bindings = [
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+# `canMerge`: any two orbs.
+[[injection]]
+id = "can_merge"
+hook = "experience_orb_can_merge"
+hook_version = 1
+kind = "HEAD"
+helper = "h_can_merge.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "can_merge", ty = "&mut bool", value = "&mut *can_merge" },
+]
+
+# `merge` and `tryMergeToExisting`: the orb that takes another in is worth
+# both, once every mod had its say on the merge.
+[[injection]]
+id = "merge"
+target = "horizon_client::game::native_hooks::Game<'_>::native_experience_orb_merge"
+kind = "RETURN"
+helper = "h_merge.rs"
+bindings = [
+  { name = "value", ty = "()", value = "$value" },
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "into", ty = "u32", value = "into" },
+  { name = "from", ty = "u32", value = "from" },
+  { name = "from_value", ty = "u32", value = "from_value" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+# `playerTouch`: the orb taken whole.
+[[injection]]
+id = "pickup_listened"
+hook = "experience_orb_pickup_listened"
+hook_version = 1
+kind = "HEAD"
+helper = "h_pickup_listened.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "listened", ty = "&mut bool", value = "&mut *listened" },
+]
+
+[[injection]]
+id = "pickup"
+hook = "experience_orb_pickup"
+hook_version = 1
+kind = "HEAD"
+helper = "h_pickup.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "value", ty = "&mut u32", value = "&mut *value" },
+  { name = "count", ty = "&mut u32", value = "&mut *count" },
+]
