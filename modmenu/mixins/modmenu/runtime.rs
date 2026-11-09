@@ -7,7 +7,7 @@
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, Ordering};
 
 pub const ID: &str = "modmenu";
-pub const VERSION: &str = "1.1.1";
+pub const VERSION: &str = "1.1.2";
 
 /// Configure on a mod with a config screen of its own (`config_screen` in its
 /// `modmenu.json`): Mod Menu opens the mod's page on Options > Mods, then
@@ -46,6 +46,17 @@ pub const PAUSE_BUTTON: u8 = 200;
 static PAUSE_ICON_X: AtomicU32 = AtomicU32::new(u32::MAX);
 static PAUSE_ICON_Y: AtomicU32 = AtomicU32::new(u32::MAX);
 
+/// The pause menu's server links (or server dialog) button the last time it
+/// laid itself out: x, y, width (f32 bits; NaN when it has none).
+static PAUSE_LINKS: [AtomicU32; 3] = [const { AtomicU32::new(u32::MAX) }; 3];
+
+/// The pause menu's server links (or server dialog) button: x, y, width.
+/// Its tooltip (`menu.custom_options.tooltip`) can reach up over the Mods icon.
+pub fn pause_links_button() -> Option<(f32, f32, f32)> {
+    let [x, y, w] = [0, 1, 2].map(|i| f32::from_bits(PAUSE_LINKS[i].load(Ordering::Relaxed)));
+    (x.is_finite() && y.is_finite() && w.is_finite()).then_some((x, y, w))
+}
+
 /// The pause menu's Mods icon (x, y), for drawing its sprite and tooltip.
 pub fn pause_icon() -> Option<(f32, f32)> {
     let x = f32::from_bits(PAUSE_ICON_X.load(Ordering::Relaxed));
@@ -83,6 +94,10 @@ pub fn pause_buttons(mut v: Vec<(f32, f32, f32, &'static str, u8, bool)>, w: f32
             v.push((x0 + 4.0, y0 + 122.0, 204.0, "horizon.pages.mods", PAUSE_BUTTON, true));
         }
         _ => {}
+    }
+    let links = v.iter().find(|b| b.4 == 11 || b.4 == 14).map_or([f32::NAN; 3], |b| [b.0, b.1, b.2]);
+    for (slot, value) in PAUSE_LINKS.iter().zip(links) {
+        slot.store(value.to_bits(), Ordering::Relaxed);
     }
     v
 }

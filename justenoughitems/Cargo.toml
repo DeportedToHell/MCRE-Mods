@@ -1,7 +1,7 @@
 # Runs the mod's own tests: `cargo test`. The game builds the mod from mixins/ instead.
 [package]
 name = "justenoughitems-horizon"
-version = "1.1.0"
+version = "1.1.1"
 edition = "2024"
 license = "MIT"
 publish = false

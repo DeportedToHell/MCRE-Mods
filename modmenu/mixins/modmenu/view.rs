@@ -296,8 +296,19 @@ fn pause_extras(game: &Game<'_>, batch: &mut HudBatch, s: &State) {
         tooltip(game, batch, &[mm::button_text(s.ru, count, c)]);
         return;
     }
-    // The menu drew its icons' tooltips before this icon: one under the
-    // pointer is drawn again over it (`PauseScreen`'s icon labels).
+    // The menu drew its tooltips before this icon: one under the pointer is
+    // drawn again over it, as Java draws tooltips last. The server links
+    // (or server dialog) button's, which can reach up over the icon...
+    if let Some((bx, by, bw)) = mm::pause_links_button()
+        && inside(game.cursor, [bx, by, bw, 20.0])
+    {
+        let label = Text::translate("menu.custom_options.tooltip", &[]);
+        let atlas = &game.gui.atlas;
+        let lines: Vec<Text> = atlas.font.split_lines(&label, batch.width).into_iter().map(|(l, _)| l).collect();
+        ui::tooltip(batch, atlas, &lines, game.cursor);
+        return;
+    }
+    // ...and the icons' labels (`PauseScreen`'s icon row).
     for i in 0..4 {
         let ix = x - 96.0 + 24.0 * i as f32;
         if !inside(game.cursor, [ix, y, 20.0, 20.0]) {

@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 pub const ID: &str = "justenoughitems";
 pub const NAME: &str = "Just Enough Items";
-pub const VERSION: &str = "1.1.0";
+pub const VERSION: &str = "1.1.1";
 
 /// Russian labels when the game's language is Russian, English otherwise.
 pub fn russian(language: &str) -> bool {

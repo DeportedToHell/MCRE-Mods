@@ -7,6 +7,7 @@
 // buttons. Every part drawn is recorded in `State::hits` for the mouse and
 // keys of the next frame.
 use super::roughlyenoughitems::{self as rei, Category, Lookup, Mark, Rect, Recipe, Shortcut, Stack, inside};
+use super::roughlyenoughitems_defer as defer;
 use super::roughlyenoughitems_glue::{self as glue, Data, Hit, ListCell, Menu, MenuItem, OWN_TOOLTIP, State, Status};
 use super::roughlyenoughitems_sprites::{self as sprites, Sprite};
 use super::{Game, Screen};
@@ -432,29 +433,40 @@ impl Tip {
 /// panel (`draw_mod_browser`): true when the mod is on.
 pub(super) fn draw(game: &mut Game<'_>, batch: &mut HudBatch) -> bool {
     if !glue::on(game) {
+        defer::forget();
         return false;
     }
+    // The screen's tooltips (its slots', tabs', effects', buttons') go over
+    // the overlay, as Java draws them after `ScreenEvent.Render.Post`.
+    let tooltips = defer::take(batch);
     let tip = glue::with(|s| frame(game, batch, s)).flatten();
     let cursor = game.cursor;
     let covered = glue::COVERED.with(std::cell::Cell::get);
+    // REI's own tooltip, when it shows one, is the only one.
+    let mut own = false;
     if game.carried.is_none() {
         match tip {
-            Some(Tip { drawn: true, .. }) => {}
+            Some(Tip { drawn: true, .. }) => own = true,
             Some(Tip { stack: Some(stack), lines, .. }) => {
                 let extra: Vec<(Text, u32)> = lines.into_iter().map(|(l, c)| (Text::legacy(&l), argb(c))).collect();
                 OWN_TOOLTIP.with(|c| c.set(true));
                 game.draw_stack_tooltip_with(batch, &stack, false, cursor.0, cursor.1, extra);
                 OWN_TOOLTIP.with(|c| c.set(false));
+                own = true;
             }
             Some(Tip { stack: None, lines, .. }) if !lines.is_empty() => {
                 let lines: Vec<(String, u32)> = lines.into_iter().map(|(l, c)| (l, argb(c))).collect();
                 game.draw_tooltip_lines(batch, &lines, cursor.0, cursor.1);
+                own = true;
             }
-            _ if !covered => game.draw_slot_tooltip(batch),
             _ => {}
         }
     } else {
         game.draw_carried(batch);
+    }
+    // Under the recipes and config screens the game's tooltips stay hidden.
+    if !own && !covered {
+        defer::put_back(batch, tooltips);
     }
     true
 }
