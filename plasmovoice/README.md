@@ -1,6 +1,6 @@
-# Plasmo Voice for Horizon
+# Plasmo Voice for Horizon 1.0.0
 
-A port of [Plasmo Voice](https://github.com/plasmoapp/plasmo-voice) 2.2.0 by Plasmo to
+A port of [Plasmo Voice](https://github.com/plasmoapp/plasmo-voice) by Plasmo (its version 2.2.0) to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3, as a native mod
 (`.hnmod`). Proximity voice chat: you hear the players near you, from where they stand, and they hear you.
 

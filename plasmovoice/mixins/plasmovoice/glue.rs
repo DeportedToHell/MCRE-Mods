@@ -30,8 +30,7 @@ use std::time::Instant;
 
 pub(super) const ID: &str = "plasmovoice";
 const NAME: &str = "Plasmo Voice";
-/// The port's own version (the bundle's); the settings screen shows Plasmo Voice's, `gui::VERSION`.
-const VERSION: &str = "1.0.0";
+const VERSION: &str = gui::VERSION;
 /// `fabric.mod.json`'s description.
 const DESCRIPTION: &str = "A proximity voice chat mod with audio positioning and lots of features";
 /// The port's Russian for it (the original has none).
