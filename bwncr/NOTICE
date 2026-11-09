@@ -1,0 +1,26 @@
+Bad Wither No Cookie - Reloaded for Horizon
+A port of Bad Wither No Cookie - Reloaded to Horizon (Minecraft: Java Edition
+26.3 rewritten in Rust) as a native mod.
+
+Bad Wither No Cookie - Reloaded
+Originally created by droidicus; by Kreezxil, with Eleksploded, Mrbysco,
+PrincessStellar, Valentin Alarcon and others
+https://gitlab.com/kreezxil/BadWitherNoCookie (branch 1.21.1, 3.20.4)
+Licensed under the MIT License (LICENSE: the project's licence file, kept in
+its 1.12.2 branch; its later branches name MIT in their mod metadata).
+
+The icon in mixins/bwncr/data/icon.png is the mod's own logo
+(common/src/main/resources/logo.png). The English texts are the mod's own
+(en_us.json and its messages); the Russian ones were translated for this port,
+as the mod has no ru_ru.json.
+
+The config screen the mod builds with AutoConfig and Cloth Config follows
+Cloth Config by shedaniel (https://github.com/shedaniel/cloth-config,
+LGPL-3.0), rewritten in Rust (mixins/bwncr/cloth.rs); its arrows and buttons
+in mixins/bwncr/cloth_sprites.rs are parts of Cloth Config's texture
+(assets/cloth-config2/textures/gui/cloth_config.png), converted to rows of
+pixels, and its texts are Cloth Config's own.
+
+This port rewrites the mod's sound handler, config and listen command in Rust
+for Horizon's native mod API. It is not affiliated with Kreezxil, Mojang or
+Microsoft.

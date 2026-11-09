@@ -1,0 +1,15 @@
+# Runs the mod's own tests: `cargo test`. The game builds the mod from mixins/ instead.
+[package]
+name = "bwncr-horizon"
+version = "1.0.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[lib]
+path = "mixins/bwncr/runtime.rs"
+
+# The sound check (in the game, a module of the client library's sound hook).
+[[test]]
+name = "sounds"
+path = "mixins/bwncr/sounds.rs"
