@@ -1,0 +1,15 @@
+# Plasmo Voice for Horizon: the voice chat engine (protocol, crypto, audio), a crate of the bundle.
+# Dependencies are the versions in Horizon's Cargo.lock (docs/native-mods.md, "The mod's crate").
+[package]
+name = "plasmovoice-engine"
+version = "1.0.0"
+edition = "2024"
+license = "LGPL-3.0-only"
+publish = false
+
+[dependencies]
+aes = "0.8"
+cbc = "0.1"
+getrandom = "0.3"
+rusty-opus = "1"
+cpal = "0.16"

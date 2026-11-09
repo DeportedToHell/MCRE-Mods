@@ -1,0 +1,36 @@
+Plasmo Voice for Horizon
+Copyright (c) 2026 its contributors.
+
+A Rust port of Plasmo Voice by Plasmo (Apehum, KPidS and contributors),
+https://github.com/plasmoapp/plasmo-voice (branch main, commit 198ad94,
+version 2.2.0), whose code and assets are under the GNU Lesser General Public
+License version 3 (LICENSE). This port is under the same licence.
+
+From Plasmo Voice, unchanged:
+- the icons in mixins/plasmovoice/data/ (client/src/main/resources/assets/
+  plasmovoice/textures/icons/, its tabs/ as tab_*.png, and icon.png);
+- the English texts (client lang/en_us.json), in mixins/plasmovoice/lang.rs.
+
+The Russian texts are Plasmo Voice's own Crowdin translations
+(https://github.com/plasmoapp/plasmo-voice-crowdin, branch pv: ru_RU/client.json
+and the Proximity names of each language's server.toml), translations of the
+LGPL-3.0 strings above.
+
+Plasmo Voice's Mod Menu screen is built with Cloth Config by shedaniel
+(https://github.com/shedaniel/cloth-config, LGPL-3.0): its look is rewritten
+in Rust (mixins/plasmovoice/cloth.rs), its arrows and buttons in
+mixins/plasmovoice/cloth_sprites.rs are parts of Cloth Config's texture.
+
+Opus audio is encoded and decoded with rusty-opus (libopus, BSD-3-Clause);
+the microphone and speakers are opened with cpal (Apache-2.0); AES with the
+RustCrypto aes and cbc crates (MIT or Apache-2.0).
+
+Additions of this port, not in Plasmo Voice:
+- a microphone before the name of players with voice chat in the player list
+  (Tab), with its option in the Overlay tab ([horizon] tab_list_icons);
+- the speaking-players overlay shows every source line when talking by
+  default (Plasmo Voice: off for lines without players).
+
+Made for Horizon (https://github.com/horizon-rust/horizon, MIT) with
+horizon-mixins (https://github.com/horizon-rust/horizon-mixins, MIT).
+Not affiliated with Plasmo. Minecraft is a trademark of Mojang Synergies AB.

@@ -1,0 +1,409 @@
+[mod]
+id = "plasmovoice"
+version = "1.0.0"
+priority = 100
+
+# Nightly fdc87ae (nightly-source/2026-11-08-fdc87ae). The server half hears guests' plugin
+# messages through `native_custom_payload_from_client`, which isn't in the hook catalog yet, and
+# the glue reads game fields (the player's UUID and name), so the mod is pinned to this commit.
+[compatibility]
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+
+# The voice chat itself: the protocol, the encryption, the microphone, Opus, the speakers, and
+# the client and server sides (engine/, `plasmovoice_engine`).
+[[crate]]
+id = "engine"
+path = "engine"
+
+# What joins it to the game: `crate::game::plasmovoice_glue`.
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "plasmovoice_glue"
+source = "glue.rs"
+
+# The client config (`config/plasmovoice/client.toml`) and Plasmo Voice's texts (English and
+# Crowdin's Russian, tools/lang.mjs).
+[[module]]
+id = "config"
+file = "crates/horizon-client/src/game.rs"
+name = "plasmovoice_config"
+source = "config.rs"
+
+[[module]]
+id = "lang"
+file = "crates/horizon-client/src/game.rs"
+name = "plasmovoice_lang"
+source = "lang.rs"
+
+# Plasmo Voice's icons (data/), drawn with fills.
+[[module]]
+id = "icons"
+file = "crates/horizon-client/src/game.rs"
+name = "plasmovoice_icons"
+source = "icons.rs"
+
+# The settings screen (V), the HUD (activation icon, overlay, icons over heads), and the Mod
+# Menu screen in Cloth Config's look.
+[[module]]
+id = "gui"
+file = "crates/horizon-client/src/game.rs"
+name = "plasmovoice_gui"
+source = "gui.rs"
+
+[[module]]
+id = "hud"
+file = "crates/horizon-client/src/game.rs"
+name = "plasmovoice_hud"
+source = "hud.rs"
+
+[[module]]
+id = "menu"
+file = "crates/horizon-client/src/game.rs"
+name = "plasmovoice_menu"
+source = "menu.rs"
+
+# A Horizon addition, not in Plasmo Voice: its icons in the player list (Tab).
+[[module]]
+id = "tab"
+file = "crates/horizon-client/src/game.rs"
+name = "plasmovoice_tab"
+source = "tab.rs"
+
+[[module]]
+id = "cloth"
+file = "crates/horizon-client/src/game.rs"
+name = "plasmovoice_cloth"
+source = "cloth.rs"
+
+[[module]]
+id = "cloth_sprites"
+file = "crates/horizon-client/src/game.rs"
+name = "plasmovoice_cloth_sprites"
+source = "cloth_sprites.rs"
+
+# ---- the client half ----
+
+[[injection]]
+id = "packet"
+hook = "client_packet"
+hook_version = 1
+kind = "HEAD"
+helper = "h_packet.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "packet", ty = "&horizon_client::mod_api::ClientboundPlayPacket", value = "packet" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "h_frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "wheel"
+hook = "wheel"
+hook_version = 1
+kind = "HEAD"
+helper = "h_wheel.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "steps", ty = "f32", value = "steps" },
+  { name = "claimed", ty = "&mut bool", value = "&mut *claimed" },
+]
+
+[[injection]]
+id = "disconnecting"
+hook = "client_disconnecting"
+hook_version = 1
+kind = "HEAD"
+helper = "h_disconnecting.rs"
+bindings = []
+
+[[injection]]
+id = "list"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_mods"
+helper = "h_list.rs"
+bindings = [
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+# ---- what it draws ----
+
+[[injection]]
+id = "hud_icon"
+hook = "hud"
+hook_version = 1
+kind = "HEAD"
+helper = "h_hud.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+]
+
+[[injection]]
+id = "layer"
+hook = "gui_layer_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_layer.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "layer", ty = "&str", value = "layer" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+]
+
+[[injection]]
+id = "gui_post"
+hook = "gui_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_gui_post.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "gui_hidden", ty = "bool", value = "gui_hidden" },
+]
+
+[[injection]]
+id = "name_tag"
+hook = "render_name_tag"
+hook_version = 1
+kind = "HEAD"
+helper = "h_name_tag.rs"
+bindings = [
+  { name = "entity_id", ty = "u32", value = "entity_id" },
+  { name = "vanilla_visible", ty = "bool", value = "vanilla_visible" },
+]
+
+# The player list with the voice icons (a Horizon addition): drawn by the mod with the game's
+# own layout and a column more, in place of the game's when there is anything to show.
+[[injection]]
+id = "tab_list"
+target = "horizon_client::game::scoreboard::Game<'_>::draw_tab_list"
+kind = "HEAD"
+cancellable = true
+helper = "h_tab_list.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+]
+
+# ---- the screens: the settings (a screen of the mod's own) and the Mod Menu screen over the
+# options ----
+
+[[injection]]
+id = "page"
+hook = "settings"
+hook_version = 1
+kind = "HEAD"
+helper = "h_settings.rs"
+bindings = [
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "buttons", ty = "&mut Vec<String>", value = "&mut *buttons" },
+]
+
+[[injection]]
+id = "page_click"
+hook = "settings_click"
+hook_version = 1
+kind = "HEAD"
+helper = "h_click.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "button", ty = "usize", value = "button" },
+]
+
+[[injection]]
+id = "render"
+hook = "screen_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_render.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+]
+
+# The options stay hidden while the Mod Menu screen covers them.
+[[injection]]
+id = "options_cover"
+target = "horizon_client::game::options::Game<'_>::draw_options"
+kind = "HEAD"
+cancellable = true
+helper = "h_options_cover.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "press"
+hook = "screen_mouse_button_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_press.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "release"
+hook = "screen_mouse_button_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_release.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "drag"
+hook = "screen_mouse_dragged_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_drag.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "scroll"
+hook = "screen_mouse_scrolled_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_scroll.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "scroll", ty = "[f64; 2]", value = "scroll" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_pressed"
+hook = "screen_key_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_pressed.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_released"
+hook = "screen_key_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_released.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "char"
+hook = "screen_char_typed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_char.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "c", ty = "char", value = "c" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+# ---- the server half (single player, a LAN host) ----
+
+[[injection]]
+id = "world"
+hook = "world_lifecycle"
+hook_version = 1
+kind = "HEAD"
+helper = "h_world.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "phase", ty = "horizon_client::mod_api::WorldPhase", value = "phase" },
+]
+
+[[injection]]
+id = "server_tick"
+hook = "server_tick"
+hook_version = 1
+kind = "HEAD"
+helper = "h_server_tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "phase", ty = "horizon_client::mod_api::ServerTickPhase", value = "phase" },
+]
+
+[[injection]]
+id = "logged_in"
+hook = "player_logged_in"
+hook_version = 1
+kind = "HEAD"
+helper = "h_logged_in.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "name", ty = "&str", value = "name" },
+]
+
+[[injection]]
+id = "logged_out"
+hook = "player_logged_out"
+hook_version = 1
+kind = "HEAD"
+helper = "h_logged_out.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+]
+
+# A guest's plugin message (not in the hook catalog at this commit: by its path).
+[[injection]]
+id = "payload"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_custom_payload_from_client"
+helper = "h_payload.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "channel", ty = "&str", value = "channel" },
+  { name = "data", ty = "&[u8]", value = "data" },
+]
