@@ -8,7 +8,7 @@ use std::time::Instant;
 pub const ID: &str = "firstpersonmodel";
 /// The original's name (`fabric.mod.json`).
 pub const NAME: &str = "FirstPerson";
-pub const VERSION: &str = "1.0.0";
+pub const VERSION: &str = "1.0.1";
 /// The original's file, in the game's `config/` folder.
 pub const FILE: &str = "firstperson.json";
 /// `Constants`.

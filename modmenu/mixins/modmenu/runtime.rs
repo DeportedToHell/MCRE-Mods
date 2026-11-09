@@ -7,7 +7,7 @@
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, Ordering};
 
 pub const ID: &str = "modmenu";
-pub const VERSION: &str = "1.1.0";
+pub const VERSION: &str = "1.1.1";
 
 /// Configure on a mod with a config screen of its own (`config_screen` in its
 /// `modmenu.json`): Mod Menu opens the mod's page on Options > Mods, then

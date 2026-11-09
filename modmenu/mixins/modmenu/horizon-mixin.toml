@@ -1,6 +1,6 @@
 [mod]
 id = "modmenu"
-version = "1.1.0"
+version = "1.1.1"
 # Above Roughly Enough Items and Just Enough Items: while the mods screen is
 # open its input hooks run first and take every event.
 priority = 200
@@ -9,7 +9,7 @@ priority = 200
 # title screen's and the pause menu's own button lists and hides those screens
 # under its own.
 [compatibility]
-horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
 
 [[module]]
 id = "runtime"

@@ -1,13 +1,13 @@
 [mod]
 id = "smoothswapping"
-version = "1.1.0"
+version = "1.1.1"
 priority = 100
 
 # Built for this Nightly: besides the hook points it uses the inventory
 # screen's own drawing (its slots, a slot's item, the sort buttons' place)
 # and hides the Options screen under its config screen (`draw_options`).
 [compatibility]
-horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
 
 [[module]]
 id = "runtime"

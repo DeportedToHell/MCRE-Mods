@@ -6,12 +6,13 @@
 #
 # Uses the launcher's own Rust, horizon-mixins and crate cache (read only) and
 # works in $ZOOMIFY_BUILD (default: %TEMP%/zoomify-build), never in the launcher's folders.
+# The Horizon source is the launcher's export of the pinned revision, or $HORIZON_SOURCE.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")/.." && pwd)
 launcher="$APPDATA/horizon-launcher"
-rev=2ebf00a0281c592f79191e76fce0e7d522c6f425
-source="$launcher/native/source/$rev"
+rev=fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca
+source="${HORIZON_SOURCE:-$launcher/native/source/$rev}"
 mixins="$launcher/native/tools/5a64af938ec8/bin/horizon-mixins.exe"
 rust="$launcher/rust/1.99.1-x86_64-pc-windows-gnu"
 out="${ZOOMIFY_BUILD:-$TEMP/zoomify-build}"

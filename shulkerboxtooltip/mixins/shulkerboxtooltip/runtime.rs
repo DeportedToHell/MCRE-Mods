@@ -8,7 +8,7 @@
 pub const ID: &str = "shulkerboxtooltip";
 /// `fabric.mod.json`'s name.
 pub const NAME: &str = "Shulker Box Tooltip";
-pub const VERSION: &str = "1.0.0";
+pub const VERSION: &str = "1.0.1";
 /// The file ShulkerBoxTooltip keeps its configuration in, in `config/`.
 pub const CONFIG_FILE: &str = "shulkerboxtooltip.json5";
 /// A key that is not bound (`InputConstants.UNKNOWN`).
@@ -919,9 +919,30 @@ pub fn merge(counts: &[Option<u32>], max_size: usize, same: impl Fn(usize, usize
     groups
 }
 
+/// The ender chest's slots (`PlayerEnderChestContainer`: 27).
+pub const ENDER_SLOTS: usize = 27;
+
+/// A slot read from the server's ender chest message or the cache file: kept
+/// only inside the ender chest, so a hostile server can't make the client
+/// allocate for a huge index.
+pub fn ender_slot(text: &str) -> Option<usize> {
+    text.parse::<usize>().ok().filter(|&slot| slot < ENDER_SLOTS)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ender_slots_outside_the_chest_are_refused() {
+        assert_eq!(ender_slot("0"), Some(0));
+        assert_eq!(ender_slot("26"), Some(26));
+        assert_eq!(ender_slot("27"), None);
+        assert_eq!(ender_slot("4294967295"), None);
+        assert_eq!(ender_slot("18446744073709551615"), None);
+        assert_eq!(ender_slot("99999999999999999999999"), None);
+        assert_eq!(ender_slot("-1"), None);
+    }
 
     #[test]
     fn short_counts_as_the_mod_writes_them() {

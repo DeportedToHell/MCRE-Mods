@@ -1,12 +1,12 @@
 [mod]
 id = "zoomify"
-version = "1.1.0"
+version = "1.1.1"
 priority = 100
 
 # Built for this Nightly: besides the hook points it changes what the mouse
 # reads, the hand's field of view and the spyglass overlay, inside the game.
 [compatibility]
-horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
 
 [[module]]
 id = "runtime"
@@ -171,7 +171,7 @@ bindings = [
 # What the mouse reads (the original's MouseMixin on `turnPlayer`).
 [[injection]]
 id = "look"
-target = "horizon_client::game::Game<'_>::look_options"
+target = "horizon_client::game::pointer_capture::Game<'_>::look_options"
 kind = "RETURN"
 helper = "look.rs"
 bindings = [

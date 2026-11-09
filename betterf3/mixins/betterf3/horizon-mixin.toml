@@ -1,13 +1,13 @@
 [mod]
 id = "betterf3"
-version = "1.0.0"
+version = "1.0.1"
 priority = 100
 
 # Built for this Nightly: besides the hook points it replaces the game's own
 # debug overlay (`draw_debug_overlay`), reads the data its F3 entries read
 # and takes two keys in `handleDebugKeys`.
 [compatibility]
-horizon_revision = "2ebf00a0281c592f79191e76fce0e7d522c6f425"
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
 
 # The settings and modules, BetterF3's texts.
 [[module]]

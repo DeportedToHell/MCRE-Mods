@@ -80,7 +80,7 @@ tools/check.sh                 stages the mod on the pinned Horizon source and c
 tools/package.mjs              makes the .hnmod
 ```
 
-Built for Horizon `2ebf00a0281c592f79191e76fce0e7d522c6f425` and horizon-mixins
+Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
 
 ## Licence

@@ -51,7 +51,7 @@ The `.hnmod` file is a zip of `horizon-native.json` and `mixins/`.
 
 Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
-Built for Horizon `2ebf00a0281c592f79191e76fce0e7d522c6f425` (Nightly 2026-11-07) and horizon-mixins
+Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
 
 ## Licence and credits

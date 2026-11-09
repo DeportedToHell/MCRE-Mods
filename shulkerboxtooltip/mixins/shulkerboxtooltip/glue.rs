@@ -1110,13 +1110,11 @@ fn snbt(tag: &horizon_world::nbt::Tag, out: &mut String) {
 }
 
 fn decode(text: &str) -> Vec<Option<ItemStack>> {
-    let mut items: Vec<Option<ItemStack>> = vec![None; 27];
+    let mut items: Vec<Option<ItemStack>> = vec![None; sbt::ENDER_SLOTS];
     for line in text.lines() {
         let Some((slot, snbt)) = line.split_once('\t') else { continue };
-        let (Ok(slot), Ok(Some(stack))) = (slot.parse::<usize>(), horizon_client::item_data::parse_stack(snbt)) else { continue };
-        if slot >= items.len() {
-            items.resize(slot + 1, None);
-        }
+        // A slot outside the ender chest is ignored (`sbt::ender_slot`).
+        let (Some(slot), Ok(Some(stack))) = (sbt::ender_slot(slot), horizon_client::item_data::parse_stack(snbt)) else { continue };
         items[slot] = Some(stack);
     }
     items
