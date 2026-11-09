@@ -1,0 +1,26 @@
+Falling Leaves for Horizon
+A port of Falling Leaves to Horizon (Minecraft: Java Edition 26.3 rewritten in
+Rust) as a native mod.
+
+Falling Leaves
+Copyright (c) 2020 RandomMcSomethin (authors: Fourmisain, BrekiTomasson,
+RandomMcSomethin)
+https://github.com/RandomMcSomethin/fallingleaves (branch 26.3, 2.0.8)
+Licensed under the MIT License (LICENSE).
+
+The particle textures in tools/textures/ (packed into
+mixins/fallingleaves/data/tiles.rgba by tools/tiles.mjs) and the icon in
+mixins/fallingleaves/data/icon.png are Falling Leaves' own
+(src/main/resources/assets/fallingleaves/, MIT). The texts of the settings
+screen are Falling Leaves' English and Russian language files (MIT).
+
+The settings screen (mixins/fallingleaves/cloth.rs) follows Cloth Config by
+shedaniel (https://github.com/shedaniel/cloth-config, LGPL-3.0), rewritten in
+Rust; its sprites in mixins/fallingleaves/cloth_sprites.rs are Cloth Config's
+texture (assets/cloth-config2/textures/gui/cloth_config.png), converted to
+rows of pixels by tools/sprites.mjs, and its texts are Cloth Config's and
+Falling Leaves' own.
+
+This port rewrites Falling Leaves' particles, wind, leaf and snow spawning and
+settings in Rust for Horizon's native mod API. It is not affiliated with
+RandomMcSomethin, Mojang or Microsoft.
