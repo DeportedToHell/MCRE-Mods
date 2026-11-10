@@ -19,6 +19,7 @@
 ### 🎤 Play together
 
 <p>
+<a href="emotecraft"><img src=".github/readme/card-emotecraft-en.svg" alt="Emotecraft" width="49%"></a>
 <a href="plasmovoice"><img src=".github/readme/card-plasmovoice-en.svg" alt="Plasmo Voice" width="49%"></a>
 <a href="pingwheel"><img src=".github/readme/card-pingwheel-en.svg" alt="Ping Wheel" width="49%"></a>
 </p>
