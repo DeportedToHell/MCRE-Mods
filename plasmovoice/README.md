@@ -1,4 +1,4 @@
-# Plasmo Voice for Horizon 1.0.0
+# Plasmo Voice for Horizon 1.0.1
 
 A port of [Plasmo Voice](https://github.com/plasmoapp/plasmo-voice) by Plasmo (its version 2.2.0) to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3, as a native mod
@@ -15,7 +15,12 @@ A port of [Plasmo Voice](https://github.com/plasmoapp/plasmo-voice) by Plasmo (i
   `/vmutelist`, `/vreload` and `/vrc` with their permission nodes (see *Server* below).
 - **Push to talk** (Left Alt) or **voice activation** with its threshold, per activation, as in the original; **Mute
   microphone** (M), **Disable voice chat**, the activation and distance keys, the **Action** button + wheel for a
-  player's volume.
+  player's volume, **Toggle Sound Occlusion**.
+- **The original's sound:** **noise suppression** with RNNoise (the same nnnoiseless build and model Plasmo Voice
+  runs, built into the mod), **stereo capture**, **sound occlusion** (blocks between you and a player quieten them,
+  smoothed as in the original), **directional sources** with their angle, stereo sources played in stereo or made
+  mono, the **source types overlap** rule, **camera sound listener** (third person hears from the camera), the
+  **jitter buffer delay**, and the **voice distance sphere** when the distance changes (and on joining, if asked).
 - **Plasmo Voice's settings screen** on **V**: the Devices, Volume, Activation, Overlay, Advanced and Hotkeys tabs with
   every row of the original — microphone and speakers, the level meter with the threshold marker and **Test
   microphone**, volumes up to 200%, per-player volume and mute, overlay styles and positions, key bindings.
@@ -29,13 +34,22 @@ Additions of this port: a microphone before the name of players with voice chat 
 while they talk, crossed out in red otherwise — with its option in the Overlay tab; and the list of who is talking
 is on by default (Plasmo Voice: off for proximity).
 
-Differences from the original, where Horizon has no counterpart yet: noise suppression, stereo capture, sound
-occlusion, directional sources, HRTF and the Javax input device are in the settings but change nothing; the About
-tab and addons are not ported; head icons are drawn over the world, not lit or cut by blocks; single player isn't
-paused while the settings are open. On the server: the texts are the bundled English and Russian (and any file put in
-`languages/`), not downloaded from Crowdin; `[voice.reuse_port]` is kept in the file but one socket serves; there is no
-proxy (BungeeCord/Velocity) support, update check, debug logging switch, vanish integration or `plasmovoice:`
-command aliases; target selectors in `/vmute` and `/vunmute` are `@a`, `@p`, `@r` and `@s` without arguments.
+Defaults changed: the **activation threshold is -60 dB** (Plasmo Voice: -30 dB). A threshold already saved in
+`client.toml` stays as it is; the slider's reset button sets -60 dB.
+
+Differences from the original, where Horizon has no counterpart yet: **HRTF** (OpenAL Soft's, which Horizon's mods
+don't have) and the Mod Menu screen's **Javax Input Device** (Java Sound; the port opens the microphone one way, with
+cpal) are kept in the settings but change nothing, nor do the Debug Logger and Check For Updates switches; the
+hidden `al_playback_buffers` sizes OpenAL's buffer ring, which the port's mixer doesn't have (`adaptive_jitter_buffer`
+and the compressor and limiter do nothing in Plasmo Voice either); the voice distance sphere is drawn as a mesh of
+lines, not filled; panning is equal-power stereo, not OpenAL Soft's; noise suppression at a server sample rate
+other than 48 kHz resamples to 48 kHz for RNNoise (Plasmo Voice feeds the frames as they are, and at 8 or 16 kHz
+sends nothing); the About tab and addons are not ported; head icons are drawn over the world, not lit or cut by
+blocks; single player isn't paused while the settings are open. On the server: the texts are the bundled English
+and Russian (and any file put in `languages/`), not downloaded from Crowdin; `[voice.reuse_port]` is kept in the
+file but one socket serves; there is no proxy (BungeeCord/Velocity) support, update check, debug logging switch,
+vanish integration or `plasmovoice:` command aliases; target selectors in `/vmute` and `/vunmute` are `@a`, `@p`,
+`@r` and `@s` without arguments.
 
 ## Install
 
@@ -91,7 +105,8 @@ Other permissions: `pv.activation.proximity` (talk, everyone), `pv.allow_freecam
 ## Source layout
 
 - `mixins/plasmovoice/engine/` — the voice chat itself, a crate of its own: the protocol (`tcp.rs`, `udp.rs`, `wire.rs`),
-  encryption and ids (`crypto.rs`, `md5.rs`), the microphone filters (`dsp.rs`), Opus and the audio devices
+  encryption and ids (`crypto.rs`, `md5.rs`), the microphone filters (`dsp.rs`) and RNNoise (`rnnoise/`, nnnoiseless
+  0.5.2, BSD-3-Clause, its notice in `rnnoise/mod.rs` and `NOTICE`), Opus and the audio devices
   (`audio.rs`), the client (`client.rs`), the server (`server.rs`) with its config (`server_config.rs`), mutes
   (`mutes.rs`), commands (`server_commands.rs`) and texts (`server_lang.rs`, `lang/`). `cargo test` runs its tests.
 - `mixins/plasmovoice/glue.rs` — what joins it to the game: packets, keys, positions, the server's hooks and commands.

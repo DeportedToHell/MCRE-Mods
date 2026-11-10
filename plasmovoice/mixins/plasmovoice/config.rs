@@ -86,7 +86,8 @@ fn voice() -> Vec<(&'static str, V)> {
     vec![
         ("disabled", V::B(false)),
         ("microphone_disabled", V::B(false)),
-        ("activation_threshold", V::F(-30.0)),
+        // This port's default (the user's choice): Plasmo Voice's is -30 dB.
+        ("activation_threshold", V::F(-60.0)),
         ("input_device", V::S(String::new())),
         ("output_device", V::S(String::new())),
         ("disable_input_device", V::B(false)),
@@ -562,7 +563,7 @@ mod tests {
         assert_eq!(d.i("servers.a-b.distances.c-d"), 8);
         assert_eq!(d.hotkey("key.plasmovoice.general.mute_microphone").unwrap().keys, vec!["key.keyboard.n"]);
         assert_eq!(d.write(), text);
-        assert_eq!(d.f("voice.activation_threshold"), -30.0);
+        assert_eq!(d.f("voice.activation_threshold"), -60.0);
         // Clamped as `DoubleConfigEntry` does.
         let mut e = Config::default();
         e.set("voice.volume", V::F(5.0));

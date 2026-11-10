@@ -64,7 +64,27 @@ impl Default for ActivationSettings {
     }
 }
 
-/// The settings the engine reads (`VoiceClientConfig`), with Plasmo Voice's defaults.
+/// `OverlappingSourceTypes`: which of a player's two sources plays when they talk on both a
+/// proximity (player) source and a direct one (an addon's radio, a broadcast) at once.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Overlap {
+    MuteDirect,
+    MuteProximity,
+    Off,
+}
+
+impl Overlap {
+    pub fn parse(s: &str) -> Overlap {
+        match s {
+            "MUTE_DIRECT" => Overlap::MuteDirect,
+            "OFF" => Overlap::Off,
+            _ => Overlap::MuteProximity,
+        }
+    }
+}
+
+/// The settings the engine reads (`VoiceClientConfig`), with Plasmo Voice's defaults (but the
+/// activation threshold: -60 dB in this port, -30 dB in Plasmo Voice).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Settings {
     pub voice_disabled: bool,
@@ -73,7 +93,26 @@ pub struct Settings {
     pub input_device: String,
     pub output_device: String,
     pub microphone_volume: f64,
+    /// `voice.noise_suppression`: RNNoise on the microphone (`NoiseSuppressionFilter`).
+    pub noise_suppression: bool,
+    /// `voice.stereo_capture`: the microphone opened in stereo; activations that take stereo
+    /// get it, the rest the mix of both channels (`StereoToMonoFilter`).
+    pub stereo_capture: bool,
     pub volume: f64,
+    /// `voice.sound_occlusion`: blocks between a source and the player quieten it
+    /// (`SoundOcclusion`, the game measures it: `World::occlusion`).
+    pub sound_occlusion: bool,
+    /// `voice.directional_sources` and `advanced.directional_sources_angle`: players and
+    /// entities are quieter behind where they look, outside a cone of that angle.
+    pub directional_sources: bool,
+    pub directional_sources_angle: i32,
+    /// `advanced.stereo_sources_to_mono`: stereo sources are mixed down and placed in the world.
+    pub stereo_sources_to_mono: bool,
+    /// `advanced.source_types_overlap`.
+    pub source_types_overlap: Overlap,
+    /// `advanced.camera_sound_listener`: the ears are the camera's (third person included), if
+    /// the server allows it (`pv.allow_freecam`); else the player's.
+    pub camera_sound_listener: bool,
     pub compressor_limiter: bool,
     pub compressor_threshold: i32,
     pub limiter_threshold: i32,
@@ -103,11 +142,19 @@ impl Default for Settings {
         Settings {
             voice_disabled: false,
             microphone_disabled: false,
-            activation_threshold: -30.0,
+            activation_threshold: -60.0,
             input_device: String::new(),
             output_device: String::new(),
             microphone_volume: 1.0,
+            noise_suppression: false,
+            stereo_capture: false,
             volume: 1.0,
+            sound_occlusion: false,
+            directional_sources: false,
+            directional_sources_angle: 145,
+            stereo_sources_to_mono: false,
+            source_types_overlap: Overlap::MuteProximity,
+            camera_sound_listener: true,
             compressor_limiter: true,
             compressor_threshold: -10,
             limiter_threshold: -6,
@@ -130,12 +177,22 @@ impl Default for Settings {
 /// What the game knows this frame.
 #[derive(Clone, Debug, Default)]
 pub struct World {
-    /// The listener's ears (the camera) and where it looks, yaw in degrees (Minecraft's).
+    /// The player's eyes (`getListenerPosition`: what distances are measured from) and where
+    /// they look, yaw and pitch in degrees (Minecraft's).
     pub listener: [f64; 3],
     pub listener_yaw: f32,
-    /// Players' eye positions by UUID, and entities' by id.
+    pub listener_pitch: f32,
+    /// The camera this frame (position, yaw, pitch): the ears with `camera_sound_listener`.
+    pub camera: Option<([f64; 3], f32, f32)>,
+    /// Players' eye positions by UUID, and entities' by id, and where they look (unit vectors,
+    /// `Entity.getLookAngle`).
     pub players: HashMap<Uuid, [f64; 3]>,
     pub entities: HashMap<i32, [f64; 3]>,
+    pub player_looks: HashMap<Uuid, [f64; 3]>,
+    pub entity_looks: HashMap<i32, [f64; 3]>,
+    /// Each source's occlusion (0..0.98, `SoundOcclusion.getOccludedPercent` between it and the
+    /// player's eyes), by source id, measured by the game while sound occlusion is on.
+    pub occlusion: HashMap<Uuid, f64>,
     /// The push-to-talk keys held, by activation name.
     pub held: Vec<String>,
     /// A screen with text input is open (chat, a sign): push to talk doesn't count.
@@ -223,6 +280,21 @@ struct Source {
     distance: i16,
     state: i8,
     requested: bool,
+    /// `lastOcclusion`: the occlusion heard last (-1 before any), which moves toward the
+    /// measured one by 0.05 a frame.
+    last_occlusion: f64,
+    /// `activated`: audio plays since the last end; the first frame after one fades in.
+    playing: bool,
+}
+
+/// A sphere of the voice distance to draw (`DistanceVisualizer.render`): its radius, colour
+/// (RGB), centre (none: the player), and whether it is the one shown on joining.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Visualize {
+    pub radius: i32,
+    pub color: i32,
+    pub position: Option<[f64; 3]>,
+    pub on_join: bool,
 }
 
 #[derive(Default)]
@@ -246,6 +318,7 @@ struct Shared {
     played: u64,
     output_peak: (f32, Option<Instant>),
     speakers: Option<String>,
+    visualize: Vec<Visualize>,
 }
 
 // ---- the jitter buffer ------------------------------------------------------------------------
@@ -263,7 +336,8 @@ struct Jitter {
 }
 
 enum Frame {
-    Audio(Vec<u8>),
+    /// A packet, and whether the stream's end comes right after it (it fades out).
+    Audio(Vec<u8>, bool),
     Lost,
     End,
 }
@@ -306,7 +380,7 @@ impl Jitter {
         if let Some((data, _)) = self.queue.remove(&next) {
             self.last = next;
             self.plc_in_a_row = 0;
-            return Some(Frame::Audio(data));
+            return Some(Frame::Audio(data, self.end == Some(next + 1)));
         }
         if self.end.is_some_and(|e| next >= e) {
             self.reset();
@@ -434,6 +508,18 @@ impl Client {
                 s.tcp_out.push(lang);
                 let distances = activation_distances(&s);
                 s.tcp_out.push(Packet::PlayerActivationDistances { distances }.encode());
+                // `DistanceVisualizeOnJoinListener`: the proximity activation registered before
+                // the UDP connection answered (a join, not a /vreload). The game puts the
+                // player's distance on it and draws it if the settings say so.
+                if s.server.last_ping.is_none()
+                    && let Some(a) = s.server.activations.iter().find(|a| a.name == crate::tcp::PROXIMITY)
+                {
+                    let radius = distance_of(&s, a);
+                    s.visualize.push(Visualize { radius, color: 0x00a000, position: None, on_join: true });
+                }
+            }
+            Packet::DistanceVisualize { radius, color, position } => {
+                self.lock().visualize.push(Visualize { radius, color, position: position.map(|p| [p.x, p.y, p.z]), on_join: false });
             }
             Packet::ConfigPlayerInfo { permissions } => self.lock().server.permissions = permissions,
             Packet::Language { entries, .. } => self.lock().language = entries,
@@ -448,9 +534,11 @@ impl Client {
             Packet::PlayerDisconnect { player } => self.lock().players.retain(|p| p.id != player),
             Packet::SourceInfo(info) => {
                 let mut s = self.lock();
-                let delay = s.settings.jitter_packet_delay;
-                let _ = delay;
                 let entry = s.sources.entry(info.id).or_insert_with(new_source);
+                // A source that turned stereo or mono gets a new decoder (`update`).
+                if entry.info.as_ref().is_some_and(|i| i.stereo != info.stereo) {
+                    entry.decoder = None;
+                }
                 entry.state = info.state;
                 entry.requested = false;
                 entry.info = Some(info);
@@ -555,6 +643,12 @@ impl Client {
         }
     }
 
+    /// The distance spheres to draw since the last call (`DistanceVisualizePacket`, and the one
+    /// of joining).
+    pub fn take_visualize(&mut self) -> Vec<Visualize> {
+        std::mem::take(&mut self.lock().visualize)
+    }
+
     /// The server's activations and source lines (for the settings).
     pub fn activations(&self) -> Vec<Activation> {
         self.lock().server.activations.clone()
@@ -630,6 +724,8 @@ fn new_source() -> Source {
         distance: 0,
         state: 0,
         requested: false,
+        last_occlusion: -1.0,
+        playing: false,
     }
 }
 
@@ -681,6 +777,9 @@ fn udp_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket, host: (
             }
             udp::Packet::SourceAudio { sequence, data, source, state, distance } => {
                 s.server.last_ping.get_or_insert_with(Instant::now);
+                // A muted line or player: the packet is dropped (`process` returns), so the
+                // source isn't heard nor shown talking.
+                let muted = s.sources.get(&source).and_then(|x| x.info.as_ref()).is_some_and(|info| source_muted(&s.settings, &s.server.lines, info));
                 let mut request = false;
                 let src = s.sources.entry(source).or_insert_with(new_source);
                 if src.info.is_none() || src.state != state {
@@ -693,8 +792,10 @@ fn udp_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket, host: (
                     }
                 }
                 src.distance = distance;
-                src.last_audio = Instant::now();
-                src.jitter.offer(sequence, data, Instant::now());
+                if !muted {
+                    src.last_audio = Instant::now();
+                    src.jitter.offer(sequence, data, Instant::now());
+                }
                 if request {
                     s.tcp_out.push(Packet::SourceInfoRequest { source }.encode());
                 }
@@ -702,6 +803,18 @@ fn udp_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket, host: (
             _ => {}
         }
     }
+}
+
+/// `lineMute` (`BaseClientAudioSource`) and the player's mute (`ClientPlayerSource`, and
+/// `ClientDirectSource` for its sender).
+fn source_muted(settings: &Settings, lines: &[SourceLine], info: &SourceInfo) -> bool {
+    let line_muted = lines.iter().find(|l| l.id() == info.line_id).is_some_and(|l| settings.muted_lines.contains(&l.name));
+    let player = match &info.kind {
+        SourceKind::Player(p) => Some(p.id),
+        SourceKind::Direct { sender: Some(g), .. } => Some(g.id),
+        _ => None,
+    };
+    line_muted || player.is_some_and(|p| settings.muted_players.contains(&p))
 }
 
 // ---- the microphone -------------------------------------------------------------------------
@@ -789,19 +902,20 @@ impl ActState {
 }
 
 /// The microphone the settings ask for, opened again when they change (`VoiceDeviceManager
-/// .reloadInputDevice`): none while `disable_input_device` is on.
+/// .reloadInputDevice`, also on Stereo Capture): none while `disable_input_device` is on.
 struct Microphone {
     capture: Option<Capture>,
-    /// The device asked for when it was opened ("" for the system's default).
-    wanted: Option<String>,
+    /// The device asked for when it was opened ("" for the system's default), and in stereo.
+    wanted: Option<(String, bool)>,
     failed_at: Option<Instant>,
 }
 
 impl Microphone {
-    fn next(&mut self, shared: &Mutex<Shared>, rate: i32) -> Option<Vec<i16>> {
+    /// The next frame and its channels (1, or 2 with stereo capture).
+    fn next(&mut self, shared: &Mutex<Shared>, rate: i32) -> Option<(Vec<i16>, usize)> {
         let (wanted, disabled) = {
             let s = lock(shared);
-            (s.settings.input_device.clone(), s.settings.disable_input_device)
+            ((s.settings.input_device.clone(), s.settings.stereo_capture), s.settings.disable_input_device)
         };
         if disabled {
             if self.capture.take().is_some() || self.wanted.is_some() {
@@ -813,11 +927,12 @@ impl Microphone {
             std::thread::sleep(Duration::from_millis(100));
             return None;
         }
-        if self.wanted.as_deref() != Some(wanted.as_str()) {
+        if self.wanted.as_ref() != Some(&wanted) {
             self.capture = None;
             self.failed_at = None;
             self.wanted = Some(wanted.clone());
         }
+        let (device, stereo) = wanted;
         if self.capture.is_none() {
             // A device that failed is tried again a second later.
             if self.failed_at.is_some_and(|t| t.elapsed() < Duration::from_secs(1)) {
@@ -825,7 +940,7 @@ impl Microphone {
                 return None;
             }
             let frame_size = (rate / 1000 * 20) as usize;
-            match Capture::open(if wanted.is_empty() { None } else { Some(&wanted) }, rate as u32, frame_size) {
+            match Capture::open(if device.is_empty() { None } else { Some(&device) }, rate as u32, frame_size, stereo) {
                 Ok(c) => {
                     let mut s = lock(shared);
                     s.input_device = Some(c.device.clone());
@@ -843,7 +958,7 @@ impl Microphone {
         }
         let cap = self.capture.as_ref()?;
         match cap.frames.recv_timeout(Duration::from_millis(200)) {
-            Ok(frame) => Some(frame),
+            Ok(frame) => Some((frame, cap.channels)),
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => None,
             Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
                 self.capture = None;
@@ -854,13 +969,49 @@ impl Microphone {
     }
 }
 
-/// The microphone test's source (`ClientLoopbackSource`, relative): the processed frame on both
-/// ears at the voice volume, cubed when the volume slider is exponential.
+/// The microphone test's source (`ClientLoopbackSource`, relative): the processed frame at the
+/// voice volume (cubed when the volume slider is exponential, at most 1: OpenAL's default
+/// `AL_MAX_GAIN`), stereo when stereo capture is on and stereo sources aren't made mono.
 const LOOPBACK: u128 = u128::MAX;
 
+/// The filters of the microphone's frame (`InputDevice.processFilters`), run once each for its
+/// mono and stereo forms as something asks for them (`EncodedCapture.getMono`, `getStereo`):
+/// `StereoToMonoFilter` (mono only), `GainFilter`, `NoiseSuppressionFilter`.
+struct Filters {
+    gain: dsp::Gain,
+    noise: Option<dsp::NoiseSuppression>,
+}
+
+impl Filters {
+    fn run(&mut self, raw: &[i16], channels: usize, stereo: bool, settings: &Settings, rate: i32) -> Vec<i16> {
+        let (mut samples, channels) = if channels == 2 && !stereo { (dsp::stereo_to_mono(raw), 1) } else { (raw.to_vec(), channels) };
+        self.gain.process(&mut samples, settings.microphone_volume as f32);
+        if let Some(ns) = self.noise.as_mut() {
+            samples = ns.process(&samples, channels, rate);
+        }
+        samples
+    }
+}
+
+/// `EncodedCapture`: the frame processed at most once in each form.
+struct Processed<'a> {
+    raw: &'a [i16],
+    channels: usize,
+    mono: Option<Vec<i16>>,
+    stereo: Option<Vec<i16>>,
+}
+
+impl Processed<'_> {
+    fn get(&mut self, stereo: bool, filters: &mut Filters, settings: &Settings, rate: i32) -> Vec<i16> {
+        let (raw, channels) = (self.raw, self.channels);
+        let slot = if stereo { &mut self.stereo } else { &mut self.mono };
+        slot.get_or_insert_with(|| filters.run(raw, channels, stereo, settings, rate)).clone()
+    }
+}
+
 /// `VoiceAudioCapture.run`: frames from the microphone through the activations, the filters
-/// (`StereoToMonoFilter`, `GainFilter`; the compressor and limiter are commented out in Plasmo
-/// Voice), Opus and AES, to the server.
+/// (`StereoToMonoFilter`, `GainFilter`, `NoiseSuppressionFilter`; the compressor and limiter
+/// are commented out in Plasmo Voice), Opus and AES, to the server.
 fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
     // Wait for the server's Config (sample rate, codec, key).
     let mut waited = 0;
@@ -879,15 +1030,17 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
         let s = lock(shared);
         (s.server.codec_mode.clone(), s.server.bitrate, s.server.mtu)
     };
-    let Some(mut encoder) = Encoder::new(rate, false, &mode, bitrate, mtu.max(64) as usize) else {
+    let new_encoder = |stereo: bool| Encoder::new(rate, stereo, &mode, bitrate, mtu.max(64) as usize);
+    let Some(mut mono_encoder) = new_encoder(false) else {
         lock(shared).error = Some("opus encoder".into());
         return;
     };
+    let mut stereo_encoder: Option<Encoder> = None;
     let mut mic = Microphone { capture: None, wanted: None, failed_at: None };
-    let mut gain = dsp::Gain::default();
+    let mut filters = Filters { gain: dsp::Gain::default(), noise: None };
     let mut states: HashMap<Uuid, ActState> = HashMap::new();
     while !stop.load(Ordering::Relaxed) {
-        let Some(raw) = mic.next(shared, rate) else { continue };
+        let Some((raw, channels)) = mic.next(shared, rate) else { continue };
         let mut s = lock(shared);
         let settings = s.settings.clone();
         let key = s.server.key.clone();
@@ -900,10 +1053,18 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
         };
         let held = s.world.held.clone();
         let typing = s.world.typing;
-        // The processed frame (`EncodedCapture.getMono`): what the meter and the test hear.
-        let mut processed = raw.clone();
-        gain.process(&mut processed, settings.microphone_volume as f32);
-        s.level = dsp::highest_level(&processed);
+        // The noise suppression's RNNoise states live while it is on (`toggle`).
+        if settings.noise_suppression {
+            filters.noise.get_or_insert_with(dsp::NoiseSuppression::default);
+        } else {
+            filters.noise = None;
+        }
+        let mut processed = Processed { raw: &raw, channels, mono: None, stereo: None };
+        // The meter and the microphone test (`MicrophoneTestController.onAudioCaptureProcessed`):
+        // the processed frame, stereo when stereo capture is on and stereo sources aren't mono.
+        let test_stereo = channels == 2 && !settings.stereo_sources_to_mono;
+        let heard = processed.get(test_stereo, &mut filters, &settings, rate);
+        s.level = dsp::highest_level(&heard);
         s.frames += 1;
         if settings.microphone_test
             && let Some(mix) = s.mix.clone()
@@ -912,21 +1073,29 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
             if settings.exponential_volume_slider {
                 volume = volume.powi(3);
             }
-            let stereo: Vec<f32> = processed.iter().flat_map(|&v| {
-                let f = f32::from(v) / 32768.0 * volume;
-                [f, f]
-            }).collect();
+            let volume = volume.min(1.0);
+            let stereo: Vec<f32> = if test_stereo {
+                heard.iter().map(|&v| f32::from(v) / 32768.0 * volume).collect()
+            } else {
+                heard
+                    .iter()
+                    .flat_map(|&v| {
+                        let f = f32::from(v) / 32768.0 * volume;
+                        [f, f]
+                    })
+                    .collect()
+            };
             if let Ok(mut m) = mix.lock() {
                 m.push(LOOPBACK, &stereo);
             }
         }
         drop(s);
         let Some(parent) = activations.iter().find(|a| a.name == crate::tcp::PROXIMITY).cloned() else { continue };
-        let send = |activation: &Activation, state: &mut ActState, encoded: Option<&[u8]>, end: bool, s: &mut Shared| {
+        let send = |activation: &Activation, state: &mut ActState, encoded: Option<&[u8]>, stereo: bool, end: bool, s: &mut Shared| {
             let distance = distance_of(s, activation) as i16;
             if let Some(data) = encoded {
                 state.sequence += 1;
-                let p = udp::Packet::PlayerAudio { sequence: state.sequence, data: data.to_vec(), activation: activation.id(), distance, stereo: false };
+                let p = udp::Packet::PlayerAudio { sequence: state.sequence, data: data.to_vec(), activation: activation.id(), distance, stereo };
                 let _ = sock.send(&p.encode(secret, now_millis()));
             }
             if end {
@@ -945,22 +1114,38 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
                 if st.active {
                     st.active = false;
                     st.last = None;
-                    send(a, st, None, true, &mut s);
+                    send(a, st, None, false, true, &mut s);
                 }
             }
             s.talking.clear();
-            encoder = Encoder::new(rate, false, &mode, bitrate, mtu.max(64) as usize).unwrap_or(encoder);
+            mono_encoder = new_encoder(false).unwrap_or(mono_encoder);
+            stereo_encoder = None;
             continue;
         }
-        // The frame, encoded once for every activation that sends it.
-        let mut encoded: Option<Option<Vec<u8>>> = None;
-        let mut encode = |frame: &[i16]| -> Option<Vec<u8>> {
-            let opus = encoder.encode(frame)?;
-            Some(match &key {
+        // The frame, encoded once in each form for every activation that sends it
+        // (`processActivation`: stereo when stereo capture is on and the activation takes it).
+        let mut encoded: [Option<Option<Vec<u8>>>; 2] = [None, None];
+        let mut encode = |stereo: bool, processed: &mut Processed<'_>| -> Option<Vec<u8>> {
+            if let Some(e) = &encoded[usize::from(stereo)] {
+                return e.clone();
+            }
+            let frame = processed.get(stereo, &mut filters, &settings, rate);
+            let encoder = if stereo {
+                if stereo_encoder.is_none() {
+                    stereo_encoder = new_encoder(true);
+                }
+                stereo_encoder.as_mut()
+            } else {
+                Some(&mut mono_encoder)
+            };
+            let out = encoder.and_then(|e| e.encode(&frame)).map(|opus| match &key {
                 Some(k) => k.encrypt(&opus),
                 None => opus,
-            })
+            });
+            encoded[usize::from(stereo)] = Some(out.clone());
+            out
         };
+        let is_stereo = |a: &Activation| channels == 2 && a.stereo_supported;
         let config_of = |a: &Activation| settings.activations.get(&a.name).cloned().unwrap_or_default();
         let result_of = |a: &Activation, st: &mut ActState, parent_result: Option<Result>| -> Result {
             let c = config_of(a);
@@ -988,8 +1173,9 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
             }
             let r = result_of(a, st, Some(parent_result));
             if r != Result::NotActivated {
-                let data = encoded.get_or_insert_with(|| encode(&processed)).clone();
-                send(a, st, data.as_deref(), r == Result::End, &mut s);
+                let stereo = is_stereo(a);
+                let data = encode(stereo, &mut processed);
+                send(a, st, data.as_deref(), stereo, r == Result::End, &mut s);
                 if r == Result::Activated {
                     s.talking.push(a.id());
                 }
@@ -1006,15 +1192,16 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
         let st = states.entry(parent.id()).or_default();
         if !reached {
             if parent_result != Result::NotActivated {
-                let data = encoded.get_or_insert_with(|| encode(&processed)).clone();
-                send(&parent, st, data.as_deref(), parent_result == Result::End, &mut s);
+                let stereo = is_stereo(&parent);
+                let data = encode(stereo, &mut processed);
+                send(&parent, st, data.as_deref(), stereo, parent_result == Result::End, &mut s);
                 if parent_result == Result::Activated {
                     s.talking.push(parent.id());
                 }
             }
         } else if st.active {
             st.active = false;
-            send(&parent, st, None, true, &mut s);
+            send(&parent, st, None, false, true, &mut s);
         }
     }
     let mut s = lock(shared);
@@ -1080,35 +1267,110 @@ fn playback_loop(shared: &Mutex<Shared>, stop: &AtomicBool) {
         let settings = s.settings.clone();
         let lines = s.server.lines.clone();
         let sample_rate = s.server.sample_rate;
+        let allow_freecam = s.server.permissions.iter().find(|(k, _)| k == "pv.allow_freecam").is_none_or(|(_, v)| *v);
+        let ears = Ears::of(&world, &settings, allow_freecam);
+        // `isActivated` of each kind of source, for `source_types_overlap` (`shouldWrite`).
+        let activated = |src: &Source| src.last_audio.elapsed() < Duration::from_millis(500);
+        let talking_players: Vec<Uuid> = s
+            .sources
+            .values()
+            .filter(|x| activated(x))
+            .filter_map(|x| match x.info.as_ref().map(|i| &i.kind) {
+                Some(SourceKind::Player(p)) => Some(p.id),
+                _ => None,
+            })
+            .collect();
+        let talking_directly: Vec<Uuid> = s
+            .sources
+            .values()
+            .filter(|x| activated(x))
+            .filter_map(|x| match x.info.as_ref().map(|i| &i.kind) {
+                Some(SourceKind::Direct { sender: Some(g), .. }) => Some(g.id),
+                _ => None,
+            })
+            .collect();
+        let frame_size = (sample_rate / 1000 * 20) as usize;
         let mut frames: Vec<(u128, Vec<f32>)> = Vec::new();
         for (id, src) in s.sources.iter_mut() {
             let Some(info) = src.info.clone() else { continue };
             while let Some(frame) = src.jitter.poll(delay, now) {
-                let decoder = src.decoder.get_or_insert_with(|| Decoder::new(sample_rate, false).expect("opus decoder"));
-                let pcm = match frame {
-                    Frame::Audio(data) => {
+                let decoder = src.decoder.get_or_insert_with(|| Decoder::new(sample_rate, info.stereo).expect("opus decoder"));
+                let (pcm, last) = match frame {
+                    Frame::Audio(data, last) => {
                         let plain = match &key {
                             Some(k) => k.decrypt(&data),
                             None => Some(data),
                         };
-                        decoder.decode(plain.as_deref())
+                        (decoder.decode(plain.as_deref()), last)
                     }
-                    Frame::Lost => decoder.decode(None),
+                    // `processPlc`: Opus conceals a lost mono packet; a stereo one is silence.
+                    Frame::Lost if decoder.channels() == 2 => (vec![0.0; frame_size * 2], false),
+                    Frame::Lost => (decoder.decode(None), false),
                     // What is queued still plays; the next talk starts a fresh decoder.
                     Frame::End => {
                         src.decoder = None;
+                        src.playing = false;
                         break;
                     }
                 };
-                // Voice chat off (`sourceManager.clear`) or the source's line muted: nothing plays.
-                let line_muted = lines.iter().find(|l| l.id() == info.line_id).is_some_and(|l| settings.muted_lines.contains(&l.name));
-                if settings.voice_disabled || line_muted {
+                // Voice chat off (`sourceManager.clear`): nothing plays.
+                if settings.voice_disabled {
                     continue;
                 }
-                let (l, r) = gains(&info, &world, &settings, &lines, f64::from(src.distance));
-                let mono = if decoder.channels() == 2 { pcm.chunks(2).map(|c| (c[0] + c[1]) / 2.0).collect() } else { pcm };
-                let stereo: Vec<f32> = mono.iter().flat_map(|&v| [v * l, v * r]).collect();
-                frames.push((id.0, stereo));
+                // `shouldWrite`: the source still shows talking, but isn't heard over the other
+                // kind of the same player's.
+                let silenced = match (&info.kind, settings.source_types_overlap) {
+                    (SourceKind::Player(p), Overlap::MuteProximity) => talking_directly.contains(&p.id),
+                    (SourceKind::Direct { sender: Some(g), .. }, Overlap::MuteDirect) => talking_players.contains(&g.id),
+                    _ => false,
+                };
+                if silenced {
+                    continue;
+                }
+                // `calculateOcclusion`, moved toward by 0.05 a frame once heard (`lastOcclusion`).
+                let occlusion = (settings.sound_occlusion && occludable(&info)).then(|| {
+                    let measured = world.occlusion.get(id).copied().unwrap_or(0.0);
+                    if src.last_occlusion >= 0.0 {
+                        src.last_occlusion = if measured > src.last_occlusion {
+                            (src.last_occlusion + 0.05).max(0.0)
+                        } else {
+                            (src.last_occlusion - 0.05).max(measured)
+                        };
+                        src.last_occlusion
+                    } else {
+                        src.last_occlusion = measured;
+                        measured
+                    }
+                });
+                // A stereo source plays as it is (OpenAL doesn't place stereo buffers), unless
+                // `stereo_sources_to_mono` mixes it down (`convertToMonoShorts`) to place it.
+                let stereo_out = decoder.channels() == 2 && !settings.stereo_sources_to_mono;
+                let (l, r) = gains(&info, &world, &ears, &settings, &lines, f64::from(src.distance), occlusion, stereo_out);
+                let mut out: Vec<f32> = if stereo_out {
+                    pcm.chunks(2).flat_map(|c| [c[0] * l, c.get(1).copied().unwrap_or(c[0]) * r]).collect()
+                } else {
+                    let mono: Vec<f32> = if decoder.channels() == 2 {
+                        pcm.chunks(2).map(|c| ((c[0] * 32768.0) as i32 + (c.get(1).copied().unwrap_or(c[0]) * 32768.0) as i32) as f32 / 2.0 / 32768.0).collect()
+                    } else {
+                        pcm
+                    };
+                    mono.iter().flat_map(|&v| [v * l, v * r]).collect()
+                };
+                // `write`: the first frame of a talk fades in, the last before its end out.
+                let n = out.len() / 2;
+                if !src.playing {
+                    for (i, p) in out.chunks_mut(2).enumerate() {
+                        let k = (i * 2) as f32 / (n * 2) as f32;
+                        p.iter_mut().for_each(|v| *v *= k.min(1.0));
+                    }
+                } else if last {
+                    for (i, p) in out.chunks_mut(2).enumerate() {
+                        let k = ((n * 2 - i * 2) as f32 / (n * 2) as f32).max(0.0);
+                        p.iter_mut().for_each(|v| *v *= k);
+                    }
+                }
+                src.playing = true;
+                frames.push((id.0, out));
             }
         }
         // Forget sources silent for a while (`closeTimeoutMs` 500).
@@ -1137,17 +1399,88 @@ fn playback_loop(shared: &Mutex<Shared>, stop: &AtomicBool) {
     s.speakers = None;
 }
 
-/// `updateSource`: the volume (master × source × line × distance, cubed as Plasmo does) and the
-/// left/right gains from where the source is around the listener.
-fn gains(info: &SourceInfo, world: &World, settings: &Settings, lines: &[SourceLine], max_distance: f64) -> (f32, f32) {
-    let pos = match &info.kind {
-        SourceKind::Player(p) => world.players.get(&p.id).copied(),
-        SourceKind::Entity(e) => world.entities.get(e).copied(),
-        SourceKind::Static { pos, .. } => Some([pos.x, pos.y, pos.z]),
-        SourceKind::Direct { .. } => None,
-    };
+/// Where the ears are and which way is right: the camera's with `camera_sound_listener` (and the
+/// server's `pv.allow_freecam`), else the player's eyes and look (`AlListener.update`).
+#[derive(Clone, Copy, Debug)]
+struct Ears {
+    position: [f64; 3],
+    /// The listener's right, from its yaw (Minecraft's: 0 looks to +Z, 90 to -X).
+    right: [f64; 3],
+}
+
+impl Ears {
+    fn of(world: &World, settings: &Settings, allow_freecam: bool) -> Ears {
+        let (position, yaw) = match world.camera {
+            Some((p, yaw, _)) if settings.camera_sound_listener && allow_freecam => (p, yaw),
+            _ => (world.listener, world.listener_yaw),
+        };
+        let yaw = f64::from(yaw).to_radians();
+        Ears { position, right: [-yaw.cos(), 0.0, -yaw.sin()] }
+    }
+}
+
+/// `shouldCalculateOcclusion`: every source in the world (a direct one only with a position).
+fn occludable(info: &SourceInfo) -> bool {
+    match &info.kind {
+        SourceKind::Direct { relative, .. } => relative.is_some(),
+        _ => true,
+    }
+}
+
+/// Where a source is (`getPosition`, none for a direct source without a position) and where it
+/// looks (`getLookAngle`, zero when unknown).
+pub fn source_position(kind: &SourceKind, world: &World) -> (Option<[f64; 3]>, [f64; 3]) {
+    match kind {
+        SourceKind::Player(p) => (
+            Some(world.players.get(&p.id).copied().unwrap_or_default()),
+            world.player_looks.get(&p.id).copied().unwrap_or_default(),
+        ),
+        SourceKind::Entity(e) => (Some(world.entities.get(e).copied().unwrap_or_default()), world.entity_looks.get(e).copied().unwrap_or_default()),
+        SourceKind::Static { pos, look } => (Some([pos.x, pos.y, pos.z]), [look.x, look.y, look.z]),
+        SourceKind::Direct { relative: Some(r), camera_relative, .. } => {
+            // A camera-relative position is the vector itself (`getPosition`); otherwise it is
+            // from the player's eyes.
+            if *camera_relative {
+                (Some([r.x, r.y, r.z]), [0.0; 3])
+            } else {
+                let l = world.listener;
+                (Some([l[0] + r.x, l[1] + r.y, l[2] + r.z]), [0.0; 3])
+            }
+        }
+        SourceKind::Direct { .. } => (None, [0.0; 3]),
+    }
+}
+
+fn sub(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+
+fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+fn length(a: [f64; 3]) -> f64 {
+    dot(a, a).sqrt()
+}
+
+/// `Vec3.normalize`: zero for a vector shorter than 1e-4.
+fn normalize(a: [f64; 3]) -> [f64; 3] {
+    let l = length(a);
+    if l < 1.0e-4 { [0.0; 3] } else { [a[0] / l, a[1] / l, a[2] / l] }
+}
+
+/// `updateSource`: the source's left and right gains. The volume is the voice volume × the
+/// player's (or source's) × the line's, × (1 - occlusion), cubed under 1 with the exponential
+/// volume slider, × the directional gain, × the distance gain (`1 - d / max`, cubed with the
+/// exponential distance gain), at most 4 (`AL_MAX_GAIN`). A mono source is panned from where it
+/// is around the ears (equal power: OpenAL's positioning, without HRTF); a stereo one
+/// (`stereo`), a camera-relative one, the player's own, or any with Stereo Positioning off,
+/// plays on both sides alike.
+#[allow(clippy::too_many_arguments)]
+fn gains(info: &SourceInfo, world: &World, ears: &Ears, settings: &Settings, lines: &[SourceLine], max_distance: f64, occlusion: Option<f64>, stereo: bool) -> (f32, f32) {
     let (player_volume, muted) = match &info.kind {
         SourceKind::Player(p) => (settings.player_volumes.get(&p.id).copied().unwrap_or(1.0), settings.muted_players.contains(&p.id)),
+        SourceKind::Direct { sender: Some(g), .. } => (settings.player_volumes.get(&g.id).copied().unwrap_or(1.0), settings.muted_players.contains(&g.id)),
         _ => (1.0, false),
     };
     if muted {
@@ -1156,32 +1489,55 @@ fn gains(info: &SourceInfo, world: &World, settings: &Settings, lines: &[SourceL
     let line = lines.iter().find(|l| l.id() == info.line_id);
     let line_volume = line.map_or(1.0, |l| settings.line_volumes.get(&l.name).copied().unwrap_or(l.default_volume));
     let mut volume = settings.volume * player_volume * line_volume;
+    if let Some(o) = occlusion {
+        volume *= 1.0 - o;
+    }
     if settings.exponential_volume_slider && volume < 1.0 {
         volume = volume.powi(3);
     }
+    let (pos, look) = source_position(&info.kind, world);
     let Some(pos) = pos else {
-        // Direct sources play in the head, at full volume.
-        let v = volume.max(0.0) as f32;
+        // A direct source without a position plays in the head.
+        let v = volume.clamp(0.0, 4.0) as f32;
         return (v, v);
     };
-    let d = ((pos[0] - world.listener[0]).powi(2) + (pos[1] - world.listener[1]).powi(2) + (pos[2] - world.listener[2]).powi(2)).sqrt();
-    if max_distance > 0.0 {
+    let camera_relative = matches!(info.kind, SourceKind::Direct { camera_relative: true, .. });
+    // `shouldCalculateDirectionalGain`: a static source only with an angle of its own, a direct
+    // one never (its look isn't sent), the others with Directional Sources on or an angle.
+    let directional = match &info.kind {
+        SourceKind::Static { .. } => info.angle > 0,
+        SourceKind::Direct { .. } => false,
+        _ => settings.directional_sources || info.angle > 0,
+    };
+    if directional {
+        let to_listener = normalize(sub(world.listener, pos));
+        let angle = dot(to_listener, look).clamp(-1.0, 1.0).acos().to_degrees();
+        let inner = f64::from(if info.angle > 0 { info.angle / 2 } else { settings.directional_sources_angle / 2 });
+        if angle > inner {
+            let mut g = 1.0 - (angle - inner) / (180.0 - inner);
+            if settings.exponential_distance_gain {
+                g = g.powi(3);
+            }
+            volume *= g;
+        }
+    }
+    // `calculateDistanceGain(min(d, max), max)`, 1 for a camera-relative direct source (and for
+    // no distance, where Plasmo Voice's gain isn't a number and OpenAL keeps the last one).
+    let d = length(sub(pos, world.listener));
+    if max_distance > 0.0 && !camera_relative {
         let mut g = 1.0 - d.min(max_distance) / max_distance;
         if settings.exponential_distance_gain {
             g = g.powi(3);
         }
         volume *= g;
     }
-    let v = volume.max(0.0) as f32;
-    if !settings.panning || d < 0.01 {
+    let v = volume.clamp(0.0, 4.0) as f32;
+    let own = matches!(&info.kind, SourceKind::Player(p) if world.me == Some(p.id));
+    let to = sub(pos, ears.position);
+    if stereo || camera_relative || own || !settings.panning || length(to) < 0.01 {
         return (v, v);
     }
-    // Minecraft's yaw: 0 looks to +Z, 90 to -X. The listener's right is (-cos, 0, -sin) of yaw.
-    let yaw = f64::from(world.listener_yaw).to_radians();
-    let (dx, dz) = (pos[0] - world.listener[0], pos[2] - world.listener[2]);
-    let right = (-yaw.cos(), -yaw.sin());
-    let horizontal = (dx * dx + dz * dz).sqrt().max(1e-6);
-    let pan = ((dx * right.0 + dz * right.1) / horizontal).clamp(-1.0, 1.0) as f32;
+    let pan = (dot(normalize(to), ears.right)).clamp(-1.0, 1.0) as f32;
     // Equal-power panning.
     let angle = (pan + 1.0) * std::f32::consts::FRAC_PI_4;
     (v * angle.cos() * std::f32::consts::SQRT_2, v * angle.sin() * std::f32::consts::SQRT_2)
@@ -1199,11 +1555,11 @@ mod tests {
         j.offer(3, vec![3], t0);
         assert!(j.poll(40, t0).is_none(), "waits for the delay");
         let t = t0 + Duration::from_millis(41);
-        assert!(matches!(j.poll(40, t), Some(Frame::Audio(d)) if d == vec![1]));
+        assert!(matches!(j.poll(40, t), Some(Frame::Audio(d, false)) if d == vec![1]));
         let t = t0 + Duration::from_millis(61);
         assert!(matches!(j.poll(40, t), Some(Frame::Lost)));
         let t = t0 + Duration::from_millis(81);
-        assert!(matches!(j.poll(40, t), Some(Frame::Audio(d)) if d == vec![3]));
+        assert!(matches!(j.poll(40, t), Some(Frame::Audio(d, false)) if d == vec![3]));
     }
 
     #[test]
@@ -1244,25 +1600,80 @@ mod tests {
         let mut world = World::default();
         world.players.insert(Uuid(7), [-8.0, 0.0, 0.0]);
         let settings = Settings::default();
+        let ears = |w: &World, s: &Settings| Ears::of(w, s, true);
+        let g = |w: &World, s: &Settings| gains(&info, w, &ears(w, s), s, &[], 16.0, None, false);
         // Looking to +Z (yaw 0), a player at -X is on the right; half the distance: (1-0.5)^3.
-        let (l, r) = gains(&info, &world, &settings, &[], 16.0);
+        let (l, r) = g(&world, &settings);
         assert!(r > l);
         assert!(((l * l + r * r).sqrt() - 0.125 * std::f32::consts::SQRT_2).abs() < 1e-4);
         world.players.insert(Uuid(7), [0.0, 0.0, 20.0]);
-        assert_eq!(gains(&info, &world, &settings, &[], 16.0), (0.0, 0.0));
+        assert_eq!(g(&world, &settings), (0.0, 0.0));
         // The settings' volume at 200% doubles the mix (the cube only applies under 100%), at
         // 50% it is cubed, and a player's own volume multiplies it.
         world.players.insert(Uuid(7), [-8.0, 0.0, 0.0]);
         let loud = Settings { volume: 2.0, ..Settings::default() };
-        let (l2, r2) = gains(&info, &world, &loud, &[], 16.0);
+        let (l2, r2) = g(&world, &loud);
         assert!((l2 - 2.0 * l).abs() < 1e-5 && (r2 - 2.0 * r).abs() < 1e-5);
         let quiet = Settings { volume: 0.5, ..Settings::default() };
-        let (_, rq) = gains(&info, &world, &quiet, &[], 16.0);
+        let (_, rq) = g(&world, &quiet);
         assert!((rq - 0.125 * r).abs() < 1e-5);
         let mut player = Settings::default();
         player.player_volumes.insert(Uuid(7), 2.0);
-        assert!((gains(&info, &world, &player, &[], 16.0).1 - 2.0 * r).abs() < 1e-5);
+        assert!((g(&world, &player).1 - 2.0 * r).abs() < 1e-5);
         player.muted_players.push(Uuid(7));
-        assert_eq!(gains(&info, &world, &player, &[], 16.0), (0.0, 0.0));
+        assert_eq!(g(&world, &player), (0.0, 0.0));
+        // Stereo Positioning off: both sides alike.
+        let flat = Settings { panning: false, ..Settings::default() };
+        let (fl, fr) = g(&world, &flat);
+        assert!((fl - fr).abs() < 1e-6 && (fl - 0.125).abs() < 1e-4);
+        // The camera's ears (third person behind, turned around): the same player is now on
+        // the left; with the setting off, the player's own ears again.
+        world.camera = Some(([0.0, 0.0, 4.0], 180.0, 0.0));
+        let (cl, cr) = g(&world, &settings);
+        assert!(cl > cr);
+        let own_ears = Settings { camera_sound_listener: false, ..Settings::default() };
+        let (ol, or) = g(&world, &own_ears);
+        assert!(or > ol);
+        world.camera = None;
+        // Occlusion: half occluded is half the volume before the cube.
+        let (_, occluded) = gains(&info, &world, &ears(&world, &settings), &settings, &[], 16.0, Some(0.5), false);
+        assert!((occluded - 0.125 * r).abs() < 1e-5);
+    }
+
+    #[test]
+    fn directional_sources() {
+        let mut info = SourceInfo {
+            addon_id: "pv".into(),
+            id: Uuid(1),
+            name: None,
+            state: 0,
+            decoder: None,
+            stereo: false,
+            line_id: SourceLine::id_of("proximity"),
+            icon_visible: true,
+            angle: 0,
+            kind: SourceKind::Player(PlayerInfo { id: Uuid(7), nick: "a".into(), muted: false, voice_disabled: false, microphone_muted: false }),
+        };
+        let mut world = World::default();
+        // The talker 8 blocks to +Z, looking away from the listener (to +Z).
+        world.players.insert(Uuid(7), [0.0, 0.0, 8.0]);
+        world.player_looks.insert(Uuid(7), [0.0, 0.0, 1.0]);
+        let off = Settings::default();
+        let on = Settings { directional_sources: true, ..Settings::default() };
+        let v = |info: &SourceInfo, s: &Settings, w: &World| gains(info, w, &Ears::of(w, s, true), s, &[], 16.0, None, false).0;
+        let base = v(&info, &off, &world);
+        // Behind: 180 degrees, past the 145 degree cone, the angle gain is 0.
+        assert!(v(&info, &on, &world) < 1e-6);
+        // Facing the listener: inside the cone, no change.
+        world.player_looks.insert(Uuid(7), [0.0, 0.0, -1.0]);
+        assert!((v(&info, &on, &world) - base).abs() < 1e-6);
+        // Sideways, 90 degrees: (1 - (90 - 72) / (180 - 72))^3 with the exponential gain.
+        world.player_looks.insert(Uuid(7), [1.0, 0.0, 0.0]);
+        let expected = base * (1.0 - 18.0f32 / 108.0).powi(3);
+        assert!((v(&info, &on, &world) - expected).abs() < 1e-5);
+        // A source's own angle applies with the setting off, too.
+        info.angle = 90;
+        let expected = base * (1.0 - 45.0f32 / 135.0).powi(3);
+        assert!((v(&info, &off, &world) - expected).abs() < 1e-5);
     }
 }

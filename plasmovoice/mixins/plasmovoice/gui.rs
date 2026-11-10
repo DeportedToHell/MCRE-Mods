@@ -47,7 +47,7 @@ const WARNING: u32 = 0xFFFA_C653;
 const BLACK: u32 = 0xFF00_0000;
 
 /// The port's version, shown in the settings title as the original shows its own.
-pub(super) const VERSION: &str = "1.0.0";
+pub(super) const VERSION: &str = "1.0.1";
 
 // ---- what the screen shows of the voice connection ------------------------------------------
 

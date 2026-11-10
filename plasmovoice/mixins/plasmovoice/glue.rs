@@ -171,7 +171,15 @@ fn engine_settings(c: &Config, server: &str, activations: &[Activation], lines: 
         input_device: c.s("voice.input_device"),
         output_device: c.s("voice.output_device"),
         microphone_volume: c.f("voice.microphone_volume"),
+        noise_suppression: c.b("voice.noise_suppression"),
+        stereo_capture: c.b("voice.stereo_capture"),
         volume: c.f("voice.volume"),
+        sound_occlusion: c.b("voice.sound_occlusion"),
+        directional_sources: c.b("voice.directional_sources"),
+        directional_sources_angle: c.i("advanced.directional_sources_angle") as i32,
+        stereo_sources_to_mono: c.b("advanced.stereo_sources_to_mono"),
+        source_types_overlap: client::Overlap::parse(&c.s("advanced.source_types_overlap")),
+        camera_sound_listener: c.b("advanced.camera_sound_listener"),
         compressor_limiter: c.b("voice.compressor_limiter"),
         compressor_threshold: c.i("advanced.compressor_threshold") as i32,
         limiter_threshold: c.i("advanced.limiter_threshold") as i32,
@@ -673,20 +681,27 @@ pub(super) fn frame(game: &mut Game<'_>) {
     if let Some(s) = &state {
         world.listener = s.eye_position.unwrap_or_default();
         world.listener_yaw = s.yaw;
+        world.listener_pitch = s.pitch;
         world.typing = s.screen == horizon_client::mod_api::NativeScreenKind::Chat;
     }
-    let mut players = HashMap::new();
-    let mut entities = HashMap::new();
+    // The camera (`gameRenderer.mainCamera`): the ears with Camera Sound Listener.
+    world.camera = match game.native_camera() {
+        Some(c) => Some((c.position, c.yaw, c.pitch)),
+        None => Some((game.view.position, game.view.y_rot, game.view.x_rot)),
+    };
     for e in game.native_client_entities() {
         let at = e.position_at(partial);
         let eyes = [at[0], at[1] + f64::from(e.height) * 0.9, at[2]];
+        // `getLookAngle` (`calculateViewVector` of the head's pitch and yaw).
+        let (yaw, pitch) = (f64::from(e.head_yaw).to_radians(), f64::from(e.head_pitch).to_radians());
+        let look = [-yaw.sin() * pitch.cos(), -pitch.sin(), yaw.cos() * pitch.cos()];
         if let Some(id) = e.player_uuid {
-            players.insert(Uuid(id), eyes);
+            world.players.insert(Uuid(id), eyes);
+            world.player_looks.insert(Uuid(id), look);
         }
-        entities.insert(e.id as i32, eyes);
+        world.entities.insert(e.id as i32, eyes);
+        world.entity_looks.insert(e.id as i32, look);
     }
-    world.players = players;
-    world.entities = entities;
 
     let mut activations = client.activations();
     // `getActivations`' order: heaviest first, then by name.
@@ -705,7 +720,47 @@ pub(super) fn frame(game: &mut Game<'_>) {
     world.held = activations.iter().filter(|a| down.contains(&format!("key.plasmovoice.{}.ptt", a.name))).map(|a| a.name.clone()).collect();
     let test = gui::with(|s| s.mic_test && s.page == gui::Page::Settings).unwrap_or(false);
     let settings = config(|c| engine_settings(c, &server, &activations, &lines, test));
+    // Sound occlusion: each source's blocks between it and the player's eyes.
+    if settings.sound_occlusion {
+        for src in &status.sources {
+            let (Some(pos), _) = client::source_position(&src.kind, &world) else { continue };
+            if matches!(src.kind, tcp::SourceKind::Direct { camera_relative: true, .. }) {
+                continue;
+            }
+            world.occlusion.insert(src.id, occluded_percent(game, pos, world.listener));
+        }
+    }
     client.update(world, &settings);
+    // The distance spheres (`DistanceVisualizeStateExtractor.render`).
+    let visualize = client.take_visualize();
+    if !visualize.is_empty() {
+        let render_distance = game.settings.render_distance.max(2) as i32 * 16;
+        config(|c| {
+            for mut v in visualize {
+                if v.on_join {
+                    if !c.b("advanced.visualize_voice_distance_on_join") {
+                        continue;
+                    }
+                    // The player's distance for this server, which the settings know.
+                    if let Some(a) = activations.iter().find(|a| a.name == tcp::PROXIMITY)
+                        && !server.is_empty()
+                    {
+                        v.radius = c.i(&gui::distance_path(&server, a)) as i32;
+                    }
+                }
+                if !c.b("advanced.visualize_voice_distance") || v.radius < 2 || v.radius > render_distance {
+                    continue;
+                }
+                spheres(|list| {
+                    // One sphere around the player at a time; ones at a place add up.
+                    if v.position.is_none() {
+                        list.retain(|s| s.position.is_some());
+                    }
+                    list.push(Sphere { radius: v.radius as f32, color: (v.color as u32) & 0x00FF_FFFF, position: v.position, created: Instant::now(), alpha: 150.0, last: Instant::now() });
+                });
+            }
+        });
+    }
     let status = client.status();
     log_status(&status, &settings);
     log_output(&status, &settings);
@@ -794,6 +849,157 @@ fn log_output(s: &client::Status, settings: &Settings) {
 pub(super) fn status() -> Option<client::Status> {
     let guard = CLIENT.try_lock().ok()?;
     guard.as_ref()?.client.as_ref().map(Client::status)
+}
+
+// ---- in the world: sound occlusion and the distance spheres ---------------------------------
+
+/// `SoundOcclusion.getOccludedPercent`: block by block from the sound to the listener (at most
+/// 200 steps), each block crossed whose collision shape the line to the listener meets adds 0.5
+/// (a solid block) or 0.25, a quarter of that after the first, up to 0.98.
+fn occluded_percent(game: &Game<'_>, sound: [f64; 3], listener: [f64; 3]) -> f64 {
+    const MULTIPLIER: f64 = 0.5;
+    const MAX: f64 = 0.98;
+    let floor = |p: [f64; 3]| [p[0].floor() as i32, p[1].floor() as i32, p[2].floor() as i32];
+    let mut occluded = 0.0;
+    let mut sound = [sound[0] + 0.01, sound[1] + 0.01, sound[2] + 0.01];
+    if sound.iter().chain(&listener).any(|v| v.is_nan()) {
+        return occluded;
+    }
+    let listener_pos = floor(listener);
+    let mut sound_pos = floor(sound);
+    for i in 1..=200 {
+        let (prev_sound, prev_pos) = (sound, sound_pos);
+        if sound.iter().any(|v| v.is_nan()) || sound_pos == listener_pos {
+            return occluded;
+        }
+        let next: [i32; 3] = std::array::from_fn(|k| sound_pos[k] + i32::from(listener_pos[k] > sound_pos[k]));
+        let diff: [f64; 3] = std::array::from_fn(|k| listener[k] - sound[k]);
+        let change: [f64; 3] =
+            std::array::from_fn(|k| if listener_pos[k] != sound_pos[k] { (f64::from(next[k]) - sound[k]) / diff[k] } else { f64::INFINITY });
+        let mut offset = [0; 3];
+        let axis = if change[0] < change[1] && change[0] < change[2] {
+            0
+        } else if change[1] < change[2] {
+            1
+        } else {
+            2
+        };
+        let t = change[axis];
+        sound = std::array::from_fn(|k| if k == axis { f64::from(next[k]) } else { sound[k] + diff[k] * t });
+        if listener_pos[axis] < sound_pos[axis] {
+            offset[axis] = -1;
+        }
+        sound_pos = floor(sound);
+        for k in 0..3 {
+            sound_pos[k] += offset[k];
+        }
+        if i <= 1 {
+            continue;
+        }
+        // Air and shapes without collision let the sound through; else the line from here to
+        // the listener has to meet the block's collision boxes (`VoxelShape.clip`).
+        let boxes = game.native_block_collision(prev_pos);
+        let base = prev_pos.map(f64::from);
+        if !boxes.iter().any(|b| segment_hits_box(prev_sound, listener, [base[0] + b[0], base[1] + b[1], base[2] + b[2]], [base[0] + b[3], base[1] + b[4], base[2] + b[5]])) {
+            continue;
+        }
+        // `isSolidRender`: a full block that hides what is behind it.
+        let solid = game.native_client_block_obstruction(prev_pos).is_some_and(|(full, occludes)| full && occludes);
+        let add = if solid { MULTIPLIER } else { MULTIPLIER / 2.0 };
+        occluded += if occluded > 0.0 { add / 4.0 } else { add };
+        if occluded > MAX {
+            return MAX;
+        }
+    }
+    occluded
+}
+
+/// The segment from `a` to `b` meets the box (`AABB.clip`, or starts in it).
+fn segment_hits_box(a: [f64; 3], b: [f64; 3], min: [f64; 3], max: [f64; 3]) -> bool {
+    let (mut t0, mut t1) = (0.0f64, 1.0f64);
+    for k in 0..3 {
+        let d = b[k] - a[k];
+        if d.abs() < 1e-12 {
+            if a[k] < min[k] || a[k] > max[k] {
+                return false;
+            }
+            continue;
+        }
+        let (mut lo, mut hi) = ((min[k] - a[k]) / d, (max[k] - a[k]) / d);
+        if lo > hi {
+            std::mem::swap(&mut lo, &mut hi);
+        }
+        t0 = t0.max(lo);
+        t1 = t1.min(hi);
+        if t0 > t1 {
+            return false;
+        }
+    }
+    true
+}
+
+/// A voice distance sphere being shown (`DistanceVisualizeStateExtractor.Entry`).
+struct Sphere {
+    radius: f32,
+    color: u32,
+    position: Option<[f64; 3]>,
+    created: Instant,
+    /// 150 at first, fading after two seconds.
+    alpha: f32,
+    last: Instant,
+}
+
+static SPHERES: Mutex<Vec<Sphere>> = Mutex::new(Vec::new());
+
+fn spheres<R>(f: impl FnOnce(&mut Vec<Sphere>) -> R) -> R {
+    f(&mut lock(&SPHERES))
+}
+
+/// Hook `native_world_primitives`: the spheres (`DistanceVisualizeRenderer`, Plasmo Voice's
+/// translucent sphere of 18 × 72 quads, as the lines between its corners), around the player's
+/// feet or at their place, fading 2 s after they appear.
+pub(super) fn world_primitives(game: &Game<'_>, primitives: &mut horizon_client::world_primitives::WorldPrimitives) {
+    if game.window.is_none() {
+        return;
+    }
+    let on = config(|c| c.b("advanced.visualize_voice_distance"));
+    let Some(player) = game.native_player() else {
+        spheres(Vec::clear);
+        return;
+    };
+    let camera = game.native_camera().map_or(game.view.position, |c| c.position);
+    let render_distance = f64::from(game.settings.render_distance.max(2) as i32 * 16);
+    spheres(|list| {
+        list.retain(|s| {
+            s.alpha > 0.0 && on && s.position.is_none_or(|p| ((p[0] - camera[0]).powi(2) + (p[1] - camera[1]).powi(2) + (p[2] - camera[2]).powi(2)).sqrt() <= render_distance)
+        });
+        for s in list.iter_mut() {
+            // `alpha - 10 * delta`, delta in ticks: 200 a second.
+            let dt = s.last.elapsed().as_secs_f32();
+            s.last = Instant::now();
+            if s.created.elapsed().as_millis() > 2000 {
+                s.alpha = (s.alpha - 10.0 * dt * 20.0).max(0.0);
+            }
+            let center = s.position.unwrap_or([player.x, player.y, player.z]);
+            let color = ((s.alpha as u32 & 0xFF) << 24) | s.color;
+            const STACKS: usize = 18;
+            const SLICES: usize = 72;
+            let point = |stack: usize, slice: usize| {
+                let a = -std::f64::consts::FRAC_PI_2 + stack as f64 * std::f64::consts::PI / STACKS as f64;
+                let b = slice as f64 * std::f64::consts::TAU / SLICES as f64;
+                let (r, y) = (f64::from(s.radius) * a.cos(), f64::from(s.radius) * a.sin());
+                [center[0] + r * b.cos(), center[1] + y, center[2] - r * b.sin()]
+            };
+            for i in 0..STACKS {
+                for j in 0..SLICES {
+                    primitives.line(point(i, j), point(i + 1, j), color, 1.5);
+                    if i > 0 {
+                        primitives.line(point(i, j), point(i, j + 1), color, 1.5);
+                    }
+                }
+            }
+        }
+    });
 }
 
 // ---- the screens' hooks ---------------------------------------------------------------------

@@ -164,9 +164,202 @@ impl Limiter {
     }
 }
 
+/// `AudioUtil.convertToMonoShorts` (`StereoToMonoFilter`): each pair's mean, Java's int division.
+pub fn stereo_to_mono(samples: &[i16]) -> Vec<i16> {
+    samples.chunks_exact(2).map(|p| ((i32::from(p[0]) + i32::from(p[1])) / 2) as i16).collect()
+}
+
+/// `NoiseSuppressionFilter`: RNNoise (`crate::rnnoise`, the nnnoiseless 0.5.2 Plasmo's
+/// `rnnoise-jni-rust` wraps) on each channel, a state of its own for the left and the right
+/// one. At 48 kHz, as Plasmo Voice: the frame goes through in 480-sample pieces, all of them
+/// kept (the wrapper's `first` flag never skips one). At another sample rate RNNoise, made for
+/// 48 kHz, gets the frame resampled to 48 kHz and back, 10 ms later (Plasmo Voice hands it the
+/// frame as it is: wrong pitches, and at 8 and 16 kHz frames under 480 samples come out empty).
+/// The filter's limiter (-6 dB) isn't here: Plasmo Voice runs it on a copy it throws away.
+pub struct NoiseSuppression {
+    channels: [DenoiseChannel; 2],
+}
+
+struct DenoiseChannel {
+    state: Box<crate::rnnoise::DenoiseState>,
+    /// Off 48 kHz: the resamplers there and back and the samples between them.
+    up: crate::audio::Resampler,
+    down: crate::audio::Resampler,
+    pending: Vec<f32>,
+    out: std::collections::VecDeque<f32>,
+    rate: i32,
+}
+
+impl DenoiseChannel {
+    fn new() -> DenoiseChannel {
+        DenoiseChannel {
+            state: crate::rnnoise::DenoiseState::new(),
+            up: crate::audio::Resampler::new(48000, 48000),
+            down: crate::audio::Resampler::new(48000, 48000),
+            pending: Vec::new(),
+            out: std::collections::VecDeque::new(),
+            rate: 48000,
+        }
+    }
+
+    /// `Denoise.process(AudioUtil.shortsToFloats(samples))` then `AudioUtil.floatsToShorts`.
+    fn process(&mut self, samples: &[i16], rate: i32) -> Vec<i16> {
+        const FRAME: usize = crate::rnnoise::FRAME_SIZE;
+        let input: Vec<f32> = samples.iter().map(|&s| f32::from(s)).collect();
+        let mut buf = [0f32; FRAME];
+        let output = if rate == 48000 {
+            let mut output = Vec::with_capacity(input.len());
+            for chunk in input.chunks_exact(FRAME) {
+                self.state.process_frame(&mut buf, chunk);
+                output.extend_from_slice(&buf);
+            }
+            output
+        } else {
+            if self.rate != rate {
+                self.rate = rate;
+                self.up = crate::audio::Resampler::new(rate as u32, 48000);
+                self.down = crate::audio::Resampler::new(48000, rate as u32);
+                self.pending.clear();
+                // RNNoise's 480 samples, at this rate, wait in front of the first frame.
+                self.out = std::iter::repeat_n(0.0, (FRAME * rate as usize).div_ceil(48000) + 2).collect();
+            }
+            self.up.process(&input, &mut self.pending);
+            let mut down = Vec::new();
+            while self.pending.len() >= FRAME {
+                let chunk: Vec<f32> = self.pending.drain(..FRAME).collect();
+                self.state.process_frame(&mut buf, &chunk);
+                self.down.process(&buf, &mut down);
+            }
+            self.out.extend(down);
+            (0..input.len()).map(|_| self.out.pop_front().unwrap_or(0.0)).collect()
+        };
+        // `Float.shortValue()` of the value clamped to a short.
+        output.iter().map(|&f| f.clamp(-32768.0, 32767.0) as i16).collect()
+    }
+}
+
+impl Default for NoiseSuppression {
+    fn default() -> Self {
+        NoiseSuppression { channels: [DenoiseChannel::new(), DenoiseChannel::new()] }
+    }
+}
+
+impl NoiseSuppression {
+    /// One frame of `channels` interleaved channels (1 or 2; others pass through).
+    pub fn process(&mut self, samples: &[i16], channels: usize, sample_rate: i32) -> Vec<i16> {
+        match channels {
+            1 => self.channels[0].process(samples, sample_rate),
+            2 => {
+                let left: Vec<i16> = samples.iter().step_by(2).copied().collect();
+                let right: Vec<i16> = samples.iter().skip(1).step_by(2).copied().collect();
+                let left = self.channels[0].process(&left, sample_rate);
+                let right = self.channels[1].process(&right, sample_rate);
+                left.iter().zip(&right).flat_map(|(&l, &r)| [l, r]).collect()
+            }
+            _ => samples.to_vec(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Pink noise (Paul Kellet's filter on xorshift white noise) at `db` dBFS RMS: a room's
+    /// hiss and hum, the noise RNNoise was trained to take out.
+    fn pink(n: usize, db: f32) -> Vec<f32> {
+        let mut seed = 0x1234_5678u32;
+        let mut b = [0f32; 7];
+        let raw: Vec<f32> = (0..n)
+            .map(|_| {
+                seed ^= seed << 13;
+                seed ^= seed >> 17;
+                seed ^= seed << 5;
+                let w = (seed as f32 / u32::MAX as f32) * 2.0 - 1.0;
+                b[0] = 0.99886 * b[0] + w * 0.0555179;
+                b[1] = 0.99332 * b[1] + w * 0.0750759;
+                b[2] = 0.96900 * b[2] + w * 0.1538520;
+                b[3] = 0.86650 * b[3] + w * 0.3104856;
+                b[4] = 0.55000 * b[4] + w * 0.5329522;
+                b[5] = -0.7616 * b[5] - w * 0.0168980;
+                let p = b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + w * 0.5362;
+                b[6] = w * 0.115926;
+                p
+            })
+            .collect();
+        let rms = (raw.iter().map(|v| v * v).sum::<f32>() / n as f32).sqrt();
+        let k = db_to_mul(db) * 32768.0 / rms;
+        raw.iter().map(|v| v * k).collect()
+    }
+
+    /// A voiced sound: 150 Hz and its harmonics up to 3 kHz, falling 6 dB an octave, about -21 dBFS.
+    fn voice(i: usize, rate: i32) -> f32 {
+        let t = i as f32 / rate as f32;
+        (1..=20).map(|h| (t * 150.0 * h as f32 * std::f32::consts::TAU).sin() / h as f32).sum::<f32>() * 0.1 * 32768.0
+    }
+
+    fn rms_db(s: &[i16]) -> f64 {
+        let e: f64 = s.iter().map(|&v| f64::from(v) * f64::from(v)).sum::<f64>() / s.len() as f64;
+        10.0 * (e / (32768.0 * 32768.0)).log10()
+    }
+
+    fn denoise(input: &[i16], rate: i32) -> Vec<i16> {
+        let frame = (rate / 1000 * 20) as usize;
+        let mut ns = NoiseSuppression::default();
+        input
+            .chunks_exact(frame)
+            .flat_map(|f| {
+                let o = ns.process(f, 1, rate);
+                assert_eq!(o.len(), frame);
+                o
+            })
+            .collect()
+    }
+
+    #[test]
+    fn noise_suppression_removes_room_noise() {
+        // Pink noise at -40 dBFS, three seconds; the last one is measured.
+        for rate in [48000, 24000, 16000] {
+            let n = rate as usize * 3;
+            let noise: Vec<i16> = pink(n, -40.0).iter().map(|&f| f as i16).collect();
+            let out = denoise(&noise, rate);
+            let last = rate as usize;
+            let (before, after) = (rms_db(&noise[n - last..]), rms_db(&out[n - last..]));
+            eprintln!("{rate} Hz: pink noise {before:.1} dBFS -> {after:.1} dBFS");
+            assert!(after < before - 30.0, "{rate} Hz: pink noise {before:.1} dBFS -> {after:.1} dBFS");
+        }
+    }
+
+    #[test]
+    fn noise_suppression_keeps_the_voice_and_takes_the_noise_between_words() {
+        // A voiced sound 400 ms on, 400 ms off, in pink noise at -40 dBFS, four seconds.
+        let rate = 48000;
+        let n = rate as usize * 4;
+        let span = rate as usize * 2 / 5;
+        let noise = pink(n, -40.0);
+        let talking = |i: usize| (i / span) % 2 == 0;
+        let input: Vec<i16> = (0..n).map(|i| ((if talking(i) { voice(i, rate) } else { 0.0 }) + noise[i]) as i16).collect();
+        let out = denoise(&input, rate);
+        // From the second second on: the words (past their first 50 ms) and the pauses (past
+        // their first 100 ms, RNNoise's release).
+        let pick = |s: &[i16], words: bool, skip: usize| -> Vec<i16> {
+            (rate as usize..n).filter(|&i| talking(i) == words && i % span >= skip).map(|i| s[i]).collect()
+        };
+        let (words_in, words_out) = (rms_db(&pick(&input, true, 2400)), rms_db(&pick(&out, true, 2400)));
+        assert!((words_in - words_out).abs() < 3.0, "words {words_in:.1} dBFS -> {words_out:.1} dBFS");
+        let (pause_in, pause_out) = (rms_db(&pick(&input, false, 4800)), rms_db(&pick(&out, false, 4800)));
+        eprintln!("words {words_in:.1} -> {words_out:.1} dBFS, pauses {pause_in:.1} -> {pause_out:.1} dBFS");
+        assert!(pause_out < pause_in - 20.0, "pauses {pause_in:.1} dBFS -> {pause_out:.1} dBFS");
+        // Stereo: each channel through a state of its own, the frame's length kept.
+        let mut ns = NoiseSuppression::default();
+        let stereo: Vec<i16> = input[..960].iter().flat_map(|&v| [v, v / 2]).collect();
+        assert_eq!(ns.process(&stereo, 2, rate).len(), 2 * 960);
+    }
+
+    #[test]
+    fn stereo_to_mono_is_javas() {
+        assert_eq!(stereo_to_mono(&[3, 4, -3, -4, 32767, 32767]), vec![3, -3, 32767]);
+    }
 
     #[test]
     fn java_casts() {

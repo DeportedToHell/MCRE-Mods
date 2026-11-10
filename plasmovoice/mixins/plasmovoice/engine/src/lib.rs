@@ -11,6 +11,7 @@ pub mod crypto;
 pub mod dsp;
 pub mod md5;
 pub mod mutes;
+pub mod rnnoise;
 pub mod server;
 pub mod server_commands;
 pub mod server_config;

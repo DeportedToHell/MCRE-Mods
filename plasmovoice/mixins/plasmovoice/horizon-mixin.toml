@@ -1,6 +1,6 @@
 [mod]
 id = "plasmovoice"
-version = "1.0.0"
+version = "1.0.1"
 priority = 100
 
 # Nightly fdc87ae (nightly-source/2026-11-08-fdc87ae). The server half hears guests' plugin
@@ -148,6 +148,18 @@ bindings = [
 ]
 
 # ---- what it draws ----
+
+# The voice distance's sphere (`DistanceVisualizeRenderer`), among the world's primitives (not in
+# the hook catalog at this commit: by its path).
+[[injection]]
+id = "primitives"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_world_primitives"
+helper = "h_primitives.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "primitives", ty = "&mut horizon_client::world_primitives::WorldPrimitives", value = "&mut *primitives" },
+]
 
 [[injection]]
 id = "hud_icon"

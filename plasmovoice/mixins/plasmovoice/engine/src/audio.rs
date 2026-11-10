@@ -153,17 +153,20 @@ pub fn default_output_device() -> Option<String> {
 }
 
 /// The microphone, open on a thread of its own (a cpal stream lives on the thread that made it):
-/// mono 16-bit frames of `frame_size` samples at `sample_rate` arrive on `frames`.
+/// 16-bit frames of `frame_size` samples at `sample_rate` arrive on `frames`, mono (every
+/// channel mixed, as OpenAL captures in mono) or, with `stereo` (`stereo_capture`), the first
+/// two channels interleaved (a mono microphone on both).
 pub struct Capture {
     stop: Arc<AtomicBool>,
     thread: Option<JoinHandle<()>>,
     pub frames: Receiver<Vec<i16>>,
     pub device: String,
+    pub channels: usize,
 }
 
 impl Capture {
     /// The named device, or the default one (`None` or not found).
-    pub fn open(device: Option<&str>, sample_rate: u32, frame_size: usize) -> Result<Capture, String> {
+    pub fn open(device: Option<&str>, sample_rate: u32, frame_size: usize, stereo: bool) -> Result<Capture, String> {
         let (tx, rx) = channel();
         let (ready_tx, ready_rx) = channel::<Result<String, String>>();
         let stop = Arc::new(AtomicBool::new(false));
@@ -182,7 +185,7 @@ impl Capture {
                     return;
                 };
                 let name = dev.name().unwrap_or_default();
-                let stream = match open_input(&dev, sample_rate, frame_size, tx) {
+                let stream = match open_input(&dev, sample_rate, frame_size, stereo, tx) {
                     Ok(s) => s,
                     Err(e) => {
                         let _ = ready_tx.send(Err(e));
@@ -201,7 +204,7 @@ impl Capture {
             })
             .map_err(|e| e.to_string())?;
         match ready_rx.recv() {
-            Ok(Ok(device)) => Ok(Capture { stop, thread: Some(thread), frames: rx, device }),
+            Ok(Ok(device)) => Ok(Capture { stop, thread: Some(thread), frames: rx, device, channels: if stereo { 2 } else { 1 } }),
             Ok(Err(e)) => Err(e),
             Err(_) => Err("capture thread ended".into()),
         }
@@ -218,39 +221,54 @@ impl Drop for Capture {
     }
 }
 
-fn open_input(dev: &cpal::Device, rate: u32, frame_size: usize, tx: Sender<Vec<i16>>) -> Result<cpal::Stream, String> {
+fn open_input(dev: &cpal::Device, rate: u32, frame_size: usize, stereo: bool, tx: Sender<Vec<i16>>) -> Result<cpal::Stream, String> {
     let config = dev.default_input_config().map_err(|e| e.to_string())?;
     let format = config.sample_format();
     let cfg: cpal::StreamConfig = config.into();
     match format {
-        cpal::SampleFormat::F32 => input_stream::<f32>(dev, &cfg, rate, frame_size, tx),
-        cpal::SampleFormat::I16 => input_stream::<i16>(dev, &cfg, rate, frame_size, tx),
-        cpal::SampleFormat::U16 => input_stream::<u16>(dev, &cfg, rate, frame_size, tx),
-        cpal::SampleFormat::I32 => input_stream::<i32>(dev, &cfg, rate, frame_size, tx),
+        cpal::SampleFormat::F32 => input_stream::<f32>(dev, &cfg, rate, frame_size, stereo, tx),
+        cpal::SampleFormat::I16 => input_stream::<i16>(dev, &cfg, rate, frame_size, stereo, tx),
+        cpal::SampleFormat::U16 => input_stream::<u16>(dev, &cfg, rate, frame_size, stereo, tx),
+        cpal::SampleFormat::I32 => input_stream::<i32>(dev, &cfg, rate, frame_size, stereo, tx),
         f => Err(format!("unsupported microphone format {f:?}")),
     }
 }
 
-fn input_stream<T>(dev: &cpal::Device, cfg: &cpal::StreamConfig, rate: u32, frame_size: usize, tx: Sender<Vec<i16>>) -> Result<cpal::Stream, String>
+fn input_stream<T>(dev: &cpal::Device, cfg: &cpal::StreamConfig, rate: u32, frame_size: usize, stereo: bool, tx: Sender<Vec<i16>>) -> Result<cpal::Stream, String>
 where
     T: SizedSample,
     f32: FromSample<T>,
 {
     let channels = usize::from(cfg.channels.max(1));
-    let mut resampler = Resampler::new(cfg.sample_rate.0, rate);
-    let mut mono = Vec::new();
-    let mut pending: Vec<f32> = Vec::new();
+    let out_channels = if stereo { 2 } else { 1 };
+    let mut resamplers: Vec<Resampler> = (0..out_channels).map(|_| Resampler::new(cfg.sample_rate.0, rate)).collect();
+    let mut split: Vec<Vec<f32>> = vec![Vec::new(); out_channels];
+    let mut pending: Vec<Vec<f32>> = vec![Vec::new(); out_channels];
     dev.build_input_stream(
         cfg,
         move |data: &[T], _| {
-            mono.clear();
-            for chunk in data.chunks(channels) {
-                let sum: f32 = chunk.iter().map(|&s| s.to_sample::<f32>()).sum();
-                mono.push(sum / channels as f32);
+            for c in &mut split {
+                c.clear();
             }
-            resampler.process(&mono, &mut pending);
-            while pending.len() >= frame_size {
-                let frame: Vec<i16> = pending.drain(..frame_size).map(|s| (s * 32767.0).clamp(-32768.0, 32767.0) as i16).collect();
+            for chunk in data.chunks(channels) {
+                if stereo {
+                    let l = chunk[0].to_sample::<f32>();
+                    split[0].push(l);
+                    split[1].push(chunk.get(1).map_or(l, |r| r.to_sample::<f32>()));
+                } else {
+                    let sum: f32 = chunk.iter().map(|&s| s.to_sample::<f32>()).sum();
+                    split[0].push(sum / channels as f32);
+                }
+            }
+            for ((r, s), p) in resamplers.iter_mut().zip(&split).zip(&mut pending) {
+                r.process(s, p);
+            }
+            while pending.iter().all(|p| p.len() >= frame_size) {
+                let parts: Vec<Vec<f32>> = pending.iter_mut().map(|p| p.drain(..frame_size).collect()).collect();
+                let frame: Vec<i16> = (0..frame_size)
+                    .flat_map(|i| parts.iter().map(move |p| p[i]))
+                    .map(|s| (s * 32767.0).clamp(-32768.0, 32767.0) as i16)
+                    .collect();
                 if tx.send(frame).is_err() {
                     return;
                 }
