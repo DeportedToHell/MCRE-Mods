@@ -1,0 +1,362 @@
+[mod]
+id = "particlerain"
+version = "1.0.0"
+priority = 100
+
+# Built for this Nightly: besides its modules in the atlas (hud.rs), the particle engine
+# (particles.rs) and the sound cache (audio.rs), it hooks the atlas packing, the particle pass,
+# the client's particle tick, the game's weather columns and the options screen.
+[compatibility]
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+
+# ---- modules ----
+
+# The mod's sprites, made while the atlas is packed (rain, snow, heavy rain and snow, ripples,
+# grey splashes, and the original's own textures).
+[[module]]
+id = "atlas"
+file = "crates/horizon-client-render/src/hud.rs"
+name = "particlerain_atlas"
+visibility = "pub"
+source = "atlas.rs"
+
+# The original's particle textures (tools/generate.mjs).
+[[module]]
+id = "textures"
+file = "crates/horizon-client-render/src/hud.rs"
+name = "particlerain_textures"
+source = "textures.rs"
+
+# Inside the particle engine: the frame's quads, the wind on the game particles the mod spawns,
+# the water's colour on the game's water particles.
+[[module]]
+id = "particle"
+file = "crates/horizon-client-render/src/particles.rs"
+name = "particlerain_particle"
+visibility = "pub"
+source = "particle.rs"
+
+# The weather sounds (snow, sandstorm) into the sound registry and cache.
+[[module]]
+id = "sound"
+file = "crates/horizon-client-render/src/audio.rs"
+name = "particlerain_sound"
+visibility = "pub"
+source = "sound.rs"
+
+# The settings, the particles' data, the tags.
+[[module]]
+id = "core"
+file = "crates/horizon-client/src/game.rs"
+name = "particlerain_core"
+source = "core.rs"
+
+# The original's built-in particles (particles.json, tools/generate.mjs).
+[[module]]
+id = "defaults"
+file = "crates/horizon-client/src/game.rs"
+name = "particlerain_defaults"
+source = "defaults.rs"
+
+# The texts, English and Russian (tools/generate.mjs).
+[[module]]
+id = "lang"
+file = "crates/horizon-client/src/game.rs"
+name = "particlerain_lang"
+source = "lang.rs"
+
+# The game side: files, the tick's start and end, the command, Options > Mods, Mod Menu.
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "particlerain_glue"
+source = "glue.rs"
+
+# The weather: spawning, the particles' tick, the wind, the tints, the sounds, the frame's quads.
+[[module]]
+id = "weather"
+file = "crates/horizon-client/src/game.rs"
+name = "particlerain_weather"
+source = "weather.rs"
+
+# The config screens.
+[[module]]
+id = "screen"
+file = "crates/horizon-client/src/game.rs"
+name = "particlerain_screen"
+source = "screen.rs"
+
+# ---- the atlas, the particles, the weather ----
+
+[[injection]]
+id = "atlas_images"
+target = "horizon_client_render::hud::HudAtlas::slots"
+kind = "HEAD"
+helper = "h_atlas.rs"
+bindings = [
+  { name = "images", ty = "&mut Vec<(String, u32, u32, Vec<u8>)>", value = "&mut *images" },
+]
+
+[[injection]]
+id = "render"
+target = "horizon_client_render::particles::ParticleEngine::render"
+kind = "HEAD"
+helper = "h_render.rs"
+bindings = [
+  { name = "out", ty = "&mut Vec<crate::mesher::Vertex>", value = "&mut *out" },
+]
+
+[[injection]]
+id = "render_culled"
+target = "horizon_client_render::particles::ParticleEngine::render_culled"
+kind = "HEAD"
+helper = "h_render_culled.rs"
+bindings = [
+  { name = "culling_enabled", ty = "bool", value = "culling_enabled" },
+  { name = "out", ty = "&mut Vec<crate::mesher::Vertex>", value = "&mut *out" },
+]
+
+[[injection]]
+id = "geometry"
+target = "horizon_client::game::Game<'_>::entity_geometry"
+kind = "HEAD"
+helper = "h_geometry.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "camera", ty = "glam::DVec3", value = "camera" },
+  { name = "alpha", ty = "f64", value = "alpha" },
+  { name = "fov_degrees", ty = "f32", value = "fov_degrees" },
+]
+
+[[injection]]
+id = "tick_head"
+target = "horizon_client::game::render_tick::Game<'_>::tick_particles"
+kind = "HEAD"
+helper = "h_tick_head.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+# After the particle engine's tick (the item pickups come next in the same tick).
+id = "tick_tail"
+target = "horizon_client::game::pickups::Game<'_>::tick_pickups"
+kind = "HEAD"
+helper = "h_tick_tail.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "columns"
+target = "horizon_client::game::Game<'_>::weather_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "h_columns.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "camera", ty = "glam::DVec3", value = "camera" },
+  { name = "alpha", ty = "f64", value = "alpha" },
+]
+
+[[injection]]
+id = "level_load"
+hook = "client_level_load"
+hook_version = 1
+kind = "HEAD"
+helper = "h_level_load.rs"
+bindings = [
+  { name = "dimension", ty = "&str", value = "dimension" },
+]
+
+[[injection]]
+id = "reloaded"
+hook = "client_resources_reloaded"
+hook_version = 1
+kind = "HEAD"
+helper = "h_reloaded.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+# ---- /particlerain ----
+
+[[injection]]
+id = "command"
+hook = "command"
+hook_version = 1
+kind = "HEAD"
+helper = "h_command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+[[injection]]
+id = "commands"
+hook = "commands"
+hook_version = 1
+kind = "HEAD"
+helper = "h_commands.rs"
+bindings = [
+  { name = "commands", ty = "&mut Vec<&'static str>", value = "&mut *commands" },
+]
+
+# ---- Options > Mods, Mod Menu, the config screen ----
+
+[[injection]]
+id = "list"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "h_list.rs"
+bindings = [
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+[[injection]]
+id = "settings"
+hook = "settings"
+hook_version = 1
+kind = "HEAD"
+helper = "h_settings.rs"
+bindings = [
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "buttons", ty = "&mut Vec<String>", value = "&mut *buttons" },
+]
+
+[[injection]]
+id = "click"
+hook = "settings_click"
+hook_version = 1
+kind = "HEAD"
+helper = "h_click.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "button", ty = "usize", value = "button" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "h_frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "screen_render"
+hook = "screen_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_screen_render.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+]
+
+[[injection]]
+id = "options_cover"
+target = "horizon_client::game::options::Game<'_>::draw_options"
+kind = "HEAD"
+cancellable = true
+helper = "h_options_cover.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "press"
+hook = "screen_mouse_button_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_press.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "release"
+hook = "screen_mouse_button_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_release.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "drag"
+hook = "screen_mouse_dragged_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_drag.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "scroll"
+hook = "screen_mouse_scrolled_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_scroll.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "scroll", ty = "[f64; 2]", value = "scroll" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_pressed"
+hook = "screen_key_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_pressed.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_released"
+hook = "screen_key_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_released.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "char"
+hook = "screen_char_typed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_char.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "c", ty = "char", value = "c" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]

@@ -1,0 +1,4 @@
+{
+  "particlerain.horizonChangingWindDirection": "Changing Wind Direction",
+  "particlerain.horizonChangingWindDirection.description": "Horizon port addition: the wind slowly turns over time instead of always blowing north-west. Off is exactly the original."
+}

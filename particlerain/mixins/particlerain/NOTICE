@@ -1,0 +1,40 @@
+Particle Rain for Horizon
+A port of Particle Rain to Horizon (Minecraft: Java Edition 26.3 rewritten in
+Rust) as a native mod.
+
+Particle Rain
+Copyright (c) 2025 PigCart
+https://github.com/PigCart/particle-rain (branch main, a9f1de9: 4.0.3 and the
+fixes after it)
+https://modrinth.com/mod/particle-rain
+Licensed under the MIT License (LICENSE).
+Contributors credited in its changelog: plunderpixels (wind), HigorFr,
+LilleboHaugen, CH4ACKO3; translations by megatocha (Russian, Ukrainian),
+Sasaki-Akari (Simplified Chinese), good7777865 (Korean).
+
+Particle Rain's own files used by the port, from
+src/main/resources/assets/particlerain/ (MIT):
+- textures/particle/*.png (in mixins/particlerain/textures.rs, made by
+  tools/generate.mjs), the icon (mixins/particlerain/data/icon.png) and the
+  weather sounds sounds/weather/*.ogg (mixins/particlerain/data/);
+- particles.json, its built-in particles (mixins/particlerain/defaults.rs);
+- lang/en_us.json and lang/ru_ru.json (mixins/particlerain/lang.rs). Where
+  the original's Russian file has no line, the port has its own Russian
+  (tools/assets/ru_port.json).
+
+As in the original, the rain and snow sprites are cut from the game's own
+rain and snow textures (or a resource pack's) and the ripples are drawn when
+the textures load.
+
+Horizon has no `c:` convention tags (Fabric API defines them in Java). The
+port defines the ones Particle Rain's built-in particles name
+(c:in_overworld, c:is_wet, c:climate_wet, c:is_spooky, c:is_windswept,
+c:sandstone_blocks, c:glass_panes) after Fabric API's conventional tags.
+
+Port addition (not in the original): the "Changing Wind Direction" wind option
+(config key horizonChangingWindDirection, on by default) turns the original's
+north-west wind slowly with the game time; off is exactly the original.
+
+This port rewrites Particle Rain's weather particles, spawning, wind, sounds,
+settings and config screens in Rust for Horizon's native mod API. It is not
+affiliated with PigCart, Mojang or Microsoft.
