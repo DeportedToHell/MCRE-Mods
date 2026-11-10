@@ -1,0 +1,24 @@
+Ping Wheel for Horizon
+A port of Ping Wheel to Horizon (Minecraft: Java Edition 26.3 rewritten in
+Rust) as a native mod.
+
+Ping Wheel
+Copyright (c) 2023 Luken (LukenSkyne); contributor RXJpaw
+https://github.com/LukenSkyne/Minecraft-Ping-Wheel (branch 26.3, v1.12.2)
+Licensed under the MIT License (LICENSE). The original's LICENSE file has an
+empty copyright line ("Copyright (c) 2023"); the holder named above is the
+author its build files give (mod_author=Luken).
+
+The ping sound (mixins/pingwheel/data/ping.ogg), the arrow texture
+(tools/assets/arrow.png, packed into mixins/pingwheel/data/arrow32.rgba by
+tools/arrow.mjs), the icon (mixins/pingwheel/data/icon.png) and the English
+texts (tools/assets/en_us.json, in mixins/pingwheel/lang.rs) are Ping Wheel's
+own (common/src/main/resources/, MIT). The Russian texts
+(tools/assets/ru_ru.json) are the port's own: the original has no Russian.
+
+This port, by DeportedToHell, rewrites Ping Wheel's client (the ping key, the
+ray, the markers, the direction indicator, the sound, /pingwheel and the
+settings screen) and its server side (the relay, channels, rate limit and
+/pingwheel:server) in Rust for Horizon's native mod API, speaking the original's
+plugin channels byte for byte. It is not affiliated with Luken, Mojang or
+Microsoft.
