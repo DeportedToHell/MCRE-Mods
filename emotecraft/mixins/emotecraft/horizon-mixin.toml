@@ -1,0 +1,551 @@
+[mod]
+id = "emotecraft"
+version = "1.0.0"
+# Below First-person Model (100): its HEAD on the elytra's geometry (hiding the own body's layers
+# in first person) runs first, then Emotecraft's.
+priority = 50
+
+# Nightly fdc87ae (nightly-source/2026-11-08-fdc87ae). Besides hook points, the mod poses the
+# player model in the game's own render path (`mobs::anim::setup`, `base_transform_at`,
+# `held_item_transform`, the elytra), adds its icons' room to the atlas, lets its channel's
+# messages past vanilla's 32767-byte payload limit on both sides, and hears guests' plugin
+# messages and completions by their paths: it is pinned to this commit.
+[compatibility]
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+
+# The emote engine: animations (PlayerAnimationLibrary's), Molang, the controller, the formats,
+# the protocol, the songs, the config and the server's logic (engine/, `emotecraft_engine`).
+[[crate]]
+id = "engine"
+path = "engine"
+
+# ---- modules ----
+
+# The client half: emotes, keys, playback, camera, network, songs (`crate::game::emotecraft_glue`).
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "emotecraft_glue"
+source = "glue.rs"
+
+# The server half: single player, a LAN host, a dedicated server.
+[[module]]
+id = "server"
+file = "crates/horizon-client/src/game.rs"
+name = "emotecraft_server"
+source = "server.rs"
+
+# The screens and toasts.
+[[module]]
+id = "ui"
+file = "crates/horizon-client/src/game.rs"
+name = "emotecraft_ui"
+source = "ui.rs"
+
+[[module]]
+id = "lang"
+file = "crates/horizon-client/src/game.rs"
+name = "emotecraft_lang"
+source = "lang.rs"
+
+[[module]]
+id = "icons"
+file = "crates/horizon-client/src/game.rs"
+name = "emotecraft_icons"
+source = "icons.rs"
+
+[[module]]
+id = "preview"
+file = "crates/horizon-client/src/game.rs"
+name = "emotecraft_preview"
+source = "preview.rs"
+
+# The built-in emotes' songs (delete the list's entries and the .opus files to leave them out).
+[[module]]
+id = "songs"
+file = "crates/horizon-client/src/game.rs"
+name = "emotecraft_songs"
+source = "songs.rs"
+
+# The emote on the player model, beside the model's poses.
+[[module]]
+id = "pose"
+file = "crates/horizon-client/src/mobs/anim.rs"
+name = "emotecraft_pose"
+source = "pose.rs"
+visibility = "pub"
+
+# Room for the emote icons in the atlas.
+[[module]]
+id = "atlas"
+file = "crates/horizon-client-render/src/hud.rs"
+name = "emotecraft_atlas"
+source = "atlas.rs"
+visibility = "pub"
+
+# ---- the client half ----
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "h_frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "tick"
+hook = "tick"
+hook_version = 1
+kind = "HEAD"
+helper = "h_tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "packet"
+hook = "client_packet"
+hook_version = 1
+kind = "HEAD"
+helper = "h_packet.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "packet", ty = "&horizon_client::mod_api::ClientboundPlayPacket", value = "packet" },
+]
+
+[[injection]]
+id = "disconnecting"
+hook = "client_disconnecting"
+hook_version = 1
+kind = "HEAD"
+helper = "h_disconnecting.rs"
+bindings = []
+
+[[injection]]
+id = "commands"
+hook = "commands"
+hook_version = 1
+kind = "HEAD"
+helper = "h_commands.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "commands", ty = "&mut Vec<&'static str>", value = "&mut *commands" },
+]
+
+[[injection]]
+id = "command"
+hook = "command"
+hook_version = 1
+kind = "HEAD"
+helper = "h_command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+# Horizon's own emote wheel opens on B too (`key.emote`): while Emotecraft is on, B is its wheel
+# key as in Java, and Horizon's wheel stays shut.
+[[injection]]
+id = "horizon_wheel"
+target = "horizon_client::game::emote_wheel::Game<'_>::open_emote_wheel"
+kind = "HEAD"
+cancellable = true
+helper = "h_horizon_wheel.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+# ---- the model ----
+
+# PlayerModelMixin / PlayerCapeModelMixin: at the end of the model's animation setup.
+[[injection]]
+id = "setup"
+target = "horizon_client::mobs::anim::setup"
+kind = "RETURN"
+helper = "h_setup.rs"
+bindings = [
+  { name = "value", ty = "()", value = "$value" },
+  { name = "m", ty = "&crate::mobs::Mob", value = "m" },
+  { name = "s", ty = "&State", value = "s" },
+  { name = "p", ty = "&mut Poses", value = "&mut *p" },
+]
+
+# LivingEntityRendererMixin: the body bone, in the model's root transform (everything drawn on
+# the player follows: armour, cape, items, wings, parrots).
+[[injection]]
+id = "base"
+target = "horizon_client::mobs::render::base_transform_at"
+kind = "HEAD"
+cancellable = true
+helper = "h_base.rs"
+bindings = [
+  { name = "m", ty = "&Mob", value = "m" },
+  { name = "alpha", ty = "f32", value = "alpha" },
+  { name = "origin", ty = "glam::Mat4", value = "origin" },
+]
+
+# ItemInHandLayerMixin: the item bones.
+[[injection]]
+id = "held"
+target = "horizon_client::mobs::render::held_item_transform"
+kind = "HEAD"
+cancellable = true
+helper = "h_held.rs"
+bindings = [
+  { name = "m", ty = "&Mob", value = "m" },
+  { name = "alpha", ty = "f32", value = "alpha" },
+  { name = "camera", ty = "glam::DVec3", value = "camera" },
+  { name = "data", ty = "&MobData", value = "data" },
+  { name = "left", ty = "bool", value = "left" },
+]
+
+# ElytraLayerMixin: the wings follow the body, elytra and cape bones.
+[[injection]]
+id = "elytra"
+target = "horizon_client::game::perspective::Game<'_>::player_elytra_geometry"
+kind = "HEAD"
+cancellable = true
+helper = "h_elytra.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "m", ty = "&horizon_client::mobs::Mob", value = "m" },
+  { name = "chest", ty = "Option<&str>", value = "chest" },
+  { name = "camera", ty = "glam::DVec3", value = "camera" },
+  { name = "partial", ty = "f32", value = "partial" },
+  { name = "light", ty = "u32", value = "light" },
+  { name = "out", ty = "&mut Vec<horizon_client::mesher::Vertex>", value = "&mut *out" },
+]
+
+# Room for the emote icons while the atlas is packed.
+[[injection]]
+id = "atlas_slots"
+target = "horizon_client_render::hud::HudAtlas::slots"
+kind = "HEAD"
+helper = "h_atlas.rs"
+bindings = [
+  { name = "images", ty = "&mut Vec<(String, u32, u32, Vec<u8>)>", value = "&mut *images" },
+]
+
+# ---- the screens ----
+
+[[injection]]
+id = "list"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_mods"
+helper = "h_list.rs"
+bindings = [
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+[[injection]]
+id = "page"
+hook = "settings"
+hook_version = 1
+kind = "HEAD"
+helper = "h_settings.rs"
+bindings = [
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "buttons", ty = "&mut Vec<String>", value = "&mut *buttons" },
+]
+
+[[injection]]
+id = "page_click"
+hook = "settings_click"
+hook_version = 1
+kind = "HEAD"
+helper = "h_click.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "button", ty = "usize", value = "button" },
+]
+
+[[injection]]
+id = "gui_post"
+hook = "gui_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_gui_post.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+]
+
+[[injection]]
+id = "render"
+hook = "screen_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_render.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+]
+
+# The options stay hidden while the Emotes config screen covers them.
+[[injection]]
+id = "options_cover"
+target = "horizon_client::game::options::Game<'_>::draw_options"
+kind = "HEAD"
+cancellable = true
+helper = "h_options_cover.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+[[injection]]
+id = "press"
+hook = "screen_mouse_button_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_press.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "release"
+hook = "screen_mouse_button_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_release.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "drag"
+hook = "screen_mouse_dragged_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_drag.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "scroll"
+hook = "screen_mouse_scrolled_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_scroll.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "scroll", ty = "[f64; 2]", value = "scroll" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_pressed"
+hook = "screen_key_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_pressed.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_released"
+hook = "screen_key_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_released.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "char"
+hook = "screen_char_typed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_char.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "c", ty = "char", value = "c" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+# ---- the server half (single player, a LAN host, a dedicated server) ----
+
+[[injection]]
+id = "world"
+hook = "world_lifecycle"
+hook_version = 1
+kind = "HEAD"
+helper = "h_world.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "phase", ty = "horizon_client::mod_api::WorldPhase", value = "phase" },
+]
+
+[[injection]]
+id = "server_tick"
+hook = "server_tick"
+hook_version = 1
+kind = "HEAD"
+helper = "h_server_tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "phase", ty = "horizon_client::mod_api::ServerTickPhase", value = "phase" },
+]
+
+[[injection]]
+id = "logged_in"
+hook = "player_logged_in"
+hook_version = 1
+kind = "HEAD"
+helper = "h_logged_in.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "name", ty = "&str", value = "name" },
+]
+
+[[injection]]
+id = "logged_out"
+hook = "player_logged_out"
+hook_version = 1
+kind = "HEAD"
+helper = "h_logged_out.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+]
+
+[[injection]]
+id = "start_tracking"
+hook = "player_start_tracking"
+hook_version = 1
+kind = "HEAD"
+helper = "h_start_tracking.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "uuid", ty = "u128", value = "uuid" },
+  { name = "kind", ty = "&str", value = "kind" },
+]
+
+[[injection]]
+id = "stop_tracking"
+hook = "player_stop_tracking"
+hook_version = 1
+kind = "HEAD"
+helper = "h_stop_tracking.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "uuid", ty = "u128", value = "uuid" },
+  { name = "kind", ty = "&str", value = "kind" },
+]
+
+# A guest's plugin message (not in the hook catalog at this commit: by its path).
+[[injection]]
+id = "payload"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_custom_payload_from_client"
+helper = "h_payload.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "channel", ty = "&str", value = "channel" },
+  { name = "data", ty = "&[u8]", value = "data" },
+]
+
+# The server's decoder lets Emotecraft's messages up to 1 MiB on its channel, as Emotecraft's
+# own servers do (vanilla stops custom payloads at 32767 bytes; songs and big emotes are more).
+[[injection]]
+id = "checked_play"
+target = "horizon_client::lan::conn::checked_play"
+kind = "HEAD"
+cancellable = true
+helper = "h_checked_play.rs"
+bindings = [
+  { name = "packet", ty = "&play::Serverbound", value = "&packet" },
+]
+
+[[injection]]
+id = "server_commands"
+hook = "register_commands"
+hook_version = 1
+kind = "HEAD"
+helper = "h_server_commands.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "commands", ty = "&mut Vec<horizon_client::mod_api::NativeCommand>", value = "&mut *commands" },
+]
+
+[[injection]]
+id = "server_command"
+hook = "perform_command"
+hook_version = 1
+kind = "HEAD"
+helper = "h_server_command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "&horizon_client::mod_api::NativeServerPlayer", value = "player" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+[[injection]]
+id = "console_command"
+hook = "perform_console_command"
+hook_version = 1
+kind = "HEAD"
+helper = "h_console_command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+# Completions the client asks the server for (not in the hook catalog at this commit: by its path).
+[[injection]]
+id = "complete"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_tab_complete_v2"
+helper = "h_complete.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "label", ty = "&str", value = "label" },
+  { name = "arguments", ty = "&[String]", value = "arguments" },
+  { name = "range", ty = "[usize; 2]", value = "range" },
+  { name = "suggestions", ty = "&mut Vec<horizon_client::mod_api::Suggestion>", value = "&mut *suggestions" },
+]

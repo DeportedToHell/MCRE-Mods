@@ -1,0 +1,90 @@
+Emotecraft for Horizon
+Emotecraft (c) KosmX, dima_dencep and contributors
+Horizon port (c) 2026 DeportedToHell
+
+A Rust port of Emotecraft by KosmX and dima_dencep (https://github.com/KosmX/emotes,
+branch dev, version 3.5.0 for Minecraft 26.3, commit a786648), for Horizon, the Rust
+rewrite of Minecraft Java Edition 26.3. Emotecraft is under the GNU General Public
+License version 3; this port is under the GNU General Public License version 3 only
+(LICENSE). This port is not made, endorsed or supported by KosmX, dima_dencep, Mojang
+or Microsoft. Report problems with the port at
+https://github.com/DeportedToHell/MCRE-Mods/issues, not to Emotecraft's authors.
+
+
+Statement of changes (GPL-3.0 section 5a)
+-----------------------------------------
+2026-11-11, DeportedToHell: Emotecraft's client and server (the Fabric/NeoForge mod
+and the Paper plugin) rewritten in Rust as one Horizon native mod: the emote
+player, the emote wheel and every screen drawn with Horizon's GUI, the network
+protocol (emotecraft:emote and emotecraft:stream, every packet version), the
+server's commands, the emote file formats, Opus songs played through the mod's own
+audio output. Online Emotes and the cloud library are left out (their buttons stay
+as Emotecraft shows them when the service is unavailable); the Geyser support is
+left out. A Russian name for "Let's Groove" was added (Emotecraft's ru_RU has none).
+While the mod is on, Horizon's own emote wheel key (B) opens Emotecraft's wheel.
+
+
+From Emotecraft, unchanged
+--------------------------
+- the built-in emotes, their icons and songs, in mixins/emotecraft/data/emotes/
+  (emotesAssets/src/main/resources/assets/emotecraft/emotes/);
+- the mod logo (mixins/emotecraft/data/icon.png) and the folder icons
+  (folder.png, folder_open.png);
+- the English and Russian texts (assets/emotecraft/lang/en_us.json, ru_ru.json),
+  in mixins/emotecraft/engine/src/lang.rs.
+
+Built-in emotes by KosmX (Waving, Clap, Crying, Point, Over here, Face palm),
+Kale Ko (Back Flip), Wah0o (Kazotsky kick, Roblox potion dance), 3APA3EH (Club
+penguin, Twerk, Let's Groove) and SPEmotes (Caramell Dance, Take the L), as
+Emotecraft credits them. The three songs (Caramelldansen, Let's Groove, Take the L)
+come with Emotecraft's built-in emotes as Emotecraft ships them; their rights
+belong to their owners. Deleting their entries from mixins/emotecraft/songs.rs and
+the .opus files removes them.
+
+The translations are Emotecraft's own, made by its translators on Crowdin
+(https://crowdin.com/project/emotecraft, project 414868).
+
+
+Libraries the port is based on
+------------------------------
+Emotecraft plays emotes with PlayerAnimationLibrary by ZigyTheBird
+(https://github.com/ZigyTheBird/PlayerAnimationLibrary), which is based on
+GeckoLib 4.8.4 (commit 2d7dc6e) and on playerAnimator by KosmX, and uses
+mochafloats (Molang) by Unnamed Team. Their animation logic (the controller, the
+keyframes and easings, the Bedrock and PlayerAnimator loaders, the binary format)
+and the Molang parser and interpreter are rewritten in Rust in
+mixins/emotecraft/engine/src/ and mixins/emotecraft/pose.rs. They are under the MIT
+licence:
+
+    Copyright (c) 2025 ZigyTheBird           (PlayerAnimationLibrary)
+    Copyright (c) 2024 GeckoLib              (GeckoLib)
+    Copyright (c) 2022 KosmX                 (playerAnimator)
+    Copyright (c) 2021-2025 Unnamed Team     (mochafloats)
+    Copyright (c) 2015 Boris Chumichev       (the "step" easing)
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+
+Crates the engine builds with (fetched by Cargo, not included)
+---------------------------------------------------------------
+- rusty-opus 1 (https://github.com/Remade-With-Rust/rusty-opus, BSD-3-Clause;
+  a Rust Opus decoder after libopus, Copyright 2001-2023 Xiph.Org, Skype Limited,
+  Octasic and others) decodes the songs;
+- cpal 0.16 (Apache-2.0), png 0.18 (MIT OR Apache-2.0), serde_json 1
+  (MIT OR Apache-2.0), log 0.4 (MIT OR Apache-2.0).

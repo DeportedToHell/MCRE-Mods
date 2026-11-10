@@ -1,0 +1,16 @@
+# Emotecraft for Horizon: the emote engine (animations, loaders, binary formats, the network
+# protocol, songs, the client config and the server's logic), a crate of the bundle.
+# Dependencies are the versions in Horizon's Cargo.lock (docs/native-mods.md, "The mod's crate").
+[package]
+name = "emotecraft-engine"
+version = "1.0.0"
+edition = "2024"
+license = "GPL-3.0-only"
+publish = false
+
+[dependencies]
+serde_json = "1"
+rusty-opus = "1"
+cpal = "0.16"
+png = "0.18"
+log = "0.4"
