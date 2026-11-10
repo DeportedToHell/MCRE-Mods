@@ -669,7 +669,7 @@ fn modmenu_json() -> String {
   "authors": ["DeportedToHell"],
   "license": "MIT",
   "links": {{
-    "sources": "https://github.com/DeportedToHell/MCRE-Mods/tree/main/dynamiclights",
+    "sources": "https://github.com/DeportedToHell/MCRE-Mods/tree/main/betterdynamiclights",
     "issues": "https://github.com/DeportedToHell/MCRE-Mods/issues"
   }},
   "badges": ["client"],

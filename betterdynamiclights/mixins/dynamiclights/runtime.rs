@@ -11,7 +11,7 @@ use std::sync::Mutex;
 
 pub const ID: &str = "dynamiclights";
 pub const NAME: &str = "Better Dynamic Lights";
-pub const VERSION: &str = "1.0.2";
+pub const VERSION: &str = "1.0.3";
 
 /// The mod's one key: turns the lights on and off while playing.
 pub const TOGGLE_KEY: &str = "toggle";
