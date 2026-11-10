@@ -13,11 +13,11 @@ body:
     attributes:
       label: Mod / Мод
       options:
-        - BetterF3
         - Bad Wither No Cookie - Reloaded
+        - Better Dynamic Lights
+        - BetterF3
         - ClientSort
         - Clumps
-        - Dynamic Lights
         - Emotecraft
         - Falling Leaves
         - First-person Model

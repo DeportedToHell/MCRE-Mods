@@ -1,7 +1,27 @@
-# Dynamic Lights for Horizon
+# Better Dynamic Lights for Horizon
 
 An original native mod (`.hnmod`) for [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of
 Minecraft: Java Edition 26.3: torches, lanterns and other glowing things light up the world as they move.
+
+## Better than the built-in lights
+
+Horizon already has dynamic lights of its own (Options > Horizon Extras > Dynamic lights, off by default): items in
+your hands, dropped items and burning mobs light up, with one on/off switch. Better Dynamic Lights uses the same light
+renderer and takes the place of that switch while it is on, with much more:
+
+| | Horizon Extras | Better Dynamic Lights |
+|---|---|---|
+| Held items (yours, other players', mobs') and dropped items | yes | yes, also armor stands |
+| Burning mobs and items | yes | yes, also burning arrows and tridents |
+| Glowing creatures: blazes, magma cubes, glow squids, allays, vexes | — | yes |
+| Projectiles: fireballs, wither skulls, shulker bullets, spectral arrows, firework rockets | — | yes |
+| Primed TNT, TNT and furnace minecarts | — | yes |
+| Water puts out fire (lanterns keep shining) | — | yes |
+| A switch for every kind of light | — | yes |
+| Brightness, range and number of lights | — | yes |
+| A key to turn the lights on and off | — | yes |
+| Its own settings screen, Mod Menu, English and Russian | — | yes |
+| On by default | off | on |
 
 ## Features
 
@@ -21,7 +41,7 @@ glow berries as cave vines with berries (14).
 
 ### Settings
 
-Options > Mods > Dynamic Lights > **Configure...** (or Mod Menu's Configure button) opens the settings screen,
+Options > Mods > Better Dynamic Lights > **Configure...** (or Mod Menu's Configure button) opens the settings screen,
 an options screen in the game's own look, in English or Russian with the game's language:
 
 | Option | Default | |
@@ -43,7 +63,7 @@ Horizon's extra works as before.
 
 ## Install
 
-From the launcher: Mods, find **Dynamic Lights**, Install, then Native build > Build.
+From the launcher: Mods, find **Better Dynamic Lights**, Install, then Native build > Build.
 
 By hand: put `dynamiclights-<version>.hnmod` in `<game folder>/horizon-native-mods/`, add the line
 `mod.dynamiclights:true` to `horizon-mods.txt`, then Native build > Build in the launcher.
@@ -80,7 +100,10 @@ affiliated with Mojang or Microsoft.
 
 ---
 
-**По-русски.** Динамический свет для Horizon: факел, фонарь или другой светящийся предмет в руке освещает всё
-вокруг. Светятся и предметы на земле, горящие мобы, всполохи, магмовые кубы, светящиеся спруты, файерболы,
-активированный динамит и другое. Под водой огонь гаснет (настраивается). Настройки: Настройки > Моды >
-Dynamic Lights > «Настройки...» (или кнопка «Настроить» в Mod Menu); там же клавиша для включения и выключения.
+**По-русски.** Better Dynamic Lights — улучшенный динамический свет для Horizon. В самой игре уже есть встроенный
+динамический свет (Настройки > Дополнения Horizon, по умолчанию выключен): светятся предметы в руке и на земле и горящие
+мобы. Мод заменяет его, пока включён, и умеет больше: светятся всполохи, магмовые кубы, светящиеся спруты, тихони и
+вредины, файерболы, черепа визера, светящиеся стрелы и фейерверки, подожжённый динамит и вагонетки с динамитом и печкой;
+под водой огонь гаснет, а фонари продолжают светить; у каждого вида света свой переключатель, можно настроить яркость,
+дальность и число источников, есть клавиша включения и свой экран настроек. Настройки: Настройки > Моды >
+Better Dynamic Lights > «Настройки...» (или кнопка «Настроить» в Mod Menu).

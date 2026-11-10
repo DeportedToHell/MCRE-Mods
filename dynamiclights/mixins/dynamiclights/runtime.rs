@@ -10,8 +10,8 @@
 use std::sync::Mutex;
 
 pub const ID: &str = "dynamiclights";
-pub const NAME: &str = "Dynamic Lights";
-pub const VERSION: &str = "1.0.1";
+pub const NAME: &str = "Better Dynamic Lights";
+pub const VERSION: &str = "1.0.2";
 
 /// The mod's one key: turns the lights on and off while playing.
 pub const TOGGLE_KEY: &str = "toggle";
@@ -35,10 +35,12 @@ fn t(ru: bool, en: &'static str, russian: &'static str) -> &'static str {
 pub fn description(ru: bool) -> &'static str {
     t(
         ru,
-        "Torches, lanterns and other glowing items light up the world around you while you hold them. \
-         Dropped items, burning mobs and glowing creatures shine too.",
-        "Факелы, фонари и другие светящиеся предметы освещают всё вокруг, пока вы держите их в руке. \
-         Светятся и предметы на земле, горящие мобы и светящиеся существа.",
+        "Horizon's built-in dynamic lights, with more: besides held and dropped items and burning mobs, glowing \
+         creatures, projectiles, TNT and minecarts shine too, water puts out fire, and every kind of light has its \
+         own switch.",
+        "Встроенный динамический свет Horizon, только больше: кроме предметов в руке, на земле и горящих мобов \
+         светятся ещё светящиеся существа, снаряды, динамит и вагонетки, вода гасит огонь, и у каждого вида света \
+         свой переключатель.",
     )
 }
 
@@ -505,8 +507,8 @@ impl Settings {
 }
 
 /// The screen's title.
-pub fn title(ru: bool) -> &'static str {
-    t(ru, "Dynamic Lights", "Динамический свет")
+pub fn title(_ru: bool) -> &'static str {
+    NAME
 }
 
 /// The headings over the screen's groups of options.
