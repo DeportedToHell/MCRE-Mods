@@ -15,12 +15,15 @@ use super::plasmovoice_gui as gui;
 use super::plasmovoice_hud as hud;
 use super::plasmovoice_lang::{self as lang, t, tf};
 use horizon_client::hud::HudBatch;
-use horizon_client::mod_api::{ClientboundPlayPacket, NativeScreenView, ServerTickPhase, ServerboundPlayPacket, WorldPhase};
+use horizon_client::mod_api::{
+    ClientboundPlayPacket, NativeCommand, NativeScreenView, NativeServerPlayer, ServerTickPhase, ServerboundPlayPacket, Suggestion, WorldPhase,
+};
 use horizon_client::text::Text;
 use horizon_protocol::packets::configuration::CustomPayload;
 use horizon_protocol::rsa::{RsaPrivateKey, RsaPublicKey};
 use plasmovoice_engine::client::{self, ActivationSettings, ActivationType, Client, Settings, World};
 use plasmovoice_engine::server::{self, Position, Server};
+use plasmovoice_engine::server_commands::{self, Sender};
 use plasmovoice_engine::tcp::{self, Activation};
 use plasmovoice_engine::wire::Uuid;
 use std::collections::{HashMap, HashSet};
@@ -692,7 +695,8 @@ pub(super) fn frame(game: &mut Game<'_>) {
     lines.sort_by(|a, b| b.weight.cmp(&a.weight).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())));
     let status = client.status();
     let server = status.server_id.map(|u| u.to_string()).unwrap_or_default();
-    let known = (activations.iter().map(|a| a.name.clone()).collect(), lines.iter().map(|l| l.name.clone()).collect(), server.clone());
+    // A server that changed its distances (`/vreload`) registers them again, as a new Config does.
+    let known = (activations.iter().map(|a| format!("{} {:?} {}", a.name, a.distances, a.default_distance)).collect(), lines.iter().map(|l| l.name.clone()).collect(), server.clone());
     if side.known != known {
         config(|c| register(c, &server, &activations, &lines));
         side.known = known;
@@ -774,7 +778,7 @@ fn log_status(s: &client::Status, settings: &Settings) {
 /// While someone is heard, once a second: how loud the mix is, at what volume.
 fn log_output(s: &client::Status, settings: &Settings) {
     static LAST: Mutex<Option<Instant>> = Mutex::new(None);
-    if !s.sources.iter().any(|x| x.activated) || s.output_peak <= 0.0 {
+    if !s.sources.iter().any(|x| x.activated) {
         return;
     }
     let mut last = lock(&LAST);
@@ -782,7 +786,8 @@ fn log_output(s: &client::Status, settings: &Settings) {
         return;
     }
     *last = Some(Instant::now());
-    log::info!("[{NAME}] hearing: output peak {:.1} dBFS at volume {:.2}", 20.0 * s.output_peak.log10(), settings.volume);
+    // Silence (a source out of range, muted) reads as -inf.
+    log::info!("[{NAME}] hearing: output peak {:.1} dBFS at volume {:.2}, played {} frames", 20.0 * s.output_peak.log10(), settings.volume, s.played);
 }
 
 /// What the HUD shows: whether the player is talking now, and who is heard.
@@ -1019,15 +1024,58 @@ pub(super) fn name_tag(entity: u32, visible: bool) {
 }
 
 // ---- the server half ------------------------------------------------------------------------
+//
+// Single player's server thread, a LAN host, and a dedicated server (`horizon-engine`, no
+// window): Plasmo Voice's server, with its files in `config/plasmovoice/server/` as the Fabric
+// mod keeps them (`config.toml`, `voice_mutes.json`, `languages/`), its commands, and its UDP
+// server on `[host]`'s address (port 0: the Minecraft server's port on a dedicated server, any free
+// port in a LAN world).
 
 struct ServerSide {
     server: Server,
     joined: HashSet<u128>,
     /// The host's own player, joined through `BRIDGE`.
     host: Option<u128>,
+    /// Ticks since the players' permissions and languages were last read.
+    reads: u32,
 }
 
 static SERVER: Mutex<Option<ServerSide>> = Mutex::new(None);
+
+/// Operators, for the commands and permissions Plasmo Voice gives `PermissionDefault.OP`:
+/// vanilla's level for game-master commands. A permissions mod answers the nodes instead.
+const OP_LEVEL: u8 = 2;
+
+/// The dedicated server's port: the one it listens on, else `server-port` (`server.properties`,
+/// vanilla's 25565 when unset).
+fn server_port(game: &Game<'_>, dir: &std::path::Path) -> u16 {
+    if let Some(port) = game.lan_port().filter(|p| *p != 0) {
+        return port;
+    }
+    std::fs::read_to_string(dir.join("server.properties"))
+        .ok()
+        .and_then(|text| {
+            text.lines()
+                .filter_map(|l| l.split_once('='))
+                .find(|(k, _)| k.trim() == "server-port")
+                .and_then(|(_, v)| v.trim().parse().ok())
+        })
+        .unwrap_or(25565)
+}
+
+/// The names in the server's `usercache.json`, for `/vmutelist` and `/vunmute` of players who
+/// aren't on (`getGameProfile`).
+fn user_cache(dir: &std::path::Path) -> Vec<(Uuid, String)> {
+    let Ok(text) = std::fs::read_to_string(dir.join("usercache.json")) else { return Vec::new() };
+    let Ok(serde_json::Value::Array(entries)) = serde_json::from_str::<serde_json::Value>(&text) else { return Vec::new() };
+    entries
+        .iter()
+        .filter_map(|e| {
+            let id = plasmovoice_engine::server_config::parse_uuid(e.get("uuid")?.as_str()?)?;
+            Some((id, e.get("name")?.as_str()?.to_owned()))
+        })
+        .collect()
+}
 
 /// Hook `world_lifecycle`: the voice server runs while the world does.
 pub(super) fn world(game: &mut Game<'_>, phase: WorldPhase) {
@@ -1037,14 +1085,20 @@ pub(super) fn world(game: &mut Game<'_>, phase: WorldPhase) {
     let mut guard = lock(&SERVER);
     match phase {
         WorldPhase::WorldOpenReady => {
-            if guard.is_none() {
-                match Server::start(0, server::Config::default(), Arc::new(Encrypt)) {
-                    Ok(server) => {
-                        log::info!("[{NAME}] voice server on UDP port {}", server.port());
-                        *guard = Some(ServerSide { server, joined: HashSet::new(), host: None });
-                    }
-                    Err(e) => log::warn!("[{NAME}] can't start the voice server: {e}"),
+            if guard.is_none() && game.native_on(ID) {
+                let folder = Game::native_config_dir().ok().map(|d| d.join(ID).join("server"));
+                // Single player's server thread runs with the dedicated options too, so
+                // `native_server_dir` answers there as well: the role tells them apart.
+                let dedicated = (game.options.execution_role == super::execution_role::ExecutionRole::DedicatedServer)
+                    .then(|| game.native_server_dir())
+                    .flatten();
+                let minecraft_port = dedicated.as_deref().map_or(0, |d| server_port(game, d));
+                let options = server::Options { folder, minecraft_port };
+                let mut server = Server::start(options, Arc::new(Encrypt));
+                if let Some(dir) = &dedicated {
+                    server.remember(user_cache(dir));
                 }
+                *guard = Some(ServerSide { server, joined: HashSet::new(), host: None, reads: 0 });
             }
         }
         WorldPhase::WorldCloseFinal | WorldPhase::WorldCloseFailed => {
@@ -1067,6 +1121,7 @@ pub(super) fn logged_in(game: &mut Game<'_>, player: u128, name: &str) {
     if side.host == Some(player) || !side.joined.insert(player) {
         return;
     }
+    // The channels Plasmo Voice's clients send on, registered as a Paper server registers them.
     let channels = format!("{}\0{}", tcp::CHANNEL, tcp::FLAG_CHANNEL).into_bytes();
     let _ = game.native_send_custom_payload_to_player(player, "minecraft:register", &channels);
     side.server.join(Uuid(player), name);
@@ -1095,7 +1150,8 @@ pub(super) fn payload(game: &mut Game<'_>, player: u128, channel: &str, data: &[
     }
 }
 
-/// Hook `server_tick`, at its end: positions in, payloads out.
+/// Hook `server_tick`, at its end: positions, permissions and languages in; payloads, chat lines
+/// and kicks out.
 pub(super) fn server_tick(game: &mut Game<'_>, phase: ServerTickPhase) {
     if game.window.is_some() || !matches!(phase, ServerTickPhase::ServerTickEnd { .. }) {
         return;
@@ -1126,8 +1182,23 @@ pub(super) fn server_tick(game: &mut Game<'_>, phase: ServerTickPhase) {
             side.server.handle_tcp(Uuid(uuid), &data);
         }
     }
-    let mut positions: Vec<(Uuid, Position)> = game
-        .native_server_players()
+    let players = game.native_server_players();
+    // Once a second: what each player may do (`pv.activation.proximity`, `pv.allow_freecam`,
+    // `pv.bypass_mod_requirement`), and their game's language for the server's messages.
+    side.reads += 1;
+    if side.reads >= 20 {
+        side.reads = 0;
+        for p in &players {
+            let perms = server::Perms {
+                proximity: game.native_has_permission(p.uuid, "pv.activation.proximity", 0),
+                allow_freecam: game.native_has_permission(p.uuid, "pv.allow_freecam", 0),
+                bypass_mod_requirement: game.native_has_permission(p.uuid, "pv.bypass_mod_requirement", OP_LEVEL),
+            };
+            let language = game.native_player_client(p.uuid).map(|c| c.language).filter(|l| !l.is_empty());
+            side.server.set_player(Uuid(p.uuid), language, perms);
+        }
+    }
+    let mut positions: Vec<(Uuid, Position)> = players
         .into_iter()
         .map(|p| (Uuid(p.uuid), Position { world: p.dimension, pos: [p.position[0], p.position[1] + f64::from(p.eye_height), p.position[2]] }))
         .collect();
@@ -1137,6 +1208,8 @@ pub(super) fn server_tick(game: &mut Game<'_>, phase: ServerTickPhase) {
     side.server.update(&positions);
     let host = side.host;
     let out = side.server.take_tcp();
+    let tells = side.server.take_tells();
+    let kicks = side.server.take_kicks();
     drop(guard);
     for (to, data) in out {
         if Some(to.0) == host {
@@ -1145,4 +1218,74 @@ pub(super) fn server_tick(game: &mut Game<'_>, phase: ServerTickPhase) {
             log::debug!("[{NAME}] can't send to {to}: {e}");
         }
     }
+    for (to, line) in tells {
+        game.native_tell(to.0, Text::literal(line));
+    }
+    for (to, reason) in kicks {
+        game.native_kick(to.0, &Text::literal(reason));
+    }
+}
+
+fn ours(command: &str) -> bool {
+    let label = command.trim_start_matches('/').split(' ').next().unwrap_or_default();
+    Server::command_names().contains(&label)
+}
+
+/// Hook `register_commands`: `/vlist`, `/vmute`, `/vunmute`, `/vmutelist`, `/vreload`, `/vrc`,
+/// each decided by its permission node (`pv.list`...), whose default is everyone or operators.
+pub(super) fn register_commands(game: &mut Game<'_>, commands: &mut Vec<NativeCommand>) {
+    if game.window.is_some() || !game.native_on(ID) {
+        return;
+    }
+    for c in server_commands::COMMANDS {
+        let level = match c.default {
+            server_commands::Default::Everyone => 0,
+            server_commands::Default::Op => OP_LEVEL,
+        };
+        commands.push(NativeCommand::op(c.usage, level).permission(c.permission));
+    }
+}
+
+/// Runs one of the commands and answers its sender.
+fn run_command(game: &mut Game<'_>, sender: &Sender, command: &str) -> bool {
+    if game.window.is_some() || !ours(command) {
+        return false;
+    }
+    let lines = {
+        let mut guard = lock(&SERVER);
+        let Some(side) = guard.as_mut() else { return false };
+        side.server.command(sender, command)
+    };
+    let Some(lines) = lines else { return false };
+    for line in lines {
+        game.native_feedback(Text::literal(line));
+    }
+    true
+}
+
+/// Hook `perform_command`: a player's command (their level or permission node already allowed).
+pub(super) fn command(game: &mut Game<'_>, player: &NativeServerPlayer, command: &str, ran: &mut bool) {
+    let sender = Sender::Player { id: Uuid(player.uuid), name: player.name.clone() };
+    if run_command(game, &sender, command) {
+        *ran = true;
+    }
+}
+
+/// Hook `perform_console_command`: the dedicated server's console.
+pub(super) fn console_command(game: &mut Game<'_>, command: &str, ran: &mut bool) {
+    if run_command(game, &Sender::Console, command) {
+        *ran = true;
+    }
+}
+
+/// `native_tab_complete_v2`: `/vmute`'s durations and `/vunmute`'s muted players.
+pub(super) fn complete(game: &mut Game<'_>, label: &str, arguments: &[String], range: [usize; 2], suggestions: &mut Vec<Suggestion>) {
+    if game.window.is_some() || !ours(label) {
+        return;
+    }
+    let guard = lock(&SERVER);
+    let Some(side) = guard.as_ref() else { return };
+    let Some(list) = side.server.complete(label, arguments) else { return };
+    suggestions.clear();
+    suggestions.extend(list.into_iter().map(|text| Suggestion { range: (range[0], range[1]), text, tooltip: None, int_value: None }));
 }

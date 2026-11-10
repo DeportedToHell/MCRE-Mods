@@ -404,6 +404,9 @@ impl Client {
                     s.server.secret = secret;
                     s.server.addr = addr;
                     s.server.configured = false;
+                    // A new UDP client (`removeClient(RECONNECT)` then `connect`): it says hello
+                    // again until the server answers (`/vrc`, a keep-alive timeout).
+                    s.server.last_ping = None;
                     if addr.is_none() {
                         s.error = Some(format!("can't resolve {host}:{port}"));
                     }
@@ -1112,7 +1115,8 @@ fn playback_loop(shared: &Mutex<Shared>, stop: &AtomicBool) {
         s.sources.retain(|_, src| src.last_audio.elapsed() < Duration::from_secs(5) || src.info.is_none());
         s.played += frames.len() as u64;
         let peak = frames.iter().flat_map(|(_, f)| f.iter()).fold(0f32, |m, v| m.max(v.abs()));
-        if peak > 0.0 {
+        // The loudest sample of the last second's frames, silent ones (out of range, muted) too.
+        if !frames.is_empty() {
             if s.output_peak.1.is_none_or(|t| t.elapsed() > Duration::from_secs(1)) {
                 s.output_peak = (peak, Some(now));
             } else {

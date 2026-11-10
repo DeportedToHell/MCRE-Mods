@@ -10,10 +10,18 @@ pub mod client;
 pub mod crypto;
 pub mod dsp;
 pub mod md5;
+pub mod mutes;
 pub mod server;
+pub mod server_commands;
+pub mod server_config;
+pub mod server_lang;
 pub mod tcp;
 pub mod udp;
 pub mod wire;
 
 /// The Plasmo Voice version the port speaks (the server checks the major, 2, and `>= 2.0.0`).
 pub const PROTOCOL_VERSION: &str = "2.2.0";
+
+/// The log target of the engine's lines: Horizon's logger shows the informational lines of
+/// `horizon*` targets only (the server's "UDP server is started", "connected", mutes).
+pub(crate) const LOG: &str = "horizon_plasmovoice";

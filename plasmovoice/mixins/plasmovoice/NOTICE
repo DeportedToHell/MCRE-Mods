@@ -9,11 +9,18 @@ License version 3 (LICENSE). This port is under the same licence.
 From Plasmo Voice, unchanged:
 - the icons in mixins/plasmovoice/data/ (client/src/main/resources/assets/
   plasmovoice/textures/icons/, its tabs/ as tab_*.png, and icon.png);
-- the English texts (client lang/en_us.json), in mixins/plasmovoice/lang.rs.
+- the English texts (client lang/en_us.json), in mixins/plasmovoice/lang.rs;
+- the server's English texts (server/common languages/en_us.toml), in
+  mixins/plasmovoice/engine/src/lang/en_us.toml;
+- the server config's comments and layout (VoiceServerConfig, written by
+  plo-config), in mixins/plasmovoice/engine/src/server_config.rs, and a
+  config.toml PlasmoVoice-Paper 2.2.0-beta.3 wrote, as a test fixture in
+  mixins/plasmovoice/engine/src/testdata/plasmo-config.toml.
 
 The Russian texts are Plasmo Voice's own Crowdin translations
 (https://github.com/plasmoapp/plasmo-voice-crowdin, branch pv: ru_RU/client.json
-and the Proximity names of each language's server.toml), translations of the
+and the Proximity names of each language's server.toml; ru_RU/server.toml
+whole, in mixins/plasmovoice/engine/src/lang/ru_ru.toml), translations of the
 LGPL-3.0 strings above.
 
 Plasmo Voice's Mod Menu screen is built with Cloth Config by shedaniel
@@ -23,7 +30,8 @@ mixins/plasmovoice/cloth_sprites.rs are parts of Cloth Config's texture.
 
 Opus audio is encoded and decoded with rusty-opus (libopus, BSD-3-Clause);
 the microphone and speakers are opened with cpal (Apache-2.0); AES with the
-RustCrypto aes and cbc crates (MIT or Apache-2.0).
+RustCrypto aes and cbc crates (MIT or Apache-2.0); the server's files with
+toml, serde_json and chrono (MIT or Apache-2.0).
 
 Additions of this port, not in Plasmo Voice:
 - a microphone before the name of players with voice chat in the player list

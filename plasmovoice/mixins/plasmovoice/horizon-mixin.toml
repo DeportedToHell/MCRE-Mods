@@ -4,8 +4,9 @@ version = "1.0.0"
 priority = 100
 
 # Nightly fdc87ae (nightly-source/2026-11-08-fdc87ae). The server half hears guests' plugin
-# messages through `native_custom_payload_from_client`, which isn't in the hook catalog yet, and
-# the glue reads game fields (the player's UUID and name), so the mod is pinned to this commit.
+# messages through `native_custom_payload_from_client` and completes commands through
+# `native_tab_complete_v2`, which aren't in the hook catalog yet, and the glue reads game fields
+# (the player's UUID and name, the server's port), so the mod is pinned to this commit.
 [compatibility]
 horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
 
@@ -348,7 +349,7 @@ bindings = [
   { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
 ]
 
-# ---- the server half (single player, a LAN host) ----
+# ---- the server half (single player, a LAN host, a dedicated server) ----
 
 [[injection]]
 id = "world"
@@ -406,4 +407,57 @@ bindings = [
   { name = "player", ty = "u128", value = "player" },
   { name = "channel", ty = "&str", value = "channel" },
   { name = "data", ty = "&[u8]", value = "data" },
+]
+
+# Plasmo Voice's commands: /vlist, /vmute, /vunmute, /vmutelist, /vreload, /vrc, each with its
+# permission node (pv.list...), from players and from a dedicated server's console.
+[[injection]]
+id = "commands"
+hook = "register_commands"
+hook_version = 1
+kind = "HEAD"
+helper = "h_commands.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "commands", ty = "&mut Vec<horizon_client::mod_api::NativeCommand>", value = "&mut *commands" },
+]
+
+[[injection]]
+id = "command"
+hook = "perform_command"
+hook_version = 1
+kind = "HEAD"
+helper = "h_command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "&horizon_client::mod_api::NativeServerPlayer", value = "player" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+[[injection]]
+id = "console_command"
+hook = "perform_console_command"
+hook_version = 1
+kind = "HEAD"
+helper = "h_console_command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+# The completions the client asks the server for (not in the hook catalog at this commit: by its
+# path): /vmute's durations, /vunmute's muted players.
+[[injection]]
+id = "complete"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_tab_complete_v2"
+helper = "h_complete.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "label", ty = "&str", value = "label" },
+  { name = "arguments", ty = "&[String]", value = "arguments" },
+  { name = "range", ty = "[usize; 2]", value = "range" },
+  { name = "suggestions", ty = "&mut Vec<horizon_client::mod_api::Suggestion>", value = "&mut *suggestions" },
 ]
