@@ -1,0 +1,67 @@
+name: Bug report / Сообщить об ошибке
+description: Something in one of our mods doesn't work. / Что-то в одном из наших модов не работает.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! You can write in English or Russian.
+        Спасибо, что сообщаете! Можно писать по-английски или по-русски.
+  - type: dropdown
+    id: mod
+    attributes:
+      label: Mod / Мод
+      options:
+        - BetterF3
+        - Bad Wither No Cookie - Reloaded
+        - ClientSort
+        - Clumps
+        - Dynamic Lights
+        - Falling Leaves
+        - First-person Model
+        - Just Enough Items
+        - Mod Menu
+        - Mouse Tweaks
+        - Particle Rain
+        - Pick Up Notifier
+        - Ping Wheel
+        - Plasmo Voice
+        - Roughly Enough Items
+        - Shulker Box Tooltip
+        - Smooth Swapping
+        - Zoomify
+    validations:
+      required: true
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod version / Версия мода
+      description: Mod Menu or Options > Mods shows it. / Видна в Mod Menu или в Настройки > Моды.
+      placeholder: "1.0.0"
+  - type: input
+    id: horizon-version
+    attributes:
+      label: Horizon version / Версия Horizon
+      description: The launcher shows it. / Видна в лаунчере.
+      placeholder: "Nightly 2026-11-08"
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? / Что случилось?
+      description: What you expected and what you saw instead. Screenshots help a lot. / Что ожидали и что получилось. Скриншоты очень помогают.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to repeat it / Как повторить
+      placeholder: |
+        1. ...
+        2. ...
+  - type: textarea
+    id: others
+    attributes:
+      label: Other mods and the log / Другие моды и лог
+      description: Which other mods you have on, and the game log if it crashed. / Какие ещё моды включены и лог игры, если она вылетела.
+      render: text
