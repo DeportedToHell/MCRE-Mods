@@ -1,7 +1,7 @@
 <p align="center"><a href="README.md"><img src=".github/readme/lang-en-off.svg" alt="English" height="36"></a> <a href="README.ru.md"><img src=".github/readme/lang-ru-on.svg" alt="Русский" height="36"></a></p>
 
 <p><img align="left" src=".github/readme/hero-top-ru.svg" alt="MCRE-Mods — Horizon Edition" width="100%"><a href="#моды"><img align="left" src=".github/readme/hero-all-ru.svg" alt="Все моды" width="100%"></a><a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><img align="left" src=".github/readme/hero-bug-ru.svg" alt="Сообщить о баге" width="100%"></a><a href="https://playhorizon.dev/mods"><img align="left" src=".github/readme/hero-install-ru.svg" alt="Установить моды" width="100%"></a><a href="#что-дальше"><img align="left" src=".github/readme/hero-next-ru.svg" alt="Что дальше" width="100%"></a><img align="left" src=".github/readme/hero-bottom-ru.svg" alt="" width="100%"></p>
-<br clear="all">
+<br clear="all"><br>
 
 <p align="center"><b>Порты лучших модов Java Edition — и наши версии с новыми возможностями — для <a href="https://github.com/horizon-rust/horizon">Horizon</a>, Minecraft: Java Edition 26.3, переписанного на Rust.</b><br>Порты выглядят и работают точно как оригиналы: те же функции, настройки и экраны. Нативно, быстро и с открытым кодом.</p>
 
