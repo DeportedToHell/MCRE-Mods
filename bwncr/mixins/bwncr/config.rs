@@ -136,7 +136,7 @@ fn write_data(game: &Game<'_>) {
   "description": "{}",
   "description_ru": "{}",
   "authors": ["Kreezxil, Eleksploded"],
-  "contributors": ["droidicus (original)", "Mrbysco", "PrincessStellar (pt_br)", "Valentín Alarcón (es_ar)", "Kastromovskiy (Horizon port)", "DeportedToHell"],
+  "contributors": ["droidicus (original)", "Mrbysco", "PrincessStellar (pt_br)", "Valentín Alarcón (es_ar)", "Kastromovskiy (Horizon port)"],
   "license": "MIT",
   "links": {{
     "homepage": "https://www.curseforge.com/minecraft/mc-mods/bad-wither-no-cookie-reloaded",

@@ -22,6 +22,6 @@ in mixins/bwncr/cloth_sprites.rs are parts of Cloth Config's texture
 (assets/cloth-config2/textures/gui/cloth_config.png), converted to rows of
 pixels, and its texts are Cloth Config's own.
 
-This port, by Kastromovskiy and DeportedToHell, rewrites the mod's sound
+This port, by Kastromovskiy, rewrites the mod's sound
 handler, config and listen command in Rust for Horizon's native mod API. It is not affiliated with Kreezxil, Mojang or
 Microsoft.

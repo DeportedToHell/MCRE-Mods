@@ -10,7 +10,7 @@
 pub const ID: &str = "bwncr";
 /// `fabric.mod.json`'s name.
 pub const NAME: &str = "Bad Wither No Cookie Reloaded";
-pub const VERSION: &str = "1.0.0";
+pub const VERSION: &str = "1.0.1";
 /// AutoConfig's file in the game's `config` folder (`@Config(name = "bwncr")`).
 pub const CONFIG_FILE: &str = "bwncr.toml";
 /// The client command's root (`/bwncr listen`).

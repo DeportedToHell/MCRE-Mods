@@ -3,7 +3,7 @@
 A port of [Clumps](https://github.com/jaredlll08/Clumps) by Jaredlll08 to [Horizon](https://github.com/horizon-rust/horizon),
 the Rust rewrite of Minecraft: Java Edition 26.3, as a native mod (`.hnmod`). It behaves like Clumps 26.3.
 
-Ported by Kastromovskiy, with DeportedToHell.
+Ported by Kastromovskiy.
 
 ## Features
 
@@ -56,4 +56,4 @@ Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
 ## Licence
 
-MIT, as Clumps (Jaredlll08; the port: Kastromovskiy and DeportedToHell): see `LICENSE` and `NOTICE`. Not affiliated with Jaredlll08, Mojang or Microsoft.
+MIT, as Clumps (Jaredlll08; the port: Kastromovskiy): see `LICENSE` and `NOTICE`. Not affiliated with Jaredlll08, Mojang or Microsoft.
