@@ -12,7 +12,7 @@
 <p>
 <a href="particlerain"><img src=".github/readme/card-particlerain-en.svg" alt="Particle Rain" width="49%"></a>
 <a href="fallingleaves"><img src=".github/readme/card-fallingleaves-en.svg" alt="Falling Leaves" width="49%"></a>
-<a href="dynamiclights"><img src=".github/readme/card-dynamiclights-en.svg" alt="Better Dynamic Lights" width="49%"></a>
+<a href="betterdynamiclights"><img src=".github/readme/card-dynamiclights-en.svg" alt="Better Dynamic Lights" width="49%"></a>
 <a href="firstpersonmodel"><img src=".github/readme/card-firstpersonmodel-en.svg" alt="First-person Model" width="49%"></a>
 </p>
 
