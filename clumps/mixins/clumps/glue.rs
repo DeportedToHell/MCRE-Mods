@@ -64,7 +64,7 @@ pub(super) fn frame(game: &Game<'_>) {
   "description": "{}",
   "description_ru": "{}",
   "authors": ["Jaredlll08"],
-  "contributors": ["Darkhax", "ChampionAsh5357", "Chloe Dawn", "FalseHonesty", "Griefed", "Hache_raw", "Paint_Ninja", "SkySom", "OathtakerPaladin", "Kastromovskiy (Horizon port)"],
+  "contributors": ["Darkhax", "ChampionAsh5357", "Chloe Dawn", "FalseHonesty", "Griefed", "Hache_raw", "Paint_Ninja", "SkySom", "OathtakerPaladin", "DispatchedToHeaven (Horizon port)"],
   "license": "MIT",
   "links": {{
     "homepage": "https://www.curseforge.com/minecraft/mc-mods/clumps",

@@ -68,5 +68,5 @@ Native mods are compiled into the game and are not sandboxed: build only code yo
 
 ## Credits
 
-Every mod keeps its original's licence and credits its authors: see the README, LICENSE and NOTICE in its folder. Ported by **DeportedToHell** and **Kastromovskiy**.
+Every mod keeps its original's licence and credits its authors: see the README, LICENSE and NOTICE in its folder. Ported by **DeportedToHell** and **DispatchedToHeaven**.
 Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.

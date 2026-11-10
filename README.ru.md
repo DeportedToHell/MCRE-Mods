@@ -68,5 +68,5 @@
 
 ## Авторы
 
-Каждый мод сохраняет лицензию оригинала и указывает его авторов: README, LICENSE и NOTICE в папке мода. Порты делают **DeportedToHell** и **Kastromovskiy**.
+Каждый мод сохраняет лицензию оригинала и указывает его авторов: README, LICENSE и NOTICE в папке мода. Порты делают **DeportedToHell** и **DispatchedToHeaven**.
 Не официальный продукт Minecraft. Не одобрен Mojang или Microsoft и не связан с ними.

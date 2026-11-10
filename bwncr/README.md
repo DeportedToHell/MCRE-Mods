@@ -4,7 +4,7 @@ A port of [Bad Wither No Cookie - Reloaded](https://gitlab.com/kreezxil/BadWithe
 contributors to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3,
 as a native mod (`.hnmod`). It behaves like the Fabric mod (3.20.4, branch 1.21.1) and has its config screen.
 
-Ported by Kastromovskiy.
+Ported by DispatchedToHeaven.
 
 ## Features
 
@@ -60,5 +60,5 @@ Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
 ## Licence
 
-MIT, as the original (droidicus, Kreezxil, Eleksploded; the port: Kastromovskiy): see
+MIT, as the original (droidicus, Kreezxil, Eleksploded; the port: DispatchedToHeaven): see
 `LICENSE` and `NOTICE`. Not affiliated with Kreezxil, Mojang or Microsoft.

@@ -11,6 +11,6 @@ The icon in mixins/clumps/data/icon.png is Clumps' own
 (common/src/main/resources/icon.png). The Russian description was written for
 this port.
 
-This port, by Kastromovskiy, rewrites Clumps' experience
+This port, by DispatchedToHeaven, rewrites Clumps' experience
 orb mixin in Rust for Horizon's native mod API. It is not affiliated with Jaredlll08 (BlameJared), Mojang or
 Microsoft.

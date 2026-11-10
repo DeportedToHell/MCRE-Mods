@@ -1,7 +1,7 @@
 # Runs the mod's own tests: `cargo test`. The game builds the mod from mixins/ instead.
 [package]
 name = "clumps-horizon"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2024"
 license = "MIT"
 publish = false

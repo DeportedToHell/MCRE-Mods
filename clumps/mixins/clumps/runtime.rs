@@ -12,7 +12,7 @@
 
 pub const ID: &str = "clumps";
 pub const NAME: &str = "Clumps";
-pub const VERSION: &str = "1.0.1";
+pub const VERSION: &str = "1.0.2";
 
 /// The most points one orb may be worth: the protocol sends an orb's value as
 /// an `int`, and `Player.giveExperiencePoints` takes one.
