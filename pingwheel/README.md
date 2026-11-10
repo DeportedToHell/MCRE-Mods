@@ -32,7 +32,8 @@ mod (`.hnmod`). Mark locations for your friends, like the pings of modern co-op 
 - **Works with the Java mod**: the same plugin channels (`ping-wheel-c2s:ping-location`,
   `ping-wheel-c2s:update-channel`, `ping-wheel-s2c:ping-location`) on the same bytes, so a Horizon client can ping
   on a Fabric/Forge/NeoForge server running Ping Wheel, and Java clients with Ping Wheel can ping on a Horizon
-  server.
+  server. Tested with two Horizon clients on a Fabric 26.3 server (Fabric API 0.161.0, Ping Wheel 1.12.2): pings
+  both ways, channels, team-only, the rate limit and `/pingwheel:server`.
 - Kept as Ping Wheel keeps them: `config/pingwheel.json` and `config/pingwheel.server.json` (Gson's layout).
 - English and Russian (the Russian is the port's own: the original has none). Mod Menu shows Ping Wheel's icon,
   authors and links.
