@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 104" width="420" height="104" role="img" aria-label="Mod Menu"><style>
+.bg{fill:#FFFFFF;stroke:#D0D7DE}.n{fill:#1F2328}.d{fill:#59636E}.a{fill:#818B98}
+@media (prefers-color-scheme: dark){.bg{fill:#151B23;stroke:#3D444D}.n{fill:#F0F6FC}.d{fill:#9198A1}.a{fill:#6E7681}}
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}
+</style>
+<defs><clipPath id="c"><rect x="16" y="20" width="64" height="64" rx="12"/></clipPath></defs>
+<rect class="bg" x="0.5" y="0.5" width="419" height="103" rx="12"/>
+<image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABUElEQVR4AeyWQY4CMRADI76w+6vd5/Is/gD3upSiQYE4RpqD1WnabXs0uf38PZ8nP7dx+K8CHB6A0QQ0AYcr0FfAAvC4j/HND/mTK+vETQAVOQ03Aeb47/8Y3/yQP7myTtwEUJHT8HEJoMEqAL+rxPxD1j+NyY9YBWBDGq4AaY7O7tMEzCqWdr4JSHN0dh9NAO/WxBzI+qcx+RGrAGxIwxUgzdHZfTQBdpfnQDu/uk5+xCoAG9JwBUhzlPsYbgJMofR6E5DusO2nCbC7PAfY+dV18iNWAdiQhitAmqOz+2gC7O7OgXZ+dZ38iFUANqThCpDm6Ow+TcCsYmnnm4A0R2f30QTY3Z0D7fzqOvkRqwBsSMMVIM3R2X00Ae++uxvB1fNUACO8e70C7O7gVf6agHd/t43w6nkqgBHevV4BdnfwKv8m4KqCu/c3Abs7eJX/CwAA///YRSS0AAAABklEQVQDAJcrR599ZUxlAAAAAElFTkSuQmCC" x="16" y="20" width="64" height="64" clip-path="url(#c)" style="image-rendering:pixelated"/>
+<text class="n" x="96" y="38" font-size="18" font-weight="600">Mod Menu</text>
+<text class="d" x="96" y="62" font-size="14">Все моды и их настройки в одном меню</text>
+<text class="a" x="96" y="84" font-size="12">автор Prospector, TerraformersMC · порт DeportedToHell</text>
+<rect x="318" y="20" width="88" height="22" rx="11" fill="#DAFBE1"/><text x="362" y="35" font-size="11.5" font-weight="600" text-anchor="middle" fill="#1A7F37">В каталоге</text>
+</svg>
