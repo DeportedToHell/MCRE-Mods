@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 pub const ID: &str = "justenoughitems";
 pub const NAME: &str = "Just Enough Items";
-pub const VERSION: &str = "1.1.1";
+pub const VERSION: &str = "1.1.2";
 
 /// Russian labels when the game's language is Russian, English otherwise.
 pub fn russian(language: &str) -> bool {
@@ -456,6 +456,84 @@ pub struct Recipe {
 impl Recipe {
     pub fn category(&self) -> Category {
         self.category.unwrap_or(Category::Crafting)
+    }
+
+    /// JEI's focus link (`IRecipeLayoutBuilder.createFocusLink`, as the anvil
+    /// and the grindstone set it): the slots whose alternatives go together
+    /// index by index (a book and the item it enchants, an enchanted item and
+    /// what the grindstone gives back), limited together to the alternatives
+    /// that hold `focus` (`FocusLink.getVisibleIngredientIndexes`).
+    pub fn focus_link(&self, focus: Option<u32>) -> FocusLink {
+        let mut link = FocusLink::default();
+        if !matches!(self.category, Some(Category::Anvil | Category::Grindstone)) {
+            return link;
+        }
+        let empty: Vec<Stack> = Vec::new();
+        let input = |i: usize| self.inputs.get(i).unwrap_or(&empty);
+        let output = self.outputs.first().unwrap_or(&empty);
+        let n = output.len();
+        // JEI links the slots that have as many alternatives as the output
+        // when the other one has a single stack (an empty slot here is JEI's
+        // list of empty stacks, as long as the others).
+        let (left, right) = (input(0).len(), input(1).len());
+        let fits = |len: usize| len == n || len == 0;
+        let linked: Vec<usize> = match (fits(left), fits(right)) {
+            (true, true) => vec![0, 1],
+            (true, false) if right == 1 => vec![0],
+            (false, true) if left == 1 => vec![1],
+            _ => Vec::new(),
+        };
+        let linked: Vec<usize> = linked.into_iter().filter(|&i| !input(i).is_empty()).collect();
+        if n < 2 || linked.is_empty() {
+            return link;
+        }
+        if let Some(f) = focus {
+            link.indexes = (0..n)
+                .filter(|&k| output[k].id == f || linked.iter().any(|&i| input(i)[k].id == f))
+                .collect();
+        }
+        link.inputs = linked;
+        link.output = true;
+        link
+    }
+}
+
+/// The slots of a recipe that show the same alternative, and the alternatives
+/// the focus limits them to (none: all, cycling together).
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct FocusLink {
+    pub inputs: Vec<usize>,
+    pub output: bool,
+    pub indexes: Vec<usize>,
+}
+
+impl FocusLink {
+    /// The index of the alternative the linked slots show now, of `len`.
+    pub fn index(&self, len: usize, millis: u64) -> usize {
+        if self.indexes.is_empty() {
+            cycle(len, millis, 0)
+        } else {
+            self.indexes[cycle(self.indexes.len(), millis, 0)]
+        }
+    }
+
+    fn limit(&self, stacks: &[Stack]) -> Vec<Stack> {
+        if self.indexes.is_empty() {
+            return stacks.to_vec();
+        }
+        self.indexes.iter().filter_map(|&k| stacks.get(k).copied()).collect()
+    }
+
+    /// Input slot `i`'s stacks as shown.
+    pub fn input(&self, r: &Recipe, i: usize) -> Vec<Stack> {
+        let stacks = r.inputs.get(i).map_or(&[][..], Vec::as_slice);
+        if self.inputs.contains(&i) { self.limit(stacks) } else { stacks.to_vec() }
+    }
+
+    /// The output slot's stacks as shown.
+    pub fn output(&self, r: &Recipe) -> Vec<Stack> {
+        let stacks = r.outputs.first().map_or(&[][..], Vec::as_slice);
+        if self.output { self.limit(stacks) } else { stacks.to_vec() }
     }
 }
 
@@ -1263,5 +1341,87 @@ mod tests {
     fn numbers_as_jei_writes_them() {
         assert_eq!(mod_display_name("minecraft"), "Minecraft");
         assert_eq!(mod_display_name("my_mod"), "My Mod");
+    }
+
+    fn stacks(ids: &[u32]) -> Vec<Stack> {
+        ids.iter().map(|&id| Stack::one(id)).collect()
+    }
+
+    /// A sword (1) with Sharpness I..V books (11..15) making swords (21..25).
+    fn sharpness() -> Recipe {
+        Recipe {
+            category: Some(Category::Anvil),
+            inputs: vec![stacks(&[1]), stacks(&[11, 12, 13, 14, 15])],
+            outputs: vec![stacks(&[21, 22, 23, 24, 25])],
+            cost: 1,
+            costs: vec![1, 2, 3, 4, 5],
+            ..Recipe::default()
+        }
+    }
+
+    #[test]
+    fn anvil_books_and_results_cycle_together() {
+        let r = sharpness();
+        let link = r.focus_link(None);
+        assert_eq!((link.inputs.as_slice(), link.output), (&[1][..], true));
+        for second in 0..10 {
+            let k = link.index(5, second * 1000);
+            assert_eq!(k, second as usize % 5);
+        }
+        assert_eq!(link.input(&r, 1), r.inputs[1]);
+        assert_eq!(link.input(&r, 0), stacks(&[1]));
+    }
+
+    #[test]
+    fn a_focused_result_or_book_holds_its_partner() {
+        let r = sharpness();
+        // Recipes for the Sharpness V sword: the level V book, its cost.
+        let link = r.focus_link(Some(25));
+        assert_eq!(link.output(&r), stacks(&[25]));
+        assert_eq!(link.input(&r, 1), stacks(&[15]));
+        for second in 0..5 {
+            assert_eq!(r.costs[link.index(r.costs.len(), second * 1000)], 5);
+        }
+        // Uses of the level III book: the Sharpness III sword.
+        let link = r.focus_link(Some(13));
+        assert_eq!((link.input(&r, 1), link.output(&r)), (stacks(&[13]), stacks(&[23])));
+        // The plain sword is in no linked slot: all of them, together.
+        let link = r.focus_link(Some(1));
+        assert!(link.indexes.is_empty());
+        assert_eq!(link.output(&r).len(), 5);
+    }
+
+    #[test]
+    fn grindstone_keeps_the_enchanted_item_with_the_one_it_gives_back() {
+        // Sharpness II off a sword (31) or an axe (32), giving 41 or 42 back.
+        let r = Recipe {
+            category: Some(Category::Grindstone),
+            inputs: vec![stacks(&[31, 32]), Vec::new()],
+            outputs: vec![stacks(&[41, 42])],
+            render_only_output: true,
+            ..Recipe::default()
+        };
+        let link = r.focus_link(Some(42));
+        assert_eq!((link.input(&r, 0), link.output(&r)), (stacks(&[32]), stacks(&[42])));
+        assert!(link.input(&r, 1).is_empty());
+        let link = r.focus_link(Some(31));
+        assert_eq!(link.output(&r), stacks(&[41]));
+    }
+
+    #[test]
+    fn only_the_anvil_and_grindstone_link_their_slots() {
+        let crafting = Recipe {
+            category: Some(Category::Crafting),
+            inputs: vec![stacks(&[1, 2])],
+            outputs: vec![stacks(&[3, 4])],
+            ..Recipe::default()
+        };
+        assert_eq!(crafting.focus_link(Some(4)), FocusLink::default());
+        // Slots of other sizes stay apart, as JEI only links equal lists.
+        let mut uneven = sharpness();
+        uneven.inputs[1] = stacks(&[11, 12]);
+        let link = uneven.focus_link(Some(25));
+        assert_eq!(link, FocusLink::default());
+        assert_eq!(link.input(&uneven, 1), stacks(&[11, 12]));
     }
 }

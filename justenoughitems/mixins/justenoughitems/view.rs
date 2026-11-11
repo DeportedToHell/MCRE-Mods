@@ -973,6 +973,7 @@ fn draw_recipe(
         }
     };
     let id_lines = recipe_id_lines(ctx, r);
+    let link = r.focus_link(ctx.focus);
     match category {
         Category::Crafting => {
             add(batch, &mut hits, output, 95.0, 19.0, Frame::Output, 0, id_lines);
@@ -1008,15 +1009,17 @@ fn draw_recipe(
             add(batch, &mut hits, input(1), 24.0, 3.0, Frame::None, 0, Vec::new());
             add(batch, &mut hits, output, 81.0, 3.0, Frame::Standard, 0, id_lines);
         }
+        // The book and the item it makes, or the enchanted item and the one
+        // the grindstone gives back, show the same alternative (JEI's focus link).
         Category::Anvil => {
-            add(batch, &mut hits, input(0), 1.0, 1.0, Frame::Standard, 0, Vec::new());
-            add(batch, &mut hits, input(1), 50.0, 1.0, Frame::Standard, 0, Vec::new());
-            add(batch, &mut hits, output, 108.0, 1.0, Frame::Standard, 0, Vec::new());
+            add(batch, &mut hits, &link.input(r, 0), 1.0, 1.0, Frame::Standard, 0, Vec::new());
+            add(batch, &mut hits, &link.input(r, 1), 50.0, 1.0, Frame::Standard, 0, Vec::new());
+            add(batch, &mut hits, &link.output(r), 108.0, 1.0, Frame::Standard, 0, Vec::new());
         }
         Category::Grindstone => {
-            add(batch, &mut hits, input(0), 1.0, 1.0, Frame::Standard, 0, Vec::new());
-            add(batch, &mut hits, input(1), 1.0, 24.0, Frame::Standard, 0, Vec::new());
-            add(batch, &mut hits, output, 52.0, 13.0, Frame::Output, 0, Vec::new());
+            add(batch, &mut hits, &link.input(r, 0), 1.0, 1.0, Frame::Standard, 0, Vec::new());
+            add(batch, &mut hits, &link.input(r, 1), 1.0, 24.0, Frame::Standard, 0, Vec::new());
+            add(batch, &mut hits, &link.output(r), 52.0, 13.0, Frame::Output, 0, Vec::new());
         }
         Category::Smithing => {
             for i in 0..3 {
@@ -1083,11 +1086,7 @@ fn draw_recipe(
             blit(game, batch, &sprites::RECIPE_PLUS, x + 27.0, y + 3.0, 1.0);
             blit(game, batch, &sprites::RECIPE_ARROW, x + 76.0, y + 1.0, 1.0);
             // The cost of the book shown now (the shown output's).
-            let shown = ctx
-                .focus
-                .and_then(|f| r.outputs.first()?.iter().position(|s| s.id == f).or_else(|| r.inputs.get(1)?.iter().position(|s| s.id == f)))
-                .unwrap_or_else(|| jei::cycle(r.costs.len().max(1), millis, 0));
-            let cost = r.costs.get(shown).copied().unwrap_or(r.cost);
+            let cost = r.costs.get(link.index(r.costs.len(), millis)).copied().unwrap_or(r.cost);
             if cost > 0 {
                 let template = game.translate("container.repair.cost", "Enchantment Cost: %1$s");
                 let t = template.replace("%1$s", &cost.to_string()).replace("%s", &cost.to_string());

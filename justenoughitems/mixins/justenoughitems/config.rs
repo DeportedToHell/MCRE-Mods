@@ -840,6 +840,8 @@ enum Press {
     Divider { mouse: f32, start: i32 },
     ContentBar,
     NavBar,
+    /// The search field: a drag selects its text (`EditBox.onDrag`).
+    Search,
 }
 
 /// The drop-down list of a value's other choices (`ConfigValueSelector`).
@@ -1578,6 +1580,7 @@ impl ConfigScreen {
                 self.search.focused = true;
                 self.search.click(&game.gui.atlas, p.0, shift, false);
                 self.search.reset_blink();
+                self.press = Some(Press::Search);
             }
             return;
         }
@@ -1702,6 +1705,7 @@ impl ConfigScreen {
                     self.clicks += 1;
                 }
             }
+            Press::Search => {}
         }
     }
 
@@ -1734,11 +1738,11 @@ impl ConfigScreen {
             }
             Some(Press::ContentBar) => self.content_scroll.drag_to(p.1),
             Some(Press::NavBar) => self.nav_scroll.drag_to(p.1),
-            _ => {
-                if self.search.focused && game.has_shift_down() {
-                    self.search.drag_to(&game.gui.atlas, p.0);
-                }
+            Some(Press::Search) if self.search.focused => {
+                self.search.drag_to(&game.gui.atlas, p.0);
+                self.search.reset_blink();
             }
+            _ => {}
         }
     }
 

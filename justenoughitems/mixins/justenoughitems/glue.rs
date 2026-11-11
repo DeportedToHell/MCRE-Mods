@@ -115,7 +115,9 @@ pub(super) enum Action {
     /// R, U or A over a slot of the screen's.
     SlotKey { key: SlotKey, at: (f32, f32) },
     Paste,
-    Copy,
+    /// Ctrl+C or Ctrl+X: the selection, taken when the key is pressed (a cut
+    /// deletes it at once).
+    Copy(String),
     OpenSettings,
 }
 
@@ -965,13 +967,7 @@ fn act(game: &mut Game<'_>, action: Action) {
                 }
             });
         }
-        Action::Copy => {
-            if let Some(text) = with(|s| s.search.as_ref().map(EditBox::selected_text)).flatten()
-                && !text.is_empty()
-            {
-                game.clipboard.set(&text);
-            }
-        }
+        Action::Copy(text) => game.clipboard.set(&text),
         // The config button: JEI's config screen, over the Options screen
         // opened on JEI's page; closing it goes back to the container screen
         // (Java's config screen has it as its parent).
@@ -1419,10 +1415,17 @@ pub(super) fn key_pressed(game: &Game<'_>, screen: &NativeScreenView<'_>, key: &
                     search.focused = false;
                 }
                 "key.keyboard.v" if control => s.pending.push(Action::Paste),
-                "key.keyboard.c" if control => s.pending.push(Action::Copy),
-                "key.keyboard.x" if control => {
-                    s.pending.push(Action::Copy);
-                    search.delete_chars(0);
+                // EditBox's copy and cut: the selection to the clipboard (the
+                // copy waits for the game, so it takes the text now), and a
+                // cut deletes it.
+                "key.keyboard.c" | "key.keyboard.x" if control => {
+                    let text = search.selected_text();
+                    if !text.is_empty() {
+                        s.pending.push(Action::Copy(text));
+                        if key == "key.keyboard.x" {
+                            search.delete_chars(0);
+                        }
+                    }
                 }
                 _ => {
                     if let Some(code) = horizon_client::keybinds::key_code(key) {
