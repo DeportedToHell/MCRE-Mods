@@ -9,45 +9,45 @@
 ### 🌧️ Atmosphere
 
 <p>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-particlerain-en-phone.svg"><a href="particlerain"><img src=".github/readme/card-particlerain-en.svg" alt="Particle Rain" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-fallingleaves-en-phone.svg"><a href="fallingleaves"><img src=".github/readme/card-fallingleaves-en.svg" alt="Falling Leaves" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-dynamiclights-en-phone.svg"><a href="betterdynamiclights"><img src=".github/readme/card-dynamiclights-en.svg" alt="Better Dynamic Lights" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-firstpersonmodel-en-phone.svg"><a href="firstpersonmodel"><img src=".github/readme/card-firstpersonmodel-en.svg" alt="First-person Model" width="49%"></a></picture>
+<a href="particlerain"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-particlerain-en-phone.svg"><img src=".github/readme/card-particlerain-en.svg" alt="Particle Rain" width="49%"></picture></a>
+<a href="fallingleaves"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-fallingleaves-en-phone.svg"><img src=".github/readme/card-fallingleaves-en.svg" alt="Falling Leaves" width="49%"></picture></a>
+<a href="betterdynamiclights"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-dynamiclights-en-phone.svg"><img src=".github/readme/card-dynamiclights-en.svg" alt="Better Dynamic Lights" width="49%"></picture></a>
+<a href="firstpersonmodel"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-firstpersonmodel-en-phone.svg"><img src=".github/readme/card-firstpersonmodel-en.svg" alt="First-person Model" width="49%"></picture></a>
 </p>
 
 ### 🎤 Play together
 
 <p>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-emotecraft-en-phone.svg"><a href="emotecraft"><img src=".github/readme/card-emotecraft-en.svg" alt="Emotecraft" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-plasmovoice-en-phone.svg"><a href="plasmovoice"><img src=".github/readme/card-plasmovoice-en.svg" alt="Plasmo Voice" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-pingwheel-en-phone.svg"><a href="pingwheel"><img src=".github/readme/card-pingwheel-en.svg" alt="Ping Wheel" width="49%"></a></picture>
+<a href="emotecraft"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-emotecraft-en-phone.svg"><img src=".github/readme/card-emotecraft-en.svg" alt="Emotecraft" width="49%"></picture></a>
+<a href="plasmovoice"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-plasmovoice-en-phone.svg"><img src=".github/readme/card-plasmovoice-en.svg" alt="Plasmo Voice" width="49%"></picture></a>
+<a href="pingwheel"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-pingwheel-en-phone.svg"><img src=".github/readme/card-pingwheel-en.svg" alt="Ping Wheel" width="49%"></picture></a>
 </p>
 
 ### 🎒 Inventory
 
 <p>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-clientsort-en-phone.svg"><a href="clientsort"><img src=".github/readme/card-clientsort-en.svg" alt="ClientSort" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-mousetweaks-en-phone.svg"><a href="mousetweaks"><img src=".github/readme/card-mousetweaks-en.svg" alt="Mouse Tweaks" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-smoothswapping-en-phone.svg"><a href="smoothswapping"><img src=".github/readme/card-smoothswapping-en.svg" alt="Smooth Swapping" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-shulkerboxtooltip-en-phone.svg"><a href="shulkerboxtooltip"><img src=".github/readme/card-shulkerboxtooltip-en.svg" alt="Shulker Box Tooltip" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-pickupnotifier-en-phone.svg"><a href="pickupnotifier"><img src=".github/readme/card-pickupnotifier-en.svg" alt="Pick Up Notifier" width="49%"></a></picture>
+<a href="clientsort"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-clientsort-en-phone.svg"><img src=".github/readme/card-clientsort-en.svg" alt="ClientSort" width="49%"></picture></a>
+<a href="mousetweaks"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-mousetweaks-en-phone.svg"><img src=".github/readme/card-mousetweaks-en.svg" alt="Mouse Tweaks" width="49%"></picture></a>
+<a href="smoothswapping"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-smoothswapping-en-phone.svg"><img src=".github/readme/card-smoothswapping-en.svg" alt="Smooth Swapping" width="49%"></picture></a>
+<a href="shulkerboxtooltip"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-shulkerboxtooltip-en-phone.svg"><img src=".github/readme/card-shulkerboxtooltip-en.svg" alt="Shulker Box Tooltip" width="49%"></picture></a>
+<a href="pickupnotifier"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-pickupnotifier-en-phone.svg"><img src=".github/readme/card-pickupnotifier-en.svg" alt="Pick Up Notifier" width="49%"></picture></a>
 </p>
 
 ### 📖 Recipes and info
 
 <p>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-justenoughitems-en-phone.svg"><a href="justenoughitems"><img src=".github/readme/card-justenoughitems-en.svg" alt="Just Enough Items" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-roughlyenoughitems-en-phone.svg"><a href="roughlyenoughitems"><img src=".github/readme/card-roughlyenoughitems-en.svg" alt="Roughly Enough Items" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-modmenu-en-phone.svg"><a href="modmenu"><img src=".github/readme/card-modmenu-en.svg" alt="Mod Menu" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-betterf3-en-phone.svg"><a href="betterf3"><img src=".github/readme/card-betterf3-en.svg" alt="BetterF3" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-zoomify-en-phone.svg"><a href="zoomify"><img src=".github/readme/card-zoomify-en.svg" alt="Zoomify" width="49%"></a></picture>
+<a href="justenoughitems"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-justenoughitems-en-phone.svg"><img src=".github/readme/card-justenoughitems-en.svg" alt="Just Enough Items" width="49%"></picture></a>
+<a href="roughlyenoughitems"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-roughlyenoughitems-en-phone.svg"><img src=".github/readme/card-roughlyenoughitems-en.svg" alt="Roughly Enough Items" width="49%"></picture></a>
+<a href="modmenu"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-modmenu-en-phone.svg"><img src=".github/readme/card-modmenu-en.svg" alt="Mod Menu" width="49%"></picture></a>
+<a href="betterf3"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-betterf3-en-phone.svg"><img src=".github/readme/card-betterf3-en.svg" alt="BetterF3" width="49%"></picture></a>
+<a href="zoomify"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-zoomify-en-phone.svg"><img src=".github/readme/card-zoomify-en.svg" alt="Zoomify" width="49%"></picture></a>
 </p>
 
 ### ✨ Less lag, less noise
 
 <p>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-clumps-en-phone.svg"><a href="clumps"><img src=".github/readme/card-clumps-en.svg" alt="Clumps" width="49%"></a></picture>
-<picture><source media="(max-width: 700px)" srcset=".github/readme/card-bwncr-en-phone.svg"><a href="bwncr"><img src=".github/readme/card-bwncr-en.svg" alt="Bad Wither No Cookie" width="49%"></a></picture>
+<a href="clumps"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-clumps-en-phone.svg"><img src=".github/readme/card-clumps-en.svg" alt="Clumps" width="49%"></picture></a>
+<a href="bwncr"><picture><source media="(max-width: 700px)" srcset=".github/readme/card-bwncr-en-phone.svg"><img src=".github/readme/card-bwncr-en.svg" alt="Bad Wither No Cookie" width="49%"></picture></a>
 </p>
 
 ## What's next
