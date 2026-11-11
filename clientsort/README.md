@@ -61,7 +61,9 @@ Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08
 
 ## Licence and credits
 
-Apache License 2.0, as the original ([LICENSE](LICENSE), [NOTICE](NOTICE)).
+Apache License 2.0, as the original ([LICENSE](LICENSE), [NOTICE](NOTICE)), except the config screen:
+`mixins/clientsort/cloth.rs` and `cloth_sprites.rs` follow Cloth Config and are under the GNU LGPL-3.0
+([LICENSE.LGPL-3.0](LICENSE.LGPL-3.0), with the GPL-3.0 it builds on in [LICENSE.GPL-3.0](LICENSE.GPL-3.0)).
 
 - ClientSort: Copyright 2024-2026 TerminalMC, https://github.com/TerminalMC/ClientSort
 - ClientSort uses code from Mouse Wheelie by Siphalor (Apache-2.0) and Inventory Management by

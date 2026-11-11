@@ -1,6 +1,6 @@
 [mod]
 id = "clientsort"
-version = "1.2.0"
+version = "1.2.1"
 priority = 100
 
 # Built for this Nightly: besides the hook points it uses the game's own

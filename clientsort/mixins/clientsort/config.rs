@@ -447,7 +447,7 @@ fn write_data(game: &Game<'_>) {
   "description_ru": "Универсальная и простая сортировка инвентаря.",
   "authors": ["NotRyken"],
   "contributors": ["Siphalor (Mouse Wheelie)", "Roundaround (Inventory Management)", "TauCu (#49, #81)", "octoturt (#14)", "Xinyang-Gao (zh_cn)", "rfin0 (ru_ru)", "DeportedToHell"],
-  "license": "Apache-2.0",
+  "license": "Apache-2.0 AND LGPL-3.0-only",
   "links": {{
     "homepage": "https://modrinth.com/project/K0AkAin6",
     "sources": "https://github.com/DeportedToHell/MCRE-Mods/tree/main/clientsort",
