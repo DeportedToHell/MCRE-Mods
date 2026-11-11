@@ -9,5 +9,5 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <text class="n" x="96" y="38" font-size="18.0" font-weight="600">Pick Up Notifier</text>
 <text class="d" x="96" y="62" font-size="14">Показывает, что ты подобрал</text>
 <text class="a" x="96" y="84" font-size="12">автор Fuzs · порт DeportedToHell</text>
-<rect x="311" y="20" width="95" height="22" rx="11" fill="#FFF8C5"/><text x="358.5" y="35" font-size="11.5" font-weight="600" text-anchor="middle" fill="#9A6700">На проверке</text>
+<rect x="318" y="20" width="88" height="22" rx="11" fill="#DAFBE1"/><text x="362" y="35" font-size="11.5" font-weight="600" text-anchor="middle" fill="#1A7F37">В каталоге</text>
 </svg>
