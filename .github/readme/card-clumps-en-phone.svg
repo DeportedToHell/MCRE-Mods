@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" width="360" height="360" role="img" aria-label="Clumps"><style>
+.bg{fill:#FFFFFF;stroke:#D0D7DE}.n{fill:#1F2328}.d{fill:#59636E}.a{fill:#818B98}
+@media (prefers-color-scheme: dark){.bg{fill:#151B23;stroke:#3D444D}.n{fill:#F0F6FC}.d{fill:#9198A1}.a{fill:#6E7681}}
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}
+</style>
+<defs><clipPath id="c"><rect x="24" y="24" width="96" height="96" rx="18"/></clipPath></defs>
+<rect class="bg" x="1" y="1" width="358" height="358" rx="20" style="stroke-width:2"/>
+<image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABi0lEQVR4AexU0Q0CIQxFN3EDN3Ajh3EjN3ADR9H2o0lDckeg9I7CMzRw3pX3eH3lmhb/QYDFDZDgADhgcQXQAosbwOESfKZf8o6OVUMLdBQz5FZwQMiydSRtd0B+4d2JnXdoTIKzDLsAFvQBcpcTINe8TQBtwdzuN4LwDo2pufCa4GtGmwA1CIN/CwEGL5A7vbIDuK/y0D2Y97s7ZQLQmJoLr3Ou/EwpW6MswFbmJP9DgEkK2XwMOKBZuprEB33cGpTqOeAAT3Uj7A0HRKiSJ0c4wFPdEfYucYADSgrN/h4OmL3CpfPBASWFZn8PB8xe4dL5jnHAm2i0BqV6jmME8DyBcW8IYBQwfDocUCzhK11SHh/KkvjSWgc9ug+NJzxkzrny8w4hOGBHnJCvakm3OYBtJSHWk1nb02stWDwLD5krFWgToBJk5M8hwMjVOYKb3QHSezJzX3qHYPFsVMkugJHA2ekQ4OwKnI0PB3SvAF9M3tGRNBzQUcyQW8EBIcvWkTQc0FHMU7aygv4BAAD//6IScPsAAAAGSURBVAMAVCW4gXoo4JYAAAAASUVORK5CYII=" x="24" y="24" width="96" height="96" clip-path="url(#c)" style="image-rendering:pixelated"/>
+<rect x="213" y="24" width="127" height="36" rx="18" fill="#FFF8C5"/><text x="276.5" y="48" font-size="18" font-weight="600" text-anchor="middle" fill="#9A6700">In review</text>
+<text class="n" x="24" y="170" font-size="34.0" font-weight="600">Clumps</text>
+<text class="d" x="24" y="212" font-size="23">XP orbs clump</text><text class="d" x="24" y="242" font-size="23">together: less lag</text>
+<text class="a" x="24" y="334" font-size="19.0">by Jaredlll08</text>
+</svg>
