@@ -27,8 +27,9 @@ struct Icons {
     pixels: HashMap<u128, Option<Arc<Vec<u8>>>>,
     /// Icons to write, and their bytes.
     wanted: Vec<(u128, Arc<Vec<u8>>)>,
-    /// What the atlas was when the slots were written: a new atlas has them empty.
-    atlas: Option<(u32, u32, [f32; 4])>,
+    /// The atlas the slots were written into (`HudAtlas::revision`): a new one, even of the
+    /// same resources, has them empty.
+    atlas: Option<u64>,
     clock: u64,
 }
 
@@ -128,10 +129,10 @@ pub(super) fn readable(key: u128) -> bool {
 
 /// Once a frame: the icons asked for, written into their slots (`map_patches`).
 pub(super) fn frame(game: &mut Game<'_>) {
-    let sprites = &game.gui.atlas.sprites;
-    let first = sprites.get(&sprite(0)).map(|r| [r.u0, r.v0, r.u1, r.v1]);
-    let Some(first) = first else { return };
-    let now = (game.gui.atlas.width, game.gui.atlas.height, first);
+    if !game.gui.atlas.sprites.contains_key(&sprite(0)) {
+        return;
+    }
+    let now = game.gui.atlas.revision;
     let wanted = with(|s| {
         if s.atlas != Some(now) {
             // A new atlas (resources reloaded): every slot is empty again.

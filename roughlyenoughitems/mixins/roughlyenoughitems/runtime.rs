@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 pub const ID: &str = "roughlyenoughitems";
 pub const NAME: &str = "Roughly Enough Items";
-pub const VERSION: &str = "1.1.1";
+pub const VERSION: &str = "1.1.2";
 
 /// Russian labels when the game's language is Russian, English otherwise.
 pub fn russian(language: &str) -> bool {
@@ -100,16 +100,25 @@ pub struct Searchable<'a> {
 #[derive(Clone, PartialEq, Eq, Debug)]
 struct Term {
     kind: Kind,
-    negate: bool,
     text: String,
 }
 
+/// One word of a search: it hits when any of its terms does (a plain word
+/// reads the name, the tooltip and the id's path), and a `-` word matches
+/// what it does not hit, so `-building` leaves out whatever has "building"
+/// in any of them.
+#[derive(Clone, PartialEq, Eq, Debug)]
+struct Word {
+    negate: bool,
+    terms: Vec<Term>,
+}
+
 /// A parsed search: groups split by `|`, any of which may match; every word
-/// of a group must, and a word matches when any of its terms does.
+/// of a group must.
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub struct Query {
     /// None: everything matches (empty text, or an empty `|` group).
-    groups: Option<Vec<Vec<Vec<Term>>>>,
+    groups: Option<Vec<Vec<Word>>>,
 }
 
 /// How each character of the search text is shown.
@@ -198,7 +207,7 @@ impl Query {
             for (_, word, _) in words {
                 if let Some((kind, negate, body, _, _)) = prefixed(&word) {
                     let text = if kind == Kind::Regex { body } else { body.to_lowercase() };
-                    parsed.push(vec![Term { kind, negate, text }]);
+                    parsed.push(Word { negate, terms: vec![Term { kind, text }] });
                     continue;
                 }
                 let lower = word.to_lowercase();
@@ -208,12 +217,13 @@ impl Query {
                 };
                 // Plain words: the name, and each type that is always on (by
                 // default the tooltip and the id's path).
-                parsed.push(
-                    std::iter::once(Kind::Text)
+                parsed.push(Word {
+                    negate,
+                    terms: std::iter::once(Kind::Text)
                         .chain(PREFIXED.iter().map(|(k, _)| *k).filter(|k| search_mode(*k) == 0))
-                        .map(|kind| Term { kind, negate, text: text.clone() })
+                        .map(|kind| Term { kind, text: text.clone() })
                         .collect(),
-                );
+                });
             }
             groups.push(parsed);
         }
@@ -227,7 +237,7 @@ impl Query {
             .iter()
             .flatten()
             .flatten()
-            .flatten()
+            .flat_map(|word| &word.terms)
             .any(|t| t.kind == Kind::Tooltip)
     }
 
@@ -237,7 +247,7 @@ impl Query {
         };
         groups
             .iter()
-            .any(|group| group.iter().all(|word| word.iter().any(|t| term_hits(t, s) != t.negate)))
+            .any(|group| group.iter().all(|word| word.terms.iter().any(|t| term_hits(t, s)) != word.negate))
     }
 }
 
@@ -291,7 +301,7 @@ pub fn marks(text: &str) -> Vec<Mark> {
 
 /// Java's `Pattern.matcher(name).matches()` for the patterns people write
 /// in a search: literals, `.`, classes (`[a-z]`, `[^…]`, `\d \w \s`),
-/// groups and `*`, `+`, `?` (greedy, backtracking).
+/// groups, `^`, `$` and `*`, `+`, `?` (greedy, backtracking).
 #[derive(Clone, Debug)]
 pub struct Regex {
     seq: Vec<Piece>,
@@ -310,6 +320,10 @@ enum Atom {
     Any,
     Class(Vec<(char, char)>, bool),
     Group(Vec<Vec<Piece>>),
+    /// `^`: the start of the name (zero-width).
+    Start,
+    /// `$`: the end of the name (zero-width).
+    End,
 }
 
 impl Regex {
@@ -354,7 +368,8 @@ impl Regex {
         *at += 1;
         Some(match c {
             '.' => Atom::Any,
-            '^' | '$' => Atom::Group(vec![Vec::new()]),
+            '^' => Atom::Start,
+            '$' => Atom::End,
             '(' => {
                 if chars.get(*at) == Some(&'?') && chars.get(*at + 1) == Some(&':') {
                     *at += 2;
@@ -437,10 +452,17 @@ impl Regex {
     }
 
     fn repeat(p: &Piece, done: usize, chars: &[char], at: usize, k: &mut dyn FnMut(usize) -> bool) -> bool {
-        // Greedy: one more first, then stop here.
+        // Greedy: one more first, then stop here. An occurrence that matched
+        // nothing (`^`, `$`, `(a?)`) counts for the ones still required, as
+        // the same empty match would fill each of them, but never starts
+        // another round, which would loop without moving on.
         if done < p.max
             && Self::atom_at(&p.atom, chars, at, &mut |end| {
-                end != at && Self::repeat(p, done + 1, chars, end, k)
+                if end == at {
+                    done < p.min && k(at)
+                } else {
+                    Self::repeat(p, done + 1, chars, end, k)
+                }
             })
         {
             return true;
@@ -457,6 +479,8 @@ impl Regex {
                 .is_some_and(|c| ranges.iter().any(|(lo, hi)| (lo..=hi).contains(&c)) != *negate)
                 && k(at + 1),
             Atom::Group(alts) => alts.iter().any(|alt| Self::seq(alt, chars, at, k)),
+            Atom::Start => at == 0 && k(at),
+            Atom::End => at == chars.len() && k(at),
         }
     }
 }
@@ -468,6 +492,23 @@ pub type Rect = [f32; 4];
 
 pub fn inside(p: (f32, f32), r: Rect) -> bool {
     p.0 >= r[0] && p.1 >= r[1] && p.0 < r[0] + r[2] && p.1 < r[1] + r[3]
+}
+
+/// Where a choice menu (`Menu`) opens by the value it belongs to, `anchor_y`
+/// high and `anchor_h` tall on a screen `screen_h` high: under it when there
+/// is more room below than above, else over it. Returns whether it opens
+/// downwards, the top of its box and the height of its rows' window (the box
+/// is 2 taller for its border). The window takes what the rows need, but no
+/// more than the room on that side (below, REI keeps 20 pixels free; above,
+/// the box stops at the screen's top), and the rows scroll in it.
+pub fn menu_place(anchor_y: f32, anchor_h: f32, content_h: f32, screen_h: f32) -> (bool, f32, f32) {
+    let below = anchor_y + anchor_h;
+    if screen_h - below > anchor_y {
+        (true, below, content_h.min(screen_h - 20.0 - below).max(0.0))
+    } else {
+        let inner_h = content_h.min(anchor_y - 2.0).max(0.0);
+        (false, anchor_y - (inner_h + 2.0), inner_h)
+    }
 }
 
 /// How many pages `len` entries take, `per_page` a page: at least one.
@@ -1996,6 +2037,60 @@ mod tests {
         assert!(!r.full_match("oak Log"));
         assert!(Regex::parse("a\\d?b+").unwrap().full_match("a7bbb"));
         assert!(Regex::parse("(").is_none());
+    }
+
+    #[test]
+    fn regex_anchors_and_empty_occurrences() {
+        assert!(Regex::parse("^Oak.*$").unwrap().full_match("Oak Log"));
+        assert!(Regex::parse("^Oak Log$").unwrap().full_match("Oak Log"));
+        assert!(!Regex::parse("^Birch.*$").unwrap().full_match("Oak Log"));
+        // The anchors only match at the ends of the name.
+        assert!(!Regex::parse("Oak^ Log").unwrap().full_match("Oak Log"));
+        assert!(!Regex::parse("Oak$ Log").unwrap().full_match("Oak Log"));
+        // A required group that matched nothing, and repeated empty matches.
+        assert!(Regex::parse("(a?)+b").unwrap().full_match("b"));
+        assert!(Regex::parse("(a?)+b").unwrap().full_match("aab"));
+        assert!(Regex::parse("(a*)*").unwrap().full_match(""));
+        assert!(Regex::parse("(|x)+y").unwrap().full_match("y"));
+        assert!(!Regex::parse("(a?)+b").unwrap().full_match("ac"));
+        let none: Vec<String> = Vec::new();
+        let log = entry("oak log", "oak_log", &none, None);
+        let named = Searchable { name_case: "Oak Log", ..log };
+        assert!(Query::parse("r/^Oak.*$/").matches(&named));
+        assert!(!Query::parse("-r/^Oak.*$/").matches(&named));
+    }
+
+    #[test]
+    fn choice_menus_stay_on_screen_and_scroll() {
+        // The 16 zoom values (12 px each) from a value at y=140 on a 240 high
+        // screen: more room above, so over it, cut to the room there.
+        let (down, y, inner_h) = menu_place(140.0, 9.0, 192.0, 240.0);
+        assert!(!down);
+        assert_eq!((y, inner_h), (0.0, 138.0));
+        assert_eq!(y + inner_h + 2.0, 140.0);
+        // Short lists open as in REI: right over or under the value.
+        assert_eq!(menu_place(140.0, 9.0, 36.0, 240.0), (false, 102.0, 36.0));
+        assert_eq!(menu_place(40.0, 9.0, 36.0, 240.0), (true, 49.0, 36.0));
+        // Below, the box keeps REI's 20 pixels off the bottom.
+        assert_eq!(menu_place(40.0, 9.0, 192.0, 240.0), (true, 49.0, 171.0));
+    }
+
+    #[test]
+    fn a_dash_word_leaves_out_what_any_field_has() {
+        let none: Vec<String> = Vec::new();
+        // "building" only in the tooltip, not in the name or the path.
+        let log = entry("oak log", "oak_log", &none, Some("oak log\nbuilding blocks"));
+        let stone = entry("stone", "stone", &none, Some("stone\nnatural blocks"));
+        assert!(!Query::parse("-building").matches(&log));
+        assert!(Query::parse("-building").matches(&stone));
+        // Only in the path.
+        let planks = entry("oak planks", "oak_planks_x", &none, Some("oak planks"));
+        assert!(!Query::parse("-planks_x").matches(&planks));
+        assert!(!Query::parse("oak -building").matches(&log));
+        assert!(Query::parse("oak -building | log").matches(&log));
+        // A prefixed exclusion still reads its own field only.
+        assert!(Query::parse("-#building").matches(&stone));
+        assert!(!Query::parse("-#building").matches(&log));
     }
 
     #[test]

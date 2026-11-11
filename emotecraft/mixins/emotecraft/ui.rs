@@ -1875,10 +1875,15 @@ pub(super) fn pressed(game: &Game<'_>, screen: &NativeScreenView<'_>, button: i3
                     pop(u);
                     return;
                 }
+                // The rows' buttons only where the list shows them (`AbstractSelectionList.isMouseOver`).
+                let area = [0.0, HEADER, w, h - 2.0 * HEADER];
+                if !inside(p, area) {
+                    return;
+                }
                 let row_w = (w / 2.0).floor();
                 let left = (w / 2.0).floor() - (row_w / 2.0).floor();
                 for (i, (key, a)) in sorted_binds().into_iter().enumerate() {
-                    let y = HEADER + 4.0 + i as f32 * 24.0 - k.scroll + 2.0;
+                    let y = area[1] + 4.0 + i as f32 * 24.0 - k.scroll + 2.0;
                     let cx = left + 2.0;
                     let cw = row_w - 4.0;
                     let reset = [cx + cw - 50.0, y, 50.0, 20.0];

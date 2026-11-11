@@ -23,6 +23,11 @@ as Emotecraft shows them when the service is unavailable); the Geyser support is
 left out. A Russian name for "Let's Groove" was added (Emotecraft's ru_RU has none).
 While the mod is on, Horizon's own emote wheel key (B) opens Emotecraft's wheel.
 
+2026-11-11, DeportedToHell (1.0.1): the server ignores a player's own stop of a forced
+emote as it does a play, and counts a played emote from the tick it started at; the
+client drops a queued emote by the ticks since it came; Molang text that nests too
+deep (64 levels of brackets, a tree taller than the binary form's 256) is rejected.
+
 
 From Emotecraft, unchanged
 --------------------------

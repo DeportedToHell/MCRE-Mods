@@ -30,7 +30,7 @@ use std::time::Instant;
 
 pub(super) const ID: &str = "emotecraft";
 pub(super) const NAME: &str = "Emotecraft";
-pub(super) const VERSION: &str = "1.0.0";
+pub(super) const VERSION: &str = "1.0.1";
 const UNBOUND: &str = "key.keyboard.unknown";
 
 /// The mod's keys in Options > Mods (`EmotecraftClientMod`'s key mappings).
@@ -583,6 +583,13 @@ fn entity_of(game: &Game<'_>, uuid: u128) -> Option<u32> {
 
 // ---- once a tick ----------------------------------------------------------------------------
 
+/// Where a queued emote is now: the tick it came with plus the ticks since it came. The
+/// queue's cleanup counts the same way (`checkQueue` adds the client's whole uptime instead,
+/// which drops an emote that has just come once the client ran longer than it lasts).
+fn queued_tick(begin: f32, received: u64, now: u64) -> f32 {
+    begin + now.saturating_sub(received) as f32
+}
+
 /// Hook `tick` (the window's): every emote a tick on, the own player's stop rules
 /// (`EmoteAvatarMixin.tick`, `PlayerMixin.updatePlayerPose`), the queue (`checkQueue`), the
 /// screens' animations.
@@ -604,7 +611,7 @@ pub(super) fn tick(game: &mut Game<'_>) {
                 if a.age == 1
                     && let Some((e, tick, received)) = c.queue.remove(uuid)
                 {
-                    let t = tick - received as f32 + now as f32;
+                    let t = queued_tick(tick, received, now);
                     if e.is_playing_at(t) {
                         start.push((*uuid, e, t));
                     }
@@ -618,7 +625,10 @@ pub(super) fn tick(game: &mut Game<'_>) {
             a.ctrl.tick();
         }
         if now % 21 == 20 {
-            c.queue.retain(|_, (e, tick, received)| !((!e.is_playing_at(*tick + now as f32) && *tick + now as f32 > 0.0) || now - *received > 24000));
+            c.queue.retain(|_, (e, tick, received)| {
+                let t = queued_tick(*tick, *received, now);
+                !((!e.is_playing_at(t) && t > 0.0) || now - *received > 24000)
+            });
         }
     });
     for (u, e, t) in start {

@@ -175,8 +175,17 @@ pub fn write_exprs(list: &[Expr], w: &mut Writer) {
     }
 }
 
+/// How tall an expression tree may be, read from bytes or parsed from text: the evaluator
+/// and the byte form recurse on it, so a taller one (a crafted keyframe) is rejected before
+/// it can exhaust the stack.
+const MAX_DEPTH: u32 = 256;
+
+/// How deep the text parser may recurse (brackets, signs, right-hand operands in each
+/// other); each level costs it far more stack than a level of the tree costs the evaluator.
+const MAX_NEST: u32 = 64;
+
 fn read_depth(r: &mut Reader<'_>, depth: u32) -> Result<Expr> {
-    if depth > 256 {
+    if depth > MAX_DEPTH {
         return err("Molang expression nests too deep");
     }
     let id = r.u8()?;
@@ -418,9 +427,24 @@ fn lex(s: &str) -> Vec<Tok> {
 struct Parser {
     toks: Vec<Tok>,
     at: usize,
+    /// How deep the parser is in itself: every recursion passes `compound_expr` or
+    /// `unary_operand`.
+    nest: u32,
 }
 
 type PResult<T> = std::result::Result<T, String>;
+
+/// A parsed expression with its height (0 for a leaf), so that chains the parser builds
+/// in a loop (`a + b + c`, `a.b.c`) are bounded as well as nesting.
+type Node = (Expr, u32);
+
+/// The height of a new node over children as high as `child`.
+fn above(child: u32) -> PResult<u32> {
+    if child >= MAX_DEPTH {
+        return Err("Expression nests too deep".into());
+    }
+    Ok(child + 1)
+}
 
 impl Parser {
     fn cur(&self) -> &Tok {
@@ -433,24 +457,35 @@ impl Parser {
         self.cur()
     }
 
-    fn single(&mut self) -> PResult<Expr> {
+    /// `f` a level deeper, unless the text nests too deep already.
+    fn nested(&mut self, f: impl FnOnce(&mut Self) -> PResult<Node>) -> PResult<Node> {
+        if self.nest >= MAX_NEST {
+            return Err("Expression nests too deep".into());
+        }
+        self.nest += 1;
+        let r = f(self);
+        self.nest -= 1;
+        r
+    }
+
+    fn single(&mut self) -> PResult<Node> {
         let t = self.cur().clone();
         match t {
             Tok::Float(v) => {
                 self.next();
-                Ok(Expr::Float(v.parse::<f32>().unwrap_or(0.0)))
+                Ok((Expr::Float(v.parse::<f32>().unwrap_or(0.0)), 0))
             }
             Tok::Str(s) => {
                 self.next();
-                Ok(Expr::Str(s))
+                Ok((Expr::Str(s), 0))
             }
             Tok::True => {
                 self.next();
-                Ok(Expr::Float(1.0))
+                Ok((Expr::Float(1.0), 0))
             }
             Tok::False => {
                 self.next();
-                Ok(Expr::Float(0.0))
+                Ok((Expr::Float(0.0), 0))
             }
             Tok::LParen => {
                 self.next();
@@ -464,6 +499,7 @@ impl Parser {
             Tok::LBrace => {
                 self.next();
                 let mut list = Vec::new();
+                let mut h = 0;
                 loop {
                     while *self.cur() == Tok::Semicolon {
                         self.next();
@@ -472,7 +508,9 @@ impl Parser {
                         self.next();
                         break;
                     }
-                    list.push(self.compound_expr(0)?);
+                    let (e, eh) = self.compound_expr(0)?;
+                    list.push(e);
+                    h = h.max(eh);
                     match self.cur().clone() {
                         Tok::RBrace => {
                             self.next();
@@ -486,77 +524,82 @@ impl Parser {
                         _ => return Err("Missing semicolon".into()),
                     }
                 }
-                Ok(Expr::Scope(list))
+                Ok((Expr::Scope(list), above(h)?))
             }
             Tok::Break => {
                 self.next();
-                Ok(Expr::Statement(StatementOp::Break))
+                Ok((Expr::Statement(StatementOp::Break), 0))
             }
             Tok::Continue => {
                 self.next();
-                Ok(Expr::Statement(StatementOp::Continue))
+                Ok((Expr::Statement(StatementOp::Continue), 0))
             }
             Tok::Ident(name) => {
-                let mut e = Expr::Ident(name);
+                let (mut e, mut h) = (Expr::Ident(name), 0);
                 let mut t = self.next().clone();
                 while t == Tok::Dot {
                     let Tok::Ident(field) = self.next().clone() else {
                         return Err("Unexpected token, expected a valid field token".into());
                     };
+                    h = above(h)?;
                     e = Expr::Access(Box::new(e), field);
                     t = self.next().clone();
                 }
-                Ok(e)
+                Ok((e, h))
             }
             Tok::Sub => {
                 self.next();
-                let x = self.unary_operand()?;
+                let (x, h) = self.unary_operand()?;
                 Ok(match x {
-                    Expr::Float(v) => Expr::Float(-v),
-                    x => Expr::Unary(UnaryOp::ArithmeticalNegation, Box::new(x)),
+                    Expr::Float(v) => (Expr::Float(-v), 0),
+                    x => (Expr::Unary(UnaryOp::ArithmeticalNegation, Box::new(x)), above(h)?),
                 })
             }
             Tok::Bang => {
                 self.next();
-                let x = self.unary_operand()?;
-                Ok(Expr::Unary(UnaryOp::LogicalNegation, Box::new(x)))
+                let (x, h) = self.unary_operand()?;
+                Ok((Expr::Unary(UnaryOp::LogicalNegation, Box::new(x)), above(h)?))
             }
             Tok::Return => {
                 self.next();
-                let x = self.compound_expr(0)?;
-                Ok(Expr::Unary(UnaryOp::Return, Box::new(x)))
+                let (x, h) = self.compound_expr(0)?;
+                Ok((Expr::Unary(UnaryOp::Return, Box::new(x)), above(h)?))
             }
             Tok::Error(e) => Err(format!("Found error token: {e}")),
             t => Err(format!("Expected an expression, but found {t:?}")),
         }
     }
 
-    fn unary_operand(&mut self) -> PResult<Expr> {
-        let mut e = self.single()?;
-        while matches!(self.cur(), Tok::LParen | Tok::LBracket) {
-            e = self.compound(e, 0)?;
-        }
-        Ok(e)
+    fn unary_operand(&mut self) -> PResult<Node> {
+        self.nested(|p| {
+            let mut e = p.single()?;
+            while matches!(p.cur(), Tok::LParen | Tok::LBracket) {
+                e = p.compound(e, 0)?;
+            }
+            Ok(e)
+        })
     }
 
-    fn compound_expr(&mut self, last: i32) -> PResult<Expr> {
-        let mut e = self.single()?;
-        loop {
-            let before = self.at;
-            let c = self.compound(e, last)?;
-            if matches!(self.cur(), Tok::Eof | Tok::Semicolon) {
-                return Ok(c);
+    fn compound_expr(&mut self, last: i32) -> PResult<Node> {
+        self.nested(|p| {
+            let mut e = p.single()?;
+            loop {
+                let before = p.at;
+                let c = p.compound(e, last)?;
+                if matches!(p.cur(), Tok::Eof | Tok::Semicolon) {
+                    return Ok(c);
+                }
+                if p.at == before {
+                    return Ok(c);
+                }
+                e = c;
             }
-            if self.at == before {
-                return Ok(c);
-            }
-            e = c;
-        }
+        })
     }
 
-    fn compound(&mut self, left: Expr, last: i32) -> PResult<Expr> {
+    fn compound(&mut self, (left, lh): Node, last: i32) -> PResult<Node> {
         match self.cur().clone() {
-            Tok::RParen | Tok::Eof => return Ok(left),
+            Tok::RParen | Tok::Eof => return Ok((left, lh)),
             Tok::LBracket => {
                 let t = self.next().clone();
                 if t == Tok::RBracket {
@@ -564,23 +607,26 @@ impl Parser {
                 } else if t == Tok::Eof {
                     return Err("Found EOF before closing RBRACKET".into());
                 }
-                let index = self.compound_expr(0)?;
+                let (index, ih) = self.compound_expr(0)?;
                 if *self.cur() != Tok::RBracket {
                     return Err("Expected a closing RBRACKET".into());
                 }
                 self.next();
-                return Ok(Expr::Index(Box::new(left), Box::new(index)));
+                return Ok((Expr::Index(Box::new(left), Box::new(index)), above(lh.max(ih))?));
             }
             Tok::LParen => {
                 let t = self.next().clone();
                 let mut args = Vec::new();
+                let mut h = lh;
                 if t == Tok::Eof {
                     return Err("Found EOF before closing RPAREN".into());
                 } else if t == Tok::RParen {
                     self.next();
                 } else {
                     loop {
-                        args.push(self.compound_expr(0)?);
+                        let (a, ah) = self.compound_expr(0)?;
+                        args.push(a);
+                        h = h.max(ah);
                         match self.cur().clone() {
                             Tok::Eof => return Err("Found EOF before closing RPAREN".into()),
                             Tok::RParen => {
@@ -595,21 +641,22 @@ impl Parser {
                         }
                     }
                 }
-                return Ok(Expr::Call(Box::new(left), args));
+                return Ok((Expr::Call(Box::new(left), args), above(h)?));
             }
             Tok::Ques => {
                 let p = BinOp::Conditional.precedence();
                 if last >= p {
-                    return Ok(left);
+                    return Ok((left, lh));
                 }
                 self.next();
-                let t = self.compound_expr(0)?;
+                let (t, th) = self.compound_expr(0)?;
                 if *self.cur() == Tok::Colon {
                     self.next();
-                    let f = self.compound_expr(p - 1)?;
-                    return Ok(Expr::Ternary(Box::new(left), Box::new(t), Box::new(f)));
+                    let (f, fh) = self.compound_expr(p - 1)?;
+                    let h = above(lh.max(th).max(fh))?;
+                    return Ok((Expr::Ternary(Box::new(left), Box::new(t), Box::new(f)), h));
                 }
-                return Ok(Expr::Binary(BinOp::Conditional, Box::new(left), Box::new(t)));
+                return Ok((Expr::Binary(BinOp::Conditional, Box::new(left), Box::new(t)), above(lh.max(th))?));
             }
             _ => {}
         }
@@ -629,22 +676,22 @@ impl Parser {
             Tok::EqEq => BinOp::Eq,
             Tok::BangEq => BinOp::Neq,
             Tok::Arrow => BinOp::Arrow,
-            _ => return Ok(left),
+            _ => return Ok((left, lh)),
         };
         let p = op.precedence();
         if last >= p {
-            return Ok(left);
+            return Ok((left, lh));
         }
         self.next();
         let rp = if op == BinOp::Assign { p - 1 } else { p };
-        let right = self.compound_expr(rp)?;
-        Ok(Expr::Binary(op, Box::new(left), Box::new(right)))
+        let (right, rh) = self.compound_expr(rp)?;
+        Ok((Expr::Binary(op, Box::new(left), Box::new(right)), above(lh.max(rh))?))
     }
 }
 
 /// `MolangParser.parseAll`: every expression of the text, `;` apart.
 pub fn parse(text: &str) -> std::result::Result<Exprs, String> {
-    let mut p = Parser { toks: lex(text), at: 0 };
+    let mut p = Parser { toks: lex(text), at: 0, nest: 0 };
     let mut out = Vec::new();
     loop {
         while *p.cur() == Tok::Semicolon {
@@ -655,7 +702,7 @@ pub fn parse(text: &str) -> std::result::Result<Exprs, String> {
             Tok::Error(e) => return Err(format!("Found an invalid token (error): {e}")),
             _ => {}
         }
-        out.push(p.compound_expr(0)?);
+        out.push(p.compound_expr(0)?.0);
         if !matches!(p.cur(), Tok::Eof | Tok::Semicolon) {
             return Err(format!("Expected a semicolon, but was {:?}", p.cur()));
         }
@@ -1005,5 +1052,29 @@ mod tests {
         write_exprs(&e, &mut w);
         let back = read_exprs(&mut Reader::new(&w.data)).unwrap();
         assert_eq!(back, e);
+    }
+
+    #[test]
+    fn rejects_text_nesting_too_deep() {
+        let n = 100_000;
+        // the parser's own recursion: brackets, signs, right-hand operands
+        assert!(parse(&format!("{}1{}", "(".repeat(n), ")".repeat(n))).is_err());
+        assert!(parse(&format!("{}1", "-!".repeat(n))).is_err());
+        assert!(parse(&vec!["v.a"; n].join(" = ")).is_err());
+        assert!(parse(&format!("{}1", "1 ? 2 : ".repeat(n))).is_err());
+        assert!(parse(&format!("{}1", "return ".repeat(n))).is_err());
+        assert!(parse(&format!("{}1{}", "f(".repeat(n), ")".repeat(n))).is_err());
+        // trees the parser builds in a loop
+        assert!(parse(&vec!["1"; n].join(" + ")).is_err());
+        assert!(parse(&format!("a{}", ".b".repeat(n))).is_err());
+        let nested = |n: usize| format!("{}1{}", "(".repeat(n), ")".repeat(n));
+        assert_eq!(parse(&nested(MAX_NEST as usize - 1)).unwrap(), vec![Expr::Float(1.0)]);
+        assert!(parse(&nested(MAX_NEST as usize)).is_err());
+        // a tree as tall as the byte form reads is accepted, a taller one is not
+        let sum = parse(&vec!["1"; MAX_DEPTH as usize + 1].join(" + ")).unwrap();
+        let mut w = Writer::new();
+        write_exprs(&sum, &mut w);
+        assert_eq!(read_exprs(&mut Reader::new(&w.data)).unwrap(), sum);
+        assert!(parse(&vec!["1"; MAX_DEPTH as usize + 2].join(" + ")).is_err());
     }
 }

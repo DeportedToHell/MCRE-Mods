@@ -1,4 +1,4 @@
-# Plasmo Voice for Horizon 1.0.1
+# Plasmo Voice for Horizon 1.0.2
 
 A port of [Plasmo Voice](https://github.com/plasmoapp/plasmo-voice) by Plasmo (its version 2.2.0) to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3, as a native mod
@@ -36,6 +36,14 @@ is on by default (Plasmo Voice: off for proximity).
 
 Defaults changed: the **activation threshold is -60 dB** (Plasmo Voice: -30 dB). A threshold already saved in
 `client.toml` stays as it is; the slider's reset button sets -60 dB.
+
+Fixed from the original: **voice activation** measures the microphone as it is sent — after the microphone volume
+and noise suppression, as the meter and its threshold marker show it (Plasmo Voice measures the raw microphone, so
+suppressed noise could still start a talk); the mono and stereo forms of a frame (with stereo capture) go through
+**separate filter states** (Plasmo Voice runs both through one RNNoise); the **player search** on the Volume tab also
+filters the players of addons' source lines and direct sources (Plasmo Voice lists those whatever is typed). As in
+Plasmo Voice, every Config from the server (`/vreload` too) restarts the microphone, the encoders and the speakers
+with its sample rate, codec and MTU.
 
 Differences from the original, where Horizon has no counterpart yet: **HRTF** (OpenAL Soft's, which Horizon's mods
 don't have) and the Mod Menu screen's **Javax Input Device** (Java Sound; the port opens the microphone one way, with

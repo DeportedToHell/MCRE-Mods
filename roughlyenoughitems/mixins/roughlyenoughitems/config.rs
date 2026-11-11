@@ -1221,9 +1221,7 @@ impl ConfigScreen {
             .collect();
         let row_w = labels.iter().map(|l| width(game, l) + 12.0).fold(10.0, f32::max);
         let content_h = 12.0 * labels.len() as f32;
-        let down = sh - (a[1] + a[3]) > a[1];
-        let y = if down { a[1] + a[3] } else { a[1] - (content_h + 2.0) };
-        let inner_h = content_h.min(sh - 20.0 - y);
+        let (down, y, inner_h) = rei::menu_place(a[1], a[3], content_h, sh);
         let scrolls = inner_h < content_h;
         let mw = row_w + 2.0 + if scrolls { 6.0 } else { 0.0 };
         let right = sw - (a[0] + a[2]) >= mw + 10.0;
@@ -1245,6 +1243,10 @@ impl ConfigScreen {
         self.hits.push((full, CHit::MenuArea));
         let max_scroll = (content_h - inner_h).max(0.0);
         let scroll = m.scroll.clamp(0.0, max_scroll);
+        // Kept clamped, so the wheel turns back at once from either end.
+        if let Some(m) = self.menu.as_mut() {
+            m.scroll = scroll;
+        }
         let start = batch.vertices.len();
         for (i, l) in labels.iter().enumerate() {
             let r = [x + 1.0, y + 1.0 + 12.0 * i as f32 - scroll, row_w, 12.0];

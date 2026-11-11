@@ -81,7 +81,12 @@ Additions of this port, not in Plasmo Voice:
   default (Plasmo Voice: off for lines without players).
 
 Changed in this port: the activation threshold's default is -60 dB (Plasmo
-Voice: -30 dB); a threshold already saved in client.toml is kept.
+Voice: -30 dB); a threshold already saved in client.toml is kept. Voice
+activation measures the processed frame (gain, noise suppression), the one
+the meter shows (Plasmo Voice: the raw one); the mono and stereo forms of a
+frame are filtered with separate states (Plasmo Voice shares one noise filter
+between them); the Volume tab's player search also filters the source lines'
+and direct sources' players (Plasmo Voice: only the voice chat's players).
 
 Made for Horizon (https://github.com/horizon-rust/horizon, MIT) with
 horizon-mixins (https://github.com/horizon-rust/horizon-mixins, MIT).

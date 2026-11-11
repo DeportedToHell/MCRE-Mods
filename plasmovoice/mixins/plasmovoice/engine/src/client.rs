@@ -269,7 +269,35 @@ struct Server {
     permissions: Vec<(String, bool)>,
     icons: Option<crate::tcp::IconConfig>,
     configured: bool,
+    /// How many Configs came: each one restarts the capture and reopens the speakers.
+    config: u64,
     last_ping: Option<Instant>,
+}
+
+/// What the microphone, the encoders, the speakers and the decoders are made for: the server's
+/// last Config (`CaptureInfo`), and which one it was. Plasmo Voice's `handle(ConfigPacket)`
+/// starts the capture again (`AudioCapture.start`, then `initialize`: the microphone and the
+/// encoders) and reopens the speakers (`reloadOutputDevice`) on every Config, `/vreload`'s
+/// included, so a new sample rate, codec or MTU applies at once.
+#[derive(Clone, Debug, PartialEq)]
+struct VoiceFormat {
+    config: u64,
+    sample_rate: i32,
+    mtu: i32,
+    codec_mode: String,
+    bitrate: i32,
+}
+
+/// The format of the Config in force; none before one came (or since a new connection).
+fn voice_format(s: &Shared) -> Option<VoiceFormat> {
+    let server = &s.server;
+    (server.configured && server.sample_rate > 0).then(|| VoiceFormat {
+        config: server.config,
+        sample_rate: server.sample_rate,
+        mtu: server.mtu,
+        codec_mode: server.codec_mode.clone(),
+        bitrate: server.bitrate,
+    })
 }
 
 struct Source {
@@ -503,6 +531,7 @@ impl Client {
                 s.server.permissions = permissions;
                 s.server.icons = icon_config;
                 s.server.configured = true;
+                s.server.config += 1;
                 // LanguageRequestPacket and PlayerActivationDistancesPacket follow (`ModServerConnection`).
                 let lang = Packet::LanguageRequest { language: s.settings.language.clone() }.encode();
                 s.tcp_out.push(lang);
@@ -974,9 +1003,9 @@ impl Microphone {
 /// `AL_MAX_GAIN`), stereo when stereo capture is on and stereo sources aren't made mono.
 const LOOPBACK: u128 = u128::MAX;
 
-/// The filters of the microphone's frame (`InputDevice.processFilters`), run once each for its
-/// mono and stereo forms as something asks for them (`EncodedCapture.getMono`, `getStereo`):
+/// The filters of one form of the microphone's frame (`InputDevice.processFilters`):
 /// `StereoToMonoFilter` (mono only), `GainFilter`, `NoiseSuppressionFilter`.
+#[derive(Default)]
 struct Filters {
     gain: dsp::Gain,
     noise: Option<dsp::NoiseSuppression>,
@@ -993,55 +1022,115 @@ impl Filters {
     }
 }
 
-/// `EncodedCapture`: the frame processed at most once in each form.
+/// The filters of the mono and the stereo forms, each with its own state (the gain's history,
+/// RNNoise's recurrent and synthesis state): a frame processed in both forms advances each
+/// once. (Plasmo Voice runs both forms through one `NoiseSuppressionFilter`, so the left
+/// channel's RNNoise there advances twice on such a frame.)
+#[derive(Default)]
+struct FormFilters {
+    mono: Filters,
+    stereo: Filters,
+}
+
+impl FormFilters {
+    /// The noise suppression's RNNoise states live while it is on (`toggle`).
+    fn set_noise_suppression(&mut self, on: bool) {
+        for f in [&mut self.mono, &mut self.stereo] {
+            if on {
+                f.noise.get_or_insert_with(dsp::NoiseSuppression::default);
+            } else {
+                f.noise = None;
+            }
+        }
+    }
+}
+
+/// `EncodedCapture`: the frame processed at most once in each form, as something asks for it
+/// (`getMono`, `getStereo`), each form by its own filters.
 struct Processed<'a> {
     raw: &'a [i16],
     channels: usize,
+    filters: &'a mut FormFilters,
+    settings: &'a Settings,
+    rate: i32,
     mono: Option<Vec<i16>>,
     stereo: Option<Vec<i16>>,
 }
 
 impl Processed<'_> {
-    fn get(&mut self, stereo: bool, filters: &mut Filters, settings: &Settings, rate: i32) -> Vec<i16> {
-        let (raw, channels) = (self.raw, self.channels);
-        let slot = if stereo { &mut self.stereo } else { &mut self.mono };
-        slot.get_or_insert_with(|| filters.run(raw, channels, stereo, settings, rate)).clone()
+    fn get(&mut self, stereo: bool) -> &[i16] {
+        let (raw, channels, settings, rate) = (self.raw, self.channels, self.settings, self.rate);
+        let (slot, filters) = if stereo { (&mut self.stereo, &mut self.filters.stereo) } else { (&mut self.mono, &mut self.filters.mono) };
+        slot.get_or_insert_with(|| filters.run(raw, channels, stereo, settings, rate))
     }
 }
 
-/// `VoiceAudioCapture.run`: frames from the microphone through the activations, the filters
-/// (`StereoToMonoFilter`, `GainFilter`, `NoiseSuppressionFilter`; the compressor and limiter
-/// are commented out in Plasmo Voice), Opus and AES, to the server.
+/// `ClientActivation.process` for one activation and frame. Voice activation measures the frame
+/// as it would be sent: the processed form the activation takes (stereo when the microphone is
+/// and the activation supports it), with the microphone's gain and noise suppression, the frame
+/// the meter and its threshold marker show. (Plasmo Voice measures the raw frame.)
+fn activation_result(
+    a: &Activation,
+    c: &ActivationSettings,
+    st: &mut ActState,
+    parent: Option<Result>,
+    held: &[String],
+    typing: bool,
+    processed: &mut Processed<'_>,
+) -> Result {
+    match c.kind {
+        ActivationType::PushToTalk => st.ptt(held.contains(&a.name) && !typing),
+        ActivationType::Voice => {
+            let stereo = processed.channels == 2 && a.stereo_supported;
+            let threshold = processed.settings.activation_threshold;
+            st.voice(processed.get(stereo), threshold, c.toggle, parent)
+        }
+        ActivationType::Inherit => st.inherit(parent.unwrap_or(Result::NotActivated), c.toggle),
+    }
+}
+
+/// `VoiceAudioCapture`: started again with each Config (`start`, `initialize`), once one came.
 fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
-    // Wait for the server's Config (sample rate, codec, key).
-    let mut waited = 0;
-    let rate = loop {
-        if stop.load(Ordering::Relaxed) || waited > 300 {
-            return;
+    let mut started: Option<u64> = None;
+    while !stop.load(Ordering::Relaxed) {
+        let format = voice_format(&lock(shared));
+        match format {
+            Some(f) if started != Some(f.config) => {
+                started = Some(f.config);
+                capture_session(shared, stop, sock, &f);
+            }
+            _ => std::thread::sleep(Duration::from_millis(50)),
         }
-        let r = lock(shared).server.sample_rate;
-        if r > 0 {
-            break r;
-        }
-        std::thread::sleep(Duration::from_millis(100));
-        waited += 1;
-    };
-    let (mode, bitrate, mtu) = {
-        let s = lock(shared);
-        (s.server.codec_mode.clone(), s.server.bitrate, s.server.mtu)
-    };
-    let new_encoder = |stereo: bool| Encoder::new(rate, stereo, &mode, bitrate, mtu.max(64) as usize);
+    }
+}
+
+/// `VoiceAudioCapture.run` for one Config: frames from the microphone (opened at its sample
+/// rate) through the activations, the filters (`StereoToMonoFilter`, `GainFilter`,
+/// `NoiseSuppressionFilter`; the compressor and limiter are commented out in Plasmo Voice),
+/// Opus and AES, to the server. It ends when another Config comes; as Plasmo Voice's thread,
+/// it leaves the microphone, the encoders and the sequence numbers behind (`cleanup`).
+fn capture_session(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket, format: &VoiceFormat) {
+    let rate = format.sample_rate;
+    let new_encoder = |stereo: bool| Encoder::new(rate, stereo, &format.codec_mode, format.bitrate, format.mtu.max(64) as usize);
     let Some(mut mono_encoder) = new_encoder(false) else {
         lock(shared).error = Some("opus encoder".into());
         return;
     };
     let mut stereo_encoder: Option<Encoder> = None;
     let mut mic = Microphone { capture: None, wanted: None, failed_at: None };
-    let mut filters = Filters { gain: dsp::Gain::default(), noise: None };
+    let mut filters = FormFilters::default();
     let mut states: HashMap<Uuid, ActState> = HashMap::new();
     while !stop.load(Ordering::Relaxed) {
-        let Some((raw, channels)) = mic.next(shared, rate) else { continue };
+        let Some((raw, channels)) = mic.next(shared, rate) else {
+            if lock(shared).server.config != format.config {
+                break;
+            }
+            continue;
+        };
         let mut s = lock(shared);
+        if s.server.config != format.config {
+            break;
+        }
         let settings = s.settings.clone();
         let key = s.server.key.clone();
         let secret = s.server.secret;
@@ -1053,18 +1142,13 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
         };
         let held = s.world.held.clone();
         let typing = s.world.typing;
-        // The noise suppression's RNNoise states live while it is on (`toggle`).
-        if settings.noise_suppression {
-            filters.noise.get_or_insert_with(dsp::NoiseSuppression::default);
-        } else {
-            filters.noise = None;
-        }
-        let mut processed = Processed { raw: &raw, channels, mono: None, stereo: None };
+        filters.set_noise_suppression(settings.noise_suppression);
+        let mut processed = Processed { raw: &raw, channels, filters: &mut filters, settings: &settings, rate, mono: None, stereo: None };
         // The meter and the microphone test (`MicrophoneTestController.onAudioCaptureProcessed`):
         // the processed frame, stereo when stereo capture is on and stereo sources aren't mono.
         let test_stereo = channels == 2 && !settings.stereo_sources_to_mono;
-        let heard = processed.get(test_stereo, &mut filters, &settings, rate);
-        s.level = dsp::highest_level(&heard);
+        let heard = processed.get(test_stereo);
+        s.level = dsp::highest_level(heard);
         s.frames += 1;
         if settings.microphone_test
             && let Some(mix) = s.mix.clone()
@@ -1129,7 +1213,7 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
             if let Some(e) = &encoded[usize::from(stereo)] {
                 return e.clone();
             }
-            let frame = processed.get(stereo, &mut filters, &settings, rate);
+            let frame = processed.get(stereo);
             let encoder = if stereo {
                 if stereo_encoder.is_none() {
                     stereo_encoder = new_encoder(true);
@@ -1138,7 +1222,7 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
             } else {
                 Some(&mut mono_encoder)
             };
-            let out = encoder.and_then(|e| e.encode(&frame)).map(|opus| match &key {
+            let out = encoder.and_then(|e| e.encode(frame)).map(|opus| match &key {
                 Some(k) => k.encrypt(&opus),
                 None => opus,
             });
@@ -1147,16 +1231,11 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
         };
         let is_stereo = |a: &Activation| channels == 2 && a.stereo_supported;
         let config_of = |a: &Activation| settings.activations.get(&a.name).cloned().unwrap_or_default();
-        let result_of = |a: &Activation, st: &mut ActState, parent_result: Option<Result>| -> Result {
-            let c = config_of(a);
-            match c.kind {
-                ActivationType::PushToTalk => st.ptt(held.contains(&a.name) && !typing),
-                ActivationType::Voice => st.voice(&raw, settings.activation_threshold, c.toggle, parent_result),
-                ActivationType::Inherit => st.inherit(parent_result.unwrap_or(Result::NotActivated), c.toggle),
-            }
+        let result_of = |a: &Activation, st: &mut ActState, parent_result: Option<Result>, processed: &mut Processed<'_>| {
+            activation_result(a, &config_of(a), st, parent_result, &held, typing, processed)
         };
         let parent_state = states.entry(parent.id()).or_default();
-        let parent_result = result_of(&parent, parent_state, None);
+        let parent_result = result_of(&parent, parent_state, None, &mut processed);
         let (mut prox_reached, mut other_reached) = (false, false);
         s.talking.clear();
         for a in activations.iter().filter(|a| a.name != parent.name) {
@@ -1171,7 +1250,7 @@ fn capture_loop(shared: &Mutex<Shared>, stop: &AtomicBool, sock: &UdpSocket) {
                 *st = ActState { sequence: st.sequence, ..ActState::default() };
                 continue;
             }
-            let r = result_of(a, st, Some(parent_result));
+            let r = result_of(a, st, Some(parent_result), &mut processed);
             if r != Result::NotActivated {
                 let stereo = is_stereo(a);
                 let data = encode(stereo, &mut processed);
@@ -1219,32 +1298,49 @@ fn s_server_muted(shared: &Mutex<Shared>) -> bool {
 
 // ---- the speakers ---------------------------------------------------------------------------
 
+/// A new Config: the sources decode anew at its sample rate, each fading in again, as on
+/// Plasmo Voice's speakers opened again (`reloadOutputDevice`).
+fn reset_decoders(sources: &mut HashMap<Uuid, Source>) {
+    for src in sources.values_mut() {
+        src.decoder = None;
+        src.playing = false;
+    }
+}
+
 /// Every 10 ms: each source's due frames, decoded, at its volume and side, into the mix. The
-/// speakers open again when the output device changes (`reloadOutputDevice`).
+/// speakers open again when the output device changes and with each Config, at its sample
+/// rate (`reloadOutputDevice`); nothing plays before the first Config (it comes after the UDP
+/// connection opens).
 fn playback_loop(shared: &Mutex<Shared>, stop: &AtomicBool) {
-    // The server's Config says the sample rate; it comes after the UDP connection opens.
-    let rate = loop {
-        if stop.load(Ordering::Relaxed) {
-            return;
-        }
-        let r = lock(shared).server.sample_rate;
-        if r > 0 {
-            break r;
-        }
-        std::thread::sleep(Duration::from_millis(50));
-    };
+    let mut opened_for: Option<u64> = None;
     let mut out: Option<(String, Output)> = None;
     let mut failed_at: Option<Instant> = None;
     while !stop.load(Ordering::Relaxed) {
         std::thread::sleep(Duration::from_millis(10));
-        let device = lock(shared).settings.output_device.clone();
+        let (format, device) = {
+            let s = lock(shared);
+            (voice_format(&s), s.settings.output_device.clone())
+        };
+        let Some(format) = format else { continue };
+        // The rate the speakers and the decoders are made for; a Config that comes meanwhile is
+        // taken in on the next pass, by both together.
+        let sample_rate = format.sample_rate;
+        if opened_for != Some(format.config) {
+            opened_for = Some(format.config);
+            out = None;
+            failed_at = None;
+            let mut s = lock(shared);
+            s.mix = None;
+            s.speakers = None;
+            reset_decoders(&mut s.sources);
+        }
         if out.as_ref().is_some_and(|(d, _)| *d != device) {
             out = None;
             failed_at = None;
             lock(shared).mix = None;
         }
         if out.is_none() && failed_at.is_none_or(|t| t.elapsed() > Duration::from_secs(1)) {
-            match Output::open(if device.is_empty() { None } else { Some(&device) }, rate as u32) {
+            match Output::open(if device.is_empty() { None } else { Some(&device) }, sample_rate as u32) {
                 Ok(o) => {
                     let mut s = lock(shared);
                     s.speakers = Some(o.device.clone());
@@ -1266,7 +1362,6 @@ fn playback_loop(shared: &Mutex<Shared>, stop: &AtomicBool) {
         let world = s.world.clone();
         let settings = s.settings.clone();
         let lines = s.server.lines.clone();
-        let sample_rate = s.server.sample_rate;
         let allow_freecam = s.server.permissions.iter().find(|(k, _)| k == "pv.allow_freecam").is_none_or(|(_, v)| *v);
         let ears = Ears::of(&world, &settings, allow_freecam);
         // `isActivated` of each kind of source, for `source_types_overlap` (`shouldWrite`).
@@ -1675,5 +1770,129 @@ mod tests {
         info.angle = 90;
         let expected = base * (1.0 - 45.0f32 / 135.0).powi(3);
         assert!((v(&info, &off, &world) - expected).abs() < 1e-5);
+    }
+
+    struct NoRsa;
+    impl Rsa for NoRsa {
+        fn public_der(&self) -> Vec<u8> {
+            Vec::new()
+        }
+        fn decrypt(&self, _: &[u8]) -> Option<Vec<u8>> {
+            None
+        }
+    }
+
+    fn config(sample_rate: i32, mtu_size: i32, mode: &str, bitrate: &str) -> Vec<u8> {
+        let encoder = crate::tcp::CodecInfo { name: "opus".into(), params: vec![("mode".into(), mode.into()), ("bitrate".into(), bitrate.into())] };
+        Packet::Config {
+            server_id: Uuid(9),
+            capture: crate::tcp::CaptureInfo { sample_rate, mtu_size, encoder: Some(encoder) },
+            encryption: None,
+            source_lines: Vec::new(),
+            activations: Vec::new(),
+            permissions: Vec::new(),
+            icon_config: None,
+        }
+        .encode()
+    }
+
+    #[test]
+    fn each_config_restarts_the_audio_with_its_format() {
+        let mut client = Client::new(Arc::new(NoRsa), "26.3", "localhost", 25565, Settings::default());
+        assert_eq!(voice_format(&client.lock()), None, "nothing opens before a Config");
+        client.handle_tcp(&config(48000, 1024, "VOIP", "-1000"));
+        let first = voice_format(&client.lock()).expect("configured");
+        assert_eq!((first.sample_rate, first.mtu, first.codec_mode.as_str(), first.bitrate), (48000, 1024, "VOIP", -1000));
+        // `/vreload` with another sample rate and codec: a new format the threads restart for.
+        client.handle_tcp(&config(24000, 512, "AUDIO", "32000"));
+        let second = voice_format(&client.lock()).expect("configured");
+        assert_eq!((second.sample_rate, second.mtu, second.codec_mode.as_str(), second.bitrate), (24000, 512, "AUDIO", 32000));
+        assert_ne!(first.config, second.config);
+        // The same Config again restarts them too, as Plasmo Voice does.
+        client.handle_tcp(&config(24000, 512, "AUDIO", "32000"));
+        assert_ne!(voice_format(&client.lock()).expect("configured").config, second.config);
+    }
+
+    #[test]
+    fn a_new_config_resets_the_decoders() {
+        let mut sources = HashMap::new();
+        let mut src = new_source();
+        src.decoder = Decoder::new(48000, false);
+        src.playing = true;
+        sources.insert(Uuid(1), src);
+        reset_decoders(&mut sources);
+        assert!(sources[&Uuid(1)].decoder.is_none());
+        assert!(!sources[&Uuid(1)].playing, "fades in again");
+    }
+
+    /// Stereo noise, 20 ms at 48 kHz.
+    fn noisy_stereo_frames(n: usize) -> Vec<Vec<i16>> {
+        let mut seed = 0x2468_ace1u32;
+        (0..n)
+            .map(|_| {
+                (0..1920)
+                    .map(|i| {
+                        seed ^= seed << 13;
+                        seed ^= seed >> 17;
+                        seed ^= seed << 5;
+                        let tone = ((i / 2) as f32 * 0.07).sin() * 6000.0;
+                        (tone + (seed % 4000) as f32 - 2000.0) as i16
+                    })
+                    .collect()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn mono_and_stereo_forms_keep_their_own_filter_states() {
+        let settings = Settings { noise_suppression: true, stereo_capture: true, ..Settings::default() };
+        let mut both = FormFilters::default();
+        let mut mono_only = FormFilters::default();
+        let mut stereo_only = FormFilters::default();
+        for f in [&mut both, &mut mono_only, &mut stereo_only] {
+            f.set_noise_suppression(true);
+        }
+        let processed = |filters: &mut FormFilters, raw: &[i16], stereo: bool| {
+            let mut p = Processed { raw, channels: 2, filters, settings: &settings, rate: 48000, mono: None, stereo: None };
+            p.get(stereo).to_vec()
+        };
+        for raw in noisy_stereo_frames(8) {
+            // The meter takes the stereo form, then the proximity activation the mono one.
+            let (stereo, mono) = {
+                let mut p = Processed { raw: &raw, channels: 2, filters: &mut both, settings: &settings, rate: 48000, mono: None, stereo: None };
+                (p.get(true).to_vec(), p.get(false).to_vec())
+            };
+            assert_eq!(mono, processed(&mut mono_only, &raw, false), "the mono form as if processed alone");
+            assert_eq!(stereo, processed(&mut stereo_only, &raw, true), "the stereo form as if processed alone");
+        }
+    }
+
+    #[test]
+    fn voice_activation_measures_the_processed_frame() {
+        let activation = Activation {
+            name: crate::tcp::PROXIMITY.into(),
+            translation: String::new(),
+            icon: String::new(),
+            distances: vec![8, 16],
+            default_distance: 8,
+            proximity: true,
+            transitive: true,
+            stereo_supported: false,
+            encoder: None,
+            weight: 0,
+        };
+        let voice = ActivationSettings { kind: ActivationType::Voice, toggle: false, distance: None };
+        // About -23 dB raw by `containsMinAudioLevel` (a 50-sample window over the frame's length), over -30 dB.
+        let raw = vec![10000i16; 960];
+        let result = |microphone_volume: f64| {
+            let settings = Settings { activation_threshold: -30.0, microphone_volume, ..Settings::default() };
+            let mut filters = FormFilters::default();
+            let mut p = Processed { raw: &raw, channels: 1, filters: &mut filters, settings: &settings, rate: 48000, mono: None, stereo: None };
+            let r = activation_result(&activation, &voice, &mut ActState::default(), None, &[], false, &mut p);
+            (r, p.mono.is_some())
+        };
+        assert_eq!(result(1.0), (Result::Activated, true), "measured on the processed (mono) form, kept for sending");
+        // At 10% the frame sent is about -43 dB, under the threshold: nothing is sent.
+        assert_eq!(result(0.1).0, Result::NotActivated);
     }
 }

@@ -195,19 +195,17 @@ pub(super) fn detect(game: &mut Game<'_>) {
         return;
     }
     let mut protos: Vec<ItemStack> = Vec::new();
-    let mut changes = Vec::new();
-    for (n, &id) in ids.iter().enumerate() {
-        let old = held(&mut protos, &prev.slots[n]);
-        let new = held(&mut protos, &slots[n]);
-        if old != new {
-            changes.push(ss::Change {
-                slot: id,
-                old,
-                new,
-                result: results[n],
-            });
-        }
-    }
+    let seen: Vec<ss::Change> = ids
+        .iter()
+        .enumerate()
+        .map(|(n, &id)| ss::Change {
+            slot: id,
+            old: held(&mut protos, &prev.slots[n]),
+            new: held(&mut protos, &slots[n]),
+            result: results[n],
+        })
+        .collect();
+    let changes = ss::changes(&seen);
     let cursor_old = held(&mut protos, &prev.carried);
     let cursor_new = held(&mut protos, &carried);
     if changes.is_empty() {

@@ -2,7 +2,7 @@
 # Dependencies are the versions in Horizon's Cargo.lock (docs/native-mods.md, "The mod's crate").
 [package]
 name = "plasmovoice-engine"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2024"
 license = "LGPL-3.0-only"
 publish = false

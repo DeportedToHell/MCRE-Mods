@@ -1,6 +1,6 @@
 [mod]
 id = "smoothswapping"
-version = "1.1.1"
+version = "1.1.2"
 priority = 100
 
 # Built for this Nightly: besides the hook points it uses the inventory

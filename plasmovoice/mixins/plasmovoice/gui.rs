@@ -47,7 +47,7 @@ const WARNING: u32 = 0xFFFA_C653;
 const BLACK: u32 = 0xFF00_0000;
 
 /// The port's version, shown in the settings title as the original shows its own.
-pub(super) const VERSION: &str = "1.0.1";
+pub(super) const VERSION: &str = "1.0.2";
 
 // ---- what the screen shows of the voice connection ------------------------------------------
 
@@ -622,7 +622,9 @@ impl Screen {
             sources.items.push(Item::Opt(volume_row(cfg, &vol, &mute, Label::Icon(l.icon.clone(), t(&l.translation)))));
         }
 
-        // `createPlayersSearch` and `refreshPlayerEntries`.
+        // `createPlayersSearch` and `refreshPlayerEntries`: the voice chat's players, the source
+        // lines' and the direct sources' senders, merged by UUID, then searched. (Plasmo Voice
+        // searches only the first list, so the others' players stay whatever is typed.)
         let search = self.search.value.to_lowercase();
         let mut players: Vec<(u128, String)> = Vec::new();
         let mut join = |id: u128, name: &str| {
@@ -632,7 +634,7 @@ impl Screen {
                 players.push((id, name.to_owned()));
             }
         };
-        for p in inf.players.iter().filter(|p| p.nick.to_lowercase().contains(&search)) {
+        for p in &inf.players {
             join(p.id.0, &p.nick);
         }
         for l in &inf.lines {
@@ -643,7 +645,7 @@ impl Screen {
         for (id, name) in &inf.direct_senders {
             join(*id, name);
         }
-        players.retain(|p| p.0 != inf.me);
+        players.retain(|p| p.0 != inf.me && p.1.to_lowercase().contains(&search));
         players.sort_by(|a, b| a.1.encode_utf16().cmp(b.1.encode_utf16()));
         let rows = players
             .into_iter()

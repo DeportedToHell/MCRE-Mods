@@ -198,10 +198,10 @@ pub(super) enum Action {
     /// R, U or A over a slot of the screen's.
     SlotKey { key: SlotKey, at: (f32, f32) },
     Command(String),
-    /// A tag tree to the clipboard.
+    /// Text to the clipboard: a tag tree, an id, or the search field's
+    /// selection (taken when Ctrl+C or Ctrl+X is pressed).
     CopyText(String),
     Paste,
-    Copy,
     /// The config screen's Done: a keybind's key (the game keeps mod keys).
     SetKey { name: String, key: String },
     /// "Reload Plugins" (the recipes read again) and "Reload Search".
@@ -1550,13 +1550,6 @@ fn act(game: &mut Game<'_>, action: Action) {
                 }
             });
         }
-        Action::Copy => {
-            if let Some(text) = with(|s| s.search.as_ref().map(EditBox::selected_text)).flatten()
-                && !text.is_empty()
-            {
-                game.clipboard.set(&text);
-            }
-        }
         Action::SetKey { name, key } => {
             game.native_set_mod_key(rei::ID, &name, Some(&key));
         }
@@ -2262,10 +2255,17 @@ pub(super) fn key_pressed(game: &Game<'_>, screen: &NativeScreenView<'_>, key: &
                     }
                 }
                 "key.keyboard.v" if control => s.pending.push(Action::Paste),
-                "key.keyboard.c" if control => s.pending.push(Action::Copy),
-                "key.keyboard.x" if control => {
-                    s.pending.push(Action::Copy);
-                    search.delete_chars(0);
+                // EditBox's copy and cut: the selection to the clipboard (the
+                // copy waits for the game, so it takes the text now, before a
+                // cut deletes it).
+                "key.keyboard.c" | "key.keyboard.x" if control => {
+                    let text = search.selected_text();
+                    if !text.is_empty() {
+                        s.pending.push(Action::CopyText(text));
+                    }
+                    if key == "key.keyboard.x" {
+                        search.delete_chars(0);
+                    }
                 }
                 _ => {
                     if let Some(code) = horizon_client::keybinds::key_code(key) {

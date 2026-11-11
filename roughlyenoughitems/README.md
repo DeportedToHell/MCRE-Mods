@@ -14,6 +14,8 @@ game's container screens.
 - **Search** with REI's grammar, coloured as you type: words (the name, the tooltip and the id),
   `"quoted phrases"`, `-exclusions`, `a | b` alternatives, `@mod`, `#tooltip`, `$tag`, `*id`, `r/regex/`.
   The field turns red when nothing matches; ↑ and ↓ go through what you searched before.
+  One difference from REI: `-word` leaves out every entry whose name, tooltip or id has the word. REI checks
+  each of the three on its own, so an entry whose tooltip has the word still shows when its name lacks it.
 - **Craftable filter** (the button right of the search field): only what you can craft from your
   inventory right now.
 - **Recipes and usages**: left click (or **R**) for how an item is made, right click (or **U**) for what

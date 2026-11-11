@@ -1,6 +1,6 @@
 [mod]
 id = "emotecraft"
-version = "1.0.0"
+version = "1.0.1"
 # Below First-person Model (100): its HEAD on the elytra's geometry (hiding the own body's layers
 # in first person) runs first, then Emotecraft's.
 priority = 50

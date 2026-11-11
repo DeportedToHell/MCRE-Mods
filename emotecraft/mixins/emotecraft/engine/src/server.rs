@@ -24,22 +24,40 @@ struct Player {
     name: String,
     /// The versions its CONFIG gave; none until it configured (a client without the mod).
     versions: Option<Versions>,
-    emote: Option<(Arc<Animation>, Instant, bool)>,
+    emote: Option<Played>,
+}
+
+/// The emote a player plays (`setPlayedEmote`).
+struct Played {
+    anim: Arc<Animation>,
+    /// When the server got it.
+    start: Instant,
+    /// The tick it started from (the message's tick), so that a late tracker gets it where it
+    /// is and a one-shot emote ends when it ends.
+    offset: f32,
+    forced: bool,
 }
 
 impl Player {
+    fn set_played(&mut self, anim: Arc<Animation>, tick: f32, forced: bool) {
+        let offset = if tick.is_finite() { tick.max(0.0) } else { 0.0 };
+        self.emote = Some(Played { anim, start: Instant::now(), offset, forced });
+    }
+
     /// `getPlayedEmote`: the emote and its tick, while it still plays.
     fn played(&mut self) -> Option<(Arc<Animation>, f32)> {
-        let (a, start, _) = self.emote.as_ref()?;
-        let tick = start.elapsed().as_millis() as f32 / 50.0;
-        if !a.is_playing_at(tick) {
+        let p = self.emote.as_ref()?;
+        let tick = p.offset + p.start.elapsed().as_millis() as f32 / 50.0;
+        if !p.anim.is_playing_at(tick) {
             self.emote = None;
             return None;
         }
-        Some((a.clone(), tick))
+        Some((p.anim.clone(), tick))
     }
+
+    /// `isForced`: false once the emote ended.
     fn forced(&mut self) -> bool {
-        self.played().is_some() && self.emote.as_ref().is_some_and(|e| e.2)
+        self.played().is_some() && self.emote.as_ref().is_some_and(|e| e.forced)
     }
 }
 
@@ -138,7 +156,12 @@ impl Server {
             self.join(player, "");
         }
         match data.purpose {
-            Task::Stop => self.stop(player, true),
+            Task::Stop => {
+                if self.disobeys_force(player) {
+                    return;
+                }
+                self.stop(player, true);
+            }
             Task::Config => {
                 log::info!("[Emotecraft] The {} does not support the new configuration!", self.players.get(&player).map_or("player", |p| p.name.as_str()));
                 if let Some(p) = self.players.get_mut(&player) {
@@ -147,9 +170,7 @@ impl Server {
                 self.presence_response(player);
             }
             Task::Stream => {
-                let forced = self.players.get_mut(&player).is_some_and(Player::forced);
-                if forced {
-                    log::warn!("[Emotecraft] Player {} is disobeying force play flag and tried to override it", crate::buf::uuid_string(player));
+                if self.disobeys_force(player) {
                     return;
                 }
                 if let Some(e) = data.emote.clone() {
@@ -158,6 +179,17 @@ impl Server {
             }
             _ => log::warn!("[Emotecraft] Unknown packet task from {}", crate::buf::uuid_string(player)),
         }
+    }
+
+    /// A player's own play or stop while it plays a forced emote is ignored: only the server
+    /// (a command, the API) ends or replaces a forced emote. Emotecraft's client sends neither
+    /// then (`clientStartLocalEmote`, `clientStopLocalEmote`); its server checks only the play.
+    fn disobeys_force(&mut self, player: u128) -> bool {
+        let forced = self.players.get_mut(&player).is_some_and(Player::forced);
+        if forced {
+            log::warn!("[Emotecraft] Player {} is disobeying force play flag and tried to override it", crate::buf::uuid_string(player));
+        }
+        forced
     }
 
     /// `presenceResponse`: the server's configuration, then every server emote as a file.
@@ -177,7 +209,7 @@ impl Server {
     /// `streamEmote`.
     fn stream(&mut self, player: u128, emote: Arc<Animation>, tick: f32, forced: bool, from_player: bool) {
         if let Some(p) = self.players.get_mut(&player) {
-            p.emote = Some((emote.clone(), Instant::now(), forced));
+            p.set_played(emote.clone(), tick, forced);
         }
         let mut data = NetData::stream(emote, Some(player), tick);
         data.forced = forced;
@@ -374,5 +406,73 @@ mod tests {
         s.receive(1, &stop.write(Bound::Server).unwrap());
         let out = s.take_out();
         assert_eq!(out.len(), 2);
+    }
+
+    fn one_shot() -> Arc<Animation> {
+        let all = crate::tests::BUILT_IN_JSON.iter().map(|j| crate::loader::load_json(j).unwrap().remove(0));
+        Arc::new(all.into_iter().find(|a| !a.loop_type.plays_again()).unwrap())
+    }
+
+    fn two_players() -> Server {
+        let mut s = Server::new(Loaded::default());
+        for p in [1, 2] {
+            s.join(p, "");
+            s.receive(p, &client_config());
+        }
+        s.start_tracking(2, 1);
+        s.take_out();
+        s
+    }
+
+    /// An emote is playing from its first tick on (`isPlayingAt`: tick > 0).
+    fn a_tick_later() {
+        std::thread::sleep(std::time::Duration::from_millis(60));
+    }
+
+    #[test]
+    fn a_player_cannot_stop_a_forced_emote() {
+        let a = one_shot();
+        let mut s = two_players();
+        s.server_play(1, Some(a.clone()), true);
+        assert_eq!(s.take_out().len(), 2);
+        a_tick_later();
+        let mut stop = NetData::stop(a.uuid, None);
+        s.receive(1, &stop.write(Bound::Server).unwrap());
+        assert!(s.take_out().is_empty());
+        assert!(s.playing(1).is_some());
+        // a command still can
+        s.server_play(1, None, false);
+        assert_eq!(s.take_out().len(), 2);
+        assert!(s.playing(1).is_none());
+        // and an emote not forced stops from the player
+        s.server_play(1, Some(a.clone()), false);
+        s.take_out();
+        a_tick_later();
+        s.receive(1, &stop.write(Bound::Server).unwrap());
+        assert_eq!(s.take_out().len(), 1);
+        assert!(s.playing(1).is_none());
+    }
+
+    #[test]
+    fn keeps_the_tick_an_emote_started_from() {
+        let a = one_shot();
+        let mut s = two_players();
+        let mut d = NetData::stream(a.clone(), None, a.length / 2.0);
+        s.receive(1, &d.write(Bound::Server).unwrap());
+        s.take_out();
+        let (_, tick) = s.playing(1).unwrap();
+        assert!(tick >= a.length / 2.0 && tick < a.length, "{tick}");
+        // a late tracker gets it from there
+        s.join(3, "");
+        s.receive(3, &client_config());
+        s.take_out();
+        s.start_tracking(3, 1);
+        let out = s.take_out();
+        let Out::Send(3, bytes) = &out[0] else { panic!() };
+        assert!(NetData::read(bytes, Bound::Client, true).unwrap().tick >= a.length / 2.0);
+        // one started at its end is over
+        let mut d = NetData::stream(a.clone(), None, a.length);
+        s.receive(1, &d.write(Bound::Server).unwrap());
+        assert!(s.playing(1).is_none());
     }
 }

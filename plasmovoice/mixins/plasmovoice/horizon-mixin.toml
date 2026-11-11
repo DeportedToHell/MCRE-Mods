@@ -1,6 +1,6 @@
 [mod]
 id = "plasmovoice"
-version = "1.0.1"
+version = "1.0.2"
 priority = 100
 
 # Nightly fdc87ae (nightly-source/2026-11-08-fdc87ae). The server half hears guests' plugin

@@ -11,7 +11,7 @@ use std::sync::Mutex;
 
 pub const ID: &str = "smoothswapping";
 pub const NAME: &str = "Smooth Swapping";
-pub const VERSION: &str = "1.1.1";
+pub const VERSION: &str = "1.1.2";
 
 pub fn russian(language: &str) -> bool {
     language.starts_with("ru")
@@ -320,7 +320,7 @@ pub fn set_settings(settings: Settings) {
 /// same components) and its count.
 pub type Held = Option<(u32, u32)>;
 
-/// One slot that changed since the last frame.
+/// One slot as the last frame and this one showed it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Change {
     pub slot: usize,
@@ -343,6 +343,19 @@ pub struct Flight {
     pub to: To,
     pub kind: u32,
     pub amount: u32,
+}
+
+/// What `flights` matches, from every slot of the screen as two frames saw
+/// it: the slots that changed, and every result slot, changed or not. A
+/// repeatable craft (shift-clicking the result) leaves the result showing the
+/// same stack while the crafted items land: it is still where they fly from,
+/// as the original's `clickSwapStack` names the clicked result slot whether
+/// it changed or not. Nothing when no slot changed.
+pub fn changes(seen: &[Change]) -> Vec<Change> {
+    if seen.iter().all(|c| c.old == c.new) {
+        return Vec::new();
+    }
+    seen.iter().copied().filter(|c| c.result || c.old != c.new).collect()
 }
 
 /// The flights that explain one frame's changes, as the original pairs the
@@ -545,25 +558,55 @@ mod tests {
 
     #[test]
     fn crafted_items_fly_from_the_result_and_ingredients_vanish() {
-        // Shift-clicking the result: the grid loses planks, the inventory
-        // gains sticks, the result slot still shows sticks.
-        let changes = [
+        // Every slot of a crafting table, as `detect` passes them: shift-
+        // clicking the result, the grid loses planks, the inventory gains
+        // sticks, and the result still shows the same sticks (another craft
+        // is ready).
+        let seen = [
             Change { slot: 200, old: Some((7, 4)), new: Some((7, 4)), result: true },
             change(100, Some((6, 2)), Some((6, 1))),
             change(101, Some((6, 2)), Some((6, 1))),
+            change(102, None, None),
             change(9, None, Some((7, 4))),
+            change(10, Some((1, 64)), Some((1, 64))),
         ];
-        let f = flights(&changes, None, None, true);
-        assert_eq!(f, vec![Flight { from: 200, to: To::Slot(9), kind: 7, amount: 4 }]);
+        let c = changes(&seen);
+        assert_eq!(c.iter().map(|c| c.slot).collect::<Vec<_>>(), [200, 100, 101, 9]);
+        assert_eq!(
+            flights(&c, None, None, true),
+            vec![Flight { from: 200, to: To::Slot(9), kind: 7, amount: 4 }]
+        );
+        // The last craft: the result empties.
+        let last = [
+            Change { slot: 200, old: Some((7, 4)), new: None, result: true },
+            change(100, Some((6, 1)), None),
+            change(101, Some((6, 1)), None),
+            change(9, Some((7, 4)), Some((7, 8))),
+        ];
+        assert_eq!(
+            flights(&changes(&last), None, None, true),
+            vec![Flight { from: 200, to: To::Slot(9), kind: 7, amount: 4 }]
+        );
         // Taking it into the cursor.
         let take = [
             Change { slot: 200, old: Some((7, 4)), new: None, result: true },
             change(100, Some((6, 1)), None),
+            change(9, Some((7, 8)), Some((7, 8))),
         ];
         assert_eq!(
-            flights(&take, None, Some((7, 4)), true),
+            flights(&changes(&take), None, Some((7, 4)), true),
             vec![Flight { from: 200, to: To::Cursor, kind: 7, amount: 4 }]
         );
+    }
+
+    #[test]
+    fn a_frame_where_nothing_changed_matches_nothing() {
+        // The result slot alone, unchanged, is no move.
+        let seen = [
+            Change { slot: 200, old: Some((7, 4)), new: Some((7, 4)), result: true },
+            change(100, Some((6, 2)), Some((6, 2))),
+        ];
+        assert!(changes(&seen).is_empty());
     }
 
     #[test]
