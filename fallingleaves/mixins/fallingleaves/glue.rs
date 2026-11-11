@@ -354,7 +354,7 @@ fn modmenu_json() -> String {
   "description": {description},
   "authors": ["Fourmisain", "BrekiTomasson", "RandomMcSomethin"],
   "contributors": ["DeportedToHell"],
-  "license": "MIT",
+  "license": "MIT AND LGPL-3.0-only",
   "links": {{
     "homepage": "https://www.curseforge.com/minecraft/mc-mods/falling-leaves-fabric",
     "sources": "https://github.com/DeportedToHell/MCRE-Mods/tree/main/fallingleaves",

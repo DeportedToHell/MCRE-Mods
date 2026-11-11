@@ -10,7 +10,7 @@ use std::rc::Rc;
 use std::sync::OnceLock;
 
 pub(super) const ID: &str = "betterf3";
-pub(super) const VERSION: &str = "1.0.1";
+pub(super) const VERSION: &str = "1.0.2";
 
 // ---- texts ---------------------------------------------------------------------------------
 

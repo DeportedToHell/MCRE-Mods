@@ -61,4 +61,5 @@ Tests: `cargo test` (Rust 1.99.1, edition 2024).
 ## Licence
 
 MIT, as the original (droidicus, Kreezxil, Eleksploded; the port: DispatchedToHeaven): see
-`LICENSE` and `NOTICE`. Not affiliated with Kreezxil, Mojang or Microsoft.
+`LICENSE` and `NOTICE`. The config screen, `mixins/bwncr/cloth.rs` and `cloth_sprites.rs`, follows Cloth Config and is
+under the GNU LGPL-3.0 (`LICENSE.LGPL-3.0`, with the GPL-3.0 it builds on in `LICENSE.GPL-3.0`). Not affiliated with Kreezxil, Mojang or Microsoft.

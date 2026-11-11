@@ -85,4 +85,6 @@ Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` and horizon-mixins
 
 ## Licence
 
-MIT, as BetterF3 (see LICENSE and NOTICE). Not affiliated with cominixo, TreyRuffy, Mojang or Microsoft.
+MIT, as BetterF3 (see LICENSE and NOTICE), except the config screens: `mixins/betterf3/cloth.rs` and
+`cloth_sprites.rs` follow Cloth Config and are under the GNU LGPL-3.0 (`LICENSE.LGPL-3.0`, with the GPL-3.0 it builds
+on in `LICENSE.GPL-3.0`). Not affiliated with cominixo, TreyRuffy, Mojang or Microsoft.

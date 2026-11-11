@@ -22,3 +22,6 @@ This port rewrites BetterF3's modules, overlay and screens in Rust for
 Horizon's native mod API, reading the game's own data where BetterF3 reads
 Minecraft's. It is not affiliated with cominixo, TreyRuffy, Mojang or
 Microsoft.
+
+Those Cloth Config parts (cloth.rs, cloth_sprites.rs) are under the GNU Lesser General Public License
+v3.0: see LICENSE.LGPL-3.0 and LICENSE.GPL-3.0. The rest of the port is under the MIT License (LICENSE).

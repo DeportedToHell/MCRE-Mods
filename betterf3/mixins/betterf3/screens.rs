@@ -219,7 +219,7 @@ fn write_data(game: &Game<'_>) {
   "description": "Replaces Minecraft's original debug HUD with a highly customizable, more human-readable HUD.",
   "authors": ["cominixo", "TreyRuffy"],
   "contributors": ["DeportedToHell"],
-  "license": "MIT",
+  "license": "MIT AND LGPL-3.0-only",
   "links": {{
     "homepage": "https://modrinth.com/mod/betterf3",
     "sources": "https://github.com/DeportedToHell/MCRE-Mods/tree/main/betterf3",

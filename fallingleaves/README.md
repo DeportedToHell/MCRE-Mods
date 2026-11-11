@@ -71,7 +71,9 @@ Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08
 
 ## Licence and credits
 
-MIT, as the original ([LICENSE](LICENSE), [NOTICE](NOTICE)).
+MIT, as the original ([LICENSE](LICENSE), [NOTICE](NOTICE)), except the settings screen: `mixins/fallingleaves/cloth.rs`
+and `cloth_sprites.rs` follow Cloth Config and are under the GNU LGPL-3.0 ([LICENSE.LGPL-3.0](LICENSE.LGPL-3.0), with the
+GPL-3.0 it builds on in [LICENSE.GPL-3.0](LICENSE.GPL-3.0)).
 
 - Falling Leaves: Copyright (c) 2020 RandomMcSomethin, https://github.com/RandomMcSomethin/fallingleaves
 - The particle textures and the icon are Falling Leaves' own.

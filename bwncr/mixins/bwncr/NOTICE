@@ -25,3 +25,6 @@ pixels, and its texts are Cloth Config's own.
 This port, by DispatchedToHeaven, rewrites the mod's sound
 handler, config and listen command in Rust for Horizon's native mod API. It is not affiliated with Kreezxil, Mojang or
 Microsoft.
+
+Those Cloth Config parts (cloth.rs, cloth_sprites.rs) are under the GNU Lesser General Public License
+v3.0: see LICENSE.LGPL-3.0 and LICENSE.GPL-3.0. The rest of the port is under the MIT License (LICENSE).

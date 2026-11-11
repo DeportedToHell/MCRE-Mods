@@ -137,7 +137,7 @@ fn write_data(game: &Game<'_>) {
   "description_ru": "{}",
   "authors": ["Kreezxil, Eleksploded"],
   "contributors": ["droidicus (original)", "Mrbysco", "PrincessStellar (pt_br)", "Valentín Alarcón (es_ar)", "DispatchedToHeaven (Horizon port)"],
-  "license": "MIT",
+  "license": "MIT AND LGPL-3.0-only",
   "links": {{
     "homepage": "https://www.curseforge.com/minecraft/mc-mods/bad-wither-no-cookie-reloaded",
     "sources": "https://github.com/DeportedToHell/MCRE-Mods/tree/main/bwncr",
