@@ -4,7 +4,7 @@
 //! keeps its default, a file that doesn't parse is reset to the defaults. `Display` is Lombok's
 //! `@ToString`, which the "Loaded"/"Saved" log lines print.
 
-use crate::MAX_CHANNEL_LENGTH;
+use crate::{MAX_CHANNEL_LENGTH, channel_fits, cut_java};
 use serde_json::Value;
 use std::fmt;
 
@@ -218,11 +218,12 @@ impl ClientConfig {
         }
     }
 
-    /// `validate`: channels cut to 128 characters.
+    /// `validate`: channels cut to 128 UTF-16 units (`channel.substring(0, MAX_CHANNEL_LENGTH)`),
+    /// so a channel from the file always fits the packets.
     pub fn validate(&mut self) {
         let cut = |s: &mut String| {
-            if s.chars().count() > MAX_CHANNEL_LENGTH {
-                *s = s.chars().take(MAX_CHANNEL_LENGTH).collect();
+            if !channel_fits(s) {
+                *s = cut_java(s, MAX_CHANNEL_LENGTH).to_owned();
             }
         };
         cut(&mut self.channel);
@@ -476,6 +477,35 @@ mod tests {
         let mut c = ClientConfig { channel: "x".repeat(200), ..ClientConfig::default() };
         c.validate();
         assert_eq!(c.channel.len(), 128);
+    }
+
+    #[test]
+    fn loaded_channels_are_cut_to_128_utf16_units() {
+        // 65 emoji: 65 characters but 130 UTF-16 units, which `writeUtf(channel, 128)` refuses.
+        let long = "\u{1F600}".repeat(65);
+        let mut c = ClientConfig::default();
+        c.set_channel_for(None, &long);
+        c.set_channel_for(Some("mc.example.com"), &long);
+        c.set_channel_for(Some("short"), "\u{1F600}".repeat(64).as_str());
+        let mut back = ClientConfig::parse(&c.write()).unwrap();
+        assert_eq!(back.channel_for(None), long);
+        back.validate();
+        let cut = "\u{1F600}".repeat(64);
+        assert_eq!(back.channel_for(None), cut);
+        assert_eq!(back.channel_for(Some("mc.example.com")), cut);
+        assert_eq!(back.channel_for(Some("short")), cut);
+        // What's left goes out in both packets.
+        assert!(crate::protocol::encode_update_channel(&back.channel_for(None)).is_ok());
+        let ping = crate::protocol::PingC2S { channel: back.channel_for(Some("mc.example.com")), pos: [0.0; 3], entity: None, sequence: 0, dimension: 0 };
+        assert!(ping.encode().is_ok());
+        // A pair across the cut goes whole.
+        let mut odd = ClientConfig { channel: format!("x{}", "\u{1F600}".repeat(64)), ..ClientConfig::default() };
+        odd.validate();
+        assert_eq!(odd.channel, format!("x{}", "\u{1F600}".repeat(63)));
+        // A channel that fits is kept as it is.
+        let mut ok = ClientConfig { channel: "\u{4e2d}".repeat(128), ..ClientConfig::default() };
+        ok.validate();
+        assert_eq!(ok.channel, "\u{4e2d}".repeat(128));
     }
 
     #[test]

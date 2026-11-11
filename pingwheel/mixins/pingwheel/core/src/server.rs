@@ -264,6 +264,27 @@ mod tests {
     }
 
     #[test]
+    fn channels_over_128_utf16_units_are_refused() {
+        let mut core = ServerCore::new();
+        let a = player(1, None);
+        // 64 emoji, 128 UTF-16 units: the longest channel there is.
+        let longest = "\u{1F600}".repeat(64);
+        let out = core.on_channel_update(&a, &protocol::encode_update_channel(&longest).unwrap());
+        assert!(matches!(&out[0], Out::Log { warn: false, .. }));
+        assert_eq!(core.channel(1), longest);
+        // 65 emoji as a client's `writeUtf` without the check would send it: 260 bytes (under
+        // 128 * 3), but 130 units, which `readUtf(128)` refuses. The player keeps the channel.
+        let long = "\u{1F600}".repeat(65);
+        assert!(protocol::encode_update_channel(&long).is_err());
+        let mut data = Vec::new();
+        protocol::write_var_int(&mut data, long.len() as i32);
+        data.extend_from_slice(long.as_bytes());
+        let out = core.on_channel_update(&a, &data);
+        assert!(matches!(&out[0], Out::Log { warn: true, line } if line.contains("invalid channel update from p1")));
+        assert_eq!(core.channel(1), longest);
+    }
+
+    #[test]
     fn disabled_and_team_only_modes() {
         let mut core = ServerCore::new();
         let (a, b) = (player(1, None), player(2, Some("red")));

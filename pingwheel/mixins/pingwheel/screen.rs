@@ -19,7 +19,7 @@ use horizon_client::options_ui::Page;
 use horizon_client::text::Text;
 use horizon_client::ui::{self, EditBox};
 use pingwheel_core::config::{ClientConfig, MAX_CORRECTION_PERIOD, MAX_PING_DISTANCE, MAX_PING_DURATION, PlayerInfoMode};
-use pingwheel_core::MAX_CHANNEL_LENGTH;
+use pingwheel_core::{MAX_CHANNEL_LENGTH, cut_java, java_length};
 use std::cell::RefCell;
 use std::time::Instant;
 
@@ -233,8 +233,10 @@ pub(super) fn is_open() -> bool {
 
 fn new_state(mode: Mode) -> State {
     let mut field = EditBox::new(0.0, 0.0, 200.0, 20.0);
+    // `setMaxLength(MAX_CHANNEL_LENGTH)`. The game's box counts characters, Java's UTF-16 units:
+    // `insert` keeps to the units, which never allow more characters than this.
     field.max_length = MAX_CHANNEL_LENGTH;
-    field.set_value(&glue::channel());
+    field.set_value(cut_java(&glue::channel(), MAX_CHANNEL_LENGTH));
     field.focused = false;
     State { mode, focus: None, dragging: None, field, scroll: 0.0, taken: 0, close: false, requests: Vec::new(), opened: Instant::now() }
 }
@@ -496,7 +498,10 @@ fn insert(s: &mut State, text: &str) {
         return;
     }
     let text: String = text.chars().filter(|c| !c.is_control() && *c != '§').collect();
-    s.field.insert_text(&text);
+    // `EditBox.insertText`: what fits in the room left, counted in UTF-16 units as Java does, so
+    // the channel always fits the packets (an emoji takes two of the 128).
+    let room = MAX_CHANNEL_LENGTH.saturating_sub(java_length(&s.field.value) - java_length(&s.field.selected_text()));
+    s.field.insert_text(cut_java(&text, room));
     s.field.reset_blink();
     changed(s);
 }

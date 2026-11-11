@@ -23,7 +23,7 @@ use horizon_protocol::packets::configuration::CustomPayload;
 use pingwheel_core::config::{ChannelMode, ClientConfig, MAX_CORRECTION_PERIOD, MAX_PING_DISTANCE, MAX_PING_DURATION, ServerConfig, TPS};
 use pingwheel_core::protocol::{self, PING_LOCATION_C2S, PING_LOCATION_S2C, PingC2S, PingS2C, UPDATE_CHANNEL_C2S, java_hash};
 use pingwheel_core::server::{Out, Player, ServerCore};
-use pingwheel_core::{MAX_CHANNEL_LENGTH, math};
+use pingwheel_core::{MAX_CHANNEL_LENGTH, channel_fits, math};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -32,7 +32,7 @@ use std::time::Instant;
 
 pub(super) const ID: &str = "pingwheel";
 pub(super) const NAME: &str = "Ping Wheel";
-pub(super) const VERSION: &str = "1.0.0";
+pub(super) const VERSION: &str = "1.0.1";
 /// `gradle.properties`' description.
 const DESCRIPTION: &str = "Mark locations similar to the ping mechanism found in modern co-op multiplayer games.";
 const DESCRIPTION_RU: &str = "Отмечайте места метками, как пингами в современных кооперативных играх.";
@@ -742,7 +742,8 @@ pub(super) fn command(game: &mut Game<'_>, input: &str, ran: &mut bool) {
                     error(game, at + used, key)
                 }
                 Ok((name, _)) => {
-                    if name.chars().count() > MAX_CHANNEL_LENGTH {
+                    // `newChannel.length() > MAX_CHANNEL_LENGTH`: UTF-16 units, as `writeUtf` counts.
+                    if !channel_fits(&name) {
                         feedback(game, false, tr("command.pingwheel.channel.set.reject", vec![Text::literal(MAX_CHANNEL_LENGTH.to_string())]));
                         return;
                     }

@@ -51,6 +51,9 @@ As Particle Rain 4.0.3 (branch `main`, a9f1de9) on Minecraft 26.3:
 - The F3 entries `particlerain:debug` and `particlerain:biome_tags` (off by default in Java) are not added; the
   same lines come from `/particlerain debug` and `/particlerain biometags`.
 - "Blended" particles draw on the game's translucent particle layer.
+- A built-in particle's Blocks or Biomes list switched between whitelist and blacklist, its entries unchanged, is
+  saved to `particles.json` (the whole list, as the original writes a changed one). The original compares only
+  the entries and loses the switch on the next load.
 
 ## Install
 

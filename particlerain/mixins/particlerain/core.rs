@@ -12,7 +12,7 @@ use std::collections::{HashMap, HashSet};
 pub(super) const ID: &str = "particlerain";
 pub(super) const NAME: &str = "Particle Rain";
 /// The port's version (the original's is 4.0.3).
-pub(super) const VERSION: &str = "1.0.0";
+pub(super) const VERSION: &str = "1.0.1";
 /// `ConfigData.configVersion`: an older file is replaced by the defaults.
 const CONFIG_VERSION: i64 = 8;
 
@@ -146,7 +146,8 @@ impl Whitelist {
         }
         !self.is_whitelist
     }
-    /// `toString`: the entries only (what `isolateCustomizedValues` compares).
+    /// `toString`: the entries only (what `isolateCustomizedValues` compares, so the mode is
+    /// compared besides: see `ParticleData::is_default`).
     fn as_string(&self) -> String {
         format!("[{}]", self.entries.join(", "))
     }
@@ -758,17 +759,29 @@ impl ParticleData {
         }
     }
 
+    /// `isolateCustomizedValues`' test: the field's text is the built-in particle's. A block or
+    /// biome list's text (`Whitelist.toString`) is its entries only, so a list compares its mode
+    /// as well: the original drops a list switched between whitelist and blacklist with the same
+    /// entries, and the switch is lost on the next load.
+    fn is_default(&self, d: &ParticleData, f: Field) -> bool {
+        let mode = match f {
+            Field::BiomeList => self.biome_list.is_whitelist == d.biome_list.is_whitelist,
+            Field::BlockList => self.block_list.is_whitelist == d.block_list.is_whitelist,
+            _ => true,
+        };
+        mode && self.field_string(f) == d.field_string(f)
+    }
+
     /// `isolateCustomizedValues` written as Gson writes it: against the built-in particle, only
-    /// the fields whose text differs (`{}` when none); a particle of the player's own whole.
+    /// the fields that differ (`{}` when none), a list whole (entries and mode); a particle of
+    /// the player's own whole.
     fn write_saved(&self, default: Option<&ParticleData>, w: &mut Json) {
         w.open('{');
         for f in Field::ALL {
             if f == Field::Id {
                 continue;
             }
-            if let Some(d) = default
-                && d.field_string(f) == self.field_string(f)
-            {
+            if default.is_some_and(|d| self.is_default(d, f)) {
                 continue;
             }
             self.write_field(f, w);
@@ -1101,5 +1114,115 @@ impl Tags {
         let mut v: Vec<String> = self.biomes.iter().filter(|(_, s)| s.contains(biome)).map(|(k, _)| k.clone()).collect();
         v.sort();
         v
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn saved(text: &str, id: &str) -> serde_json::Map<String, Value> {
+        let v: Value = serde_json::from_str(text).expect("particles.json");
+        v[id].as_object().expect("particle").clone()
+    }
+
+    /// What `particles.json` brings back over the built-in particles (`onResourceManagerReload`).
+    fn reload(text: &str, pack: &[ParticleData]) -> Vec<ParticleData> {
+        let mut back = pack.to_vec();
+        assert!(merge_particles(text, &mut back));
+        back
+    }
+
+    #[test]
+    fn nothing_changed_saves_empty_particles() {
+        let pack = pack_particles(None);
+        let text = particles_json(&pack, &pack);
+        for p in &pack {
+            assert!(saved(&text, &p.id).is_empty(), "{}", p.id);
+        }
+        assert_eq!(reload(&text, &pack), pack);
+    }
+
+    #[test]
+    fn block_list_mode_alone_is_kept() {
+        let pack = pack_particles(None);
+        let mut particles = pack.clone();
+        let dust = particles.iter_mut().find(|p| p.id == "dust").expect("dust");
+        assert!(dust.block_list.is_whitelist && !dust.block_list.entries.is_empty());
+        dust.block_list.is_whitelist = false;
+        let text = particles_json(&particles, &pack);
+        // Only the list, whole, as Gson writes the field: the entries as they are, the mode.
+        let o = saved(&text, "dust");
+        assert_eq!(o.keys().collect::<Vec<_>>(), ["blockList"]);
+        assert_eq!(o["blockList"]["isWhitelist"], Value::Bool(false));
+        let entries: Vec<&str> = o["blockList"]["entries"].as_array().unwrap().iter().map(|e| e.as_str().unwrap()).collect();
+        assert_eq!(entries, pack.iter().find(|p| p.id == "dust").unwrap().block_list.entries);
+        // After a reload: a blacklist with the same entries, the rest built-in.
+        let back = reload(&text, &pack);
+        assert_eq!(back, particles);
+        let dust = back.iter().find(|p| p.id == "dust").unwrap();
+        assert!(!dust.block_list.is_whitelist);
+        assert!(!dust.block_list.contains("minecraft:coarse_dirt", &|_| false));
+        assert!(dust.block_list.contains("minecraft:stone", &|_| false));
+        // And saved again the same.
+        assert_eq!(particles_json(&back, &pack), text);
+    }
+
+    #[test]
+    fn biome_list_mode_alone_is_kept() {
+        let pack = pack_particles(None);
+        let mut particles = pack.clone();
+        let dust = particles.iter_mut().find(|p| p.id == "dust").expect("dust");
+        assert!(dust.biome_list.is_whitelist && !dust.biome_list.entries.is_empty());
+        dust.biome_list.is_whitelist = false;
+        let text = particles_json(&particles, &pack);
+        let o = saved(&text, "dust");
+        assert_eq!(o.keys().collect::<Vec<_>>(), ["biomeList"]);
+        assert_eq!(o["biomeList"]["isWhitelist"], Value::Bool(false));
+        let back = reload(&text, &pack);
+        assert_eq!(back, particles);
+        assert!(!back.iter().find(|p| p.id == "dust").unwrap().biome_list.is_whitelist);
+        assert_eq!(particles_json(&back, &pack), text);
+    }
+
+    #[test]
+    fn a_blacklist_turned_whitelist_and_back() {
+        let pack = pack_particles(None);
+        // Every built-in list, switched: each is saved, and each comes back switched.
+        let mut particles = pack.clone();
+        let mut switched = 0;
+        for p in &mut particles {
+            for l in [&mut p.block_list, &mut p.biome_list] {
+                if !l.entries.is_empty() {
+                    l.is_whitelist = !l.is_whitelist;
+                    switched += 1;
+                }
+            }
+        }
+        assert!(switched > 2);
+        let text = particles_json(&particles, &pack);
+        assert_eq!(reload(&text, &pack), particles);
+        // Switched back: the built-in mode again, nothing saved.
+        let mut back = reload(&text, &pack);
+        for p in &mut back {
+            for l in [&mut p.block_list, &mut p.biome_list] {
+                if !l.entries.is_empty() {
+                    l.is_whitelist = !l.is_whitelist;
+                }
+            }
+        }
+        assert_eq!(back, pack);
+        let text = particles_json(&back, &pack);
+        assert!(pack.iter().all(|p| saved(&text, &p.id).is_empty()));
+    }
+
+    #[test]
+    fn entries_and_mode_changed_together() {
+        let pack = pack_particles(None);
+        let mut particles = pack.clone();
+        let dust = particles.iter_mut().find(|p| p.id == "dust").expect("dust");
+        dust.block_list = Whitelist::new(false, &["minecraft:sand"]);
+        let text = particles_json(&particles, &pack);
+        assert_eq!(reload(&text, &pack), particles);
     }
 }
