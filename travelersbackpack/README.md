@@ -8,11 +8,11 @@ Ported by **DispatchedToHeaven**.
 
 > This is an independent port of the original project. It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
 >
-> All original credits and attributions belong to their respective authors. This port is developed independently.
+> All original credits and attributions belong to the original author. This port is developed independently.
 >
-> Original mod: https://github.com/Tiviacz1337/Travelers-Backpack — licence: GNU LGPL-3.0.
-
-The port consists of two required parts: `content/` — a content mod (`.hmod`) with blocks, items, models, textures, recipes and other assets; and `mixins/travelersbackpack_native/` — a native mod (`.hnmod`) implementing the actual mechanics.
+> Original mod: https://github.com/Tiviacz1337/Travelers-Backpack — 
+>
+> licence: GNU LGPL-3.0.
 
 ## Features
 
