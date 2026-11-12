@@ -53,6 +53,31 @@ By hand: put `justenoughitems-<version>.hnmod` in `<game folder>/horizon-native-
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
+## Recipe categories from other mods
+
+Another native mod can add a recipe category (JEI's `IRecipeCategory` with its recipes), shown after
+JEI's own. Register it from the mod's module, at any time (JEI makes its tables again the next frame):
+
+```rust
+crate::game::justenoughitems_glue::register_category(crate::game::justenoughitems_glue::PluginCategory {
+    id: "mymod:category",                       // once per id
+    title: |_game| "My Category".to_owned(),    // in the game's language
+    width: 150.0,                               // the recipe's size
+    height: 52.0,
+    catalysts: &["minecraft:spawner"],          // the tab's icon first; "uses" of one shows every recipe
+    recipes: |_game| vec![PluginRecipe {
+        inputs: vec![vec!["minecraft:sugar".into()], vec!["minecraft:spawner".into()]],
+        outputs: Vec::new(),                    // after an arrow, when there are some
+        lines: vec!["Shortest Wait: -0.5s".into()], // text under the slots
+    }],
+});
+```
+
+Each slot lists stacks named as `/give` does, any one of which fits (shown in turn). R and U find a
+plugin's recipes by their outputs and inputs, as JEI's own. A mod that should also build without this
+JEI (or with an older one) can keep the call behind a check of the staged `game.rs` for
+`pub fn register_category(category: PluginCategory)`.
+
 ## Source layout
 
 ```
@@ -87,7 +112,7 @@ MIT, as the original ([LICENSE](mixins/justenoughitems/LICENSE),
 - Just Enough Items: Copyright (c) 2014-2015 mezz, https://github.com/mezz/JustEnoughItems
 - The GUI sprites are JEI's own textures.
 
-This port rewrites JEI in Rust for Horizon's native mod API. Changes from the original: no plugin API;
+This port rewrites JEI in Rust for Horizon's native mod API. Changes from the original: JEI's plugin API only as recipe categories (above);
 settings on Horizon's mod settings page; the `%` and `&` search prefixes on; colour search and the
 item-hiding edit mode not ported. Not affiliated with mezz, Mojang or Microsoft.
 
