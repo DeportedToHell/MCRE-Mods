@@ -14,7 +14,7 @@ Ported by **DispatchedToHeaven**.
 
 > Special thanks to Tiviacz1337 for creating the original mod.
 
-## Features
+## ✨Features
 
 **Backpacks.** All 44 original designs and five tiers, from leather to netherite. Backpacks can be opened, placed as blocks or worn on the player's back. Other players can see them, and dying while wearing one places it as a block.
 
@@ -24,7 +24,7 @@ Ported by **DispatchedToHeaven**.
 
 **Other features.** Dynamic lighting, tool radial menu, advancements, wandering trader trade, creative tab and keybinds. English and Russian translations.
 
-## Remaining work
+## 🚧Remaining work
 
 Original config settings and Mod Menu metadata are not yet implemented. Compatibility with other Java mods supported by the original, including Accessories / Trinkets, JEI / EMI / REI, Comforts and grave mods, is also missing.
 
@@ -32,7 +32,7 @@ Minor differences include 16-step fluid levels in item tanks, no icon growth ani
 
 Some abilities and interactions still need in-game verification, including several design-specific abilities, upgrade keybinds, the hose radial menu, jukebox audio and sleeping or dying while wearing a backpack.
 
-## Installation
+## 📦Installation
 
 Build the content mod with `cargo horizon-mod build` from `content/` and place the resulting `.hmod` in the game's mods folder.
 
@@ -40,7 +40,7 @@ Package the native mod using `tools/package.mjs` and place the resulting `.hnmod
 
 > Native mods are compiled into the game and are not sandboxed. Only build code you trust.
 
-## Source layout
+## 🗂️Source layout
 
 ```text
 content/                         Content mod, generated from the original checkout
