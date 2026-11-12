@@ -1,4 +1,9 @@
-# <img src="../.github/assets/stickers/clumps.gif" height="32" alt=""> Clumps for Horizon
+<h1 align="center">
+  <img src="../.github/assets/stickers/clumps.gif" height="32" alt="">
+  Clumps
+  <br>
+  <sub>A port for Horizon</sub>
+</h1>
 
 An independent port of [Clumps](https://github.com/jaredlll08/Clumps) by Jaredlll08 to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
 
