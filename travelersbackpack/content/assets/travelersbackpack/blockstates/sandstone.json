@@ -1,0 +1,514 @@
+{
+  "variants": {
+    "bag=red,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone"
+    },
+    "bag=white,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_white"
+    },
+    "bag=orange,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_orange"
+    },
+    "bag=magenta,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_magenta"
+    },
+    "bag=light_blue,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_light_blue"
+    },
+    "bag=yellow,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_yellow"
+    },
+    "bag=lime,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_lime"
+    },
+    "bag=pink,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_pink"
+    },
+    "bag=gray,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_gray"
+    },
+    "bag=light_gray,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_light_gray"
+    },
+    "bag=cyan,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_cyan"
+    },
+    "bag=purple,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_purple"
+    },
+    "bag=blue,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_blue"
+    },
+    "bag=brown,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_brown"
+    },
+    "bag=green,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_green"
+    },
+    "bag=black,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_black"
+    },
+    "bag=none,facing=north,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_none"
+    },
+    "bag=red,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks"
+    },
+    "bag=white,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_white"
+    },
+    "bag=orange,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_orange"
+    },
+    "bag=magenta,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_magenta"
+    },
+    "bag=light_blue,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_light_blue"
+    },
+    "bag=yellow,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_yellow"
+    },
+    "bag=lime,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_lime"
+    },
+    "bag=pink,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_pink"
+    },
+    "bag=gray,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_gray"
+    },
+    "bag=light_gray,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_light_gray"
+    },
+    "bag=cyan,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_cyan"
+    },
+    "bag=purple,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_purple"
+    },
+    "bag=blue,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_blue"
+    },
+    "bag=brown,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_brown"
+    },
+    "bag=green,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_green"
+    },
+    "bag=black,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_black"
+    },
+    "bag=none,facing=north,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_none"
+    },
+    "bag=red,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone",
+      "y": 270
+    },
+    "bag=white,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_white",
+      "y": 270
+    },
+    "bag=orange,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_orange",
+      "y": 270
+    },
+    "bag=magenta,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_magenta",
+      "y": 270
+    },
+    "bag=light_blue,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_light_blue",
+      "y": 270
+    },
+    "bag=yellow,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_yellow",
+      "y": 270
+    },
+    "bag=lime,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_lime",
+      "y": 270
+    },
+    "bag=pink,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_pink",
+      "y": 270
+    },
+    "bag=gray,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_gray",
+      "y": 270
+    },
+    "bag=light_gray,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_light_gray",
+      "y": 270
+    },
+    "bag=cyan,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_cyan",
+      "y": 270
+    },
+    "bag=purple,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_purple",
+      "y": 270
+    },
+    "bag=blue,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_blue",
+      "y": 270
+    },
+    "bag=brown,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_brown",
+      "y": 270
+    },
+    "bag=green,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_green",
+      "y": 270
+    },
+    "bag=black,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_black",
+      "y": 270
+    },
+    "bag=none,facing=west,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_none",
+      "y": 270
+    },
+    "bag=red,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks",
+      "y": 270
+    },
+    "bag=white,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_white",
+      "y": 270
+    },
+    "bag=orange,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_orange",
+      "y": 270
+    },
+    "bag=magenta,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_magenta",
+      "y": 270
+    },
+    "bag=light_blue,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_light_blue",
+      "y": 270
+    },
+    "bag=yellow,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_yellow",
+      "y": 270
+    },
+    "bag=lime,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_lime",
+      "y": 270
+    },
+    "bag=pink,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_pink",
+      "y": 270
+    },
+    "bag=gray,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_gray",
+      "y": 270
+    },
+    "bag=light_gray,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_light_gray",
+      "y": 270
+    },
+    "bag=cyan,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_cyan",
+      "y": 270
+    },
+    "bag=purple,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_purple",
+      "y": 270
+    },
+    "bag=blue,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_blue",
+      "y": 270
+    },
+    "bag=brown,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_brown",
+      "y": 270
+    },
+    "bag=green,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_green",
+      "y": 270
+    },
+    "bag=black,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_black",
+      "y": 270
+    },
+    "bag=none,facing=west,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_none",
+      "y": 270
+    },
+    "bag=red,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone",
+      "y": 90
+    },
+    "bag=white,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_white",
+      "y": 90
+    },
+    "bag=orange,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_orange",
+      "y": 90
+    },
+    "bag=magenta,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_magenta",
+      "y": 90
+    },
+    "bag=light_blue,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_light_blue",
+      "y": 90
+    },
+    "bag=yellow,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_yellow",
+      "y": 90
+    },
+    "bag=lime,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_lime",
+      "y": 90
+    },
+    "bag=pink,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_pink",
+      "y": 90
+    },
+    "bag=gray,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_gray",
+      "y": 90
+    },
+    "bag=light_gray,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_light_gray",
+      "y": 90
+    },
+    "bag=cyan,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_cyan",
+      "y": 90
+    },
+    "bag=purple,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_purple",
+      "y": 90
+    },
+    "bag=blue,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_blue",
+      "y": 90
+    },
+    "bag=brown,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_brown",
+      "y": 90
+    },
+    "bag=green,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_green",
+      "y": 90
+    },
+    "bag=black,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_black",
+      "y": 90
+    },
+    "bag=none,facing=east,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_none",
+      "y": 90
+    },
+    "bag=red,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks",
+      "y": 90
+    },
+    "bag=white,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_white",
+      "y": 90
+    },
+    "bag=orange,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_orange",
+      "y": 90
+    },
+    "bag=magenta,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_magenta",
+      "y": 90
+    },
+    "bag=light_blue,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_light_blue",
+      "y": 90
+    },
+    "bag=yellow,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_yellow",
+      "y": 90
+    },
+    "bag=lime,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_lime",
+      "y": 90
+    },
+    "bag=pink,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_pink",
+      "y": 90
+    },
+    "bag=gray,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_gray",
+      "y": 90
+    },
+    "bag=light_gray,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_light_gray",
+      "y": 90
+    },
+    "bag=cyan,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_cyan",
+      "y": 90
+    },
+    "bag=purple,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_purple",
+      "y": 90
+    },
+    "bag=blue,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_blue",
+      "y": 90
+    },
+    "bag=brown,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_brown",
+      "y": 90
+    },
+    "bag=green,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_green",
+      "y": 90
+    },
+    "bag=black,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_black",
+      "y": 90
+    },
+    "bag=none,facing=east,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_none",
+      "y": 90
+    },
+    "bag=red,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone",
+      "y": 180
+    },
+    "bag=white,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_white",
+      "y": 180
+    },
+    "bag=orange,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_orange",
+      "y": 180
+    },
+    "bag=magenta,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_magenta",
+      "y": 180
+    },
+    "bag=light_blue,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_light_blue",
+      "y": 180
+    },
+    "bag=yellow,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_yellow",
+      "y": 180
+    },
+    "bag=lime,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_lime",
+      "y": 180
+    },
+    "bag=pink,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_pink",
+      "y": 180
+    },
+    "bag=gray,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_gray",
+      "y": 180
+    },
+    "bag=light_gray,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_light_gray",
+      "y": 180
+    },
+    "bag=cyan,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_cyan",
+      "y": 180
+    },
+    "bag=purple,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_purple",
+      "y": 180
+    },
+    "bag=blue,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_blue",
+      "y": 180
+    },
+    "bag=brown,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_brown",
+      "y": 180
+    },
+    "bag=green,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_green",
+      "y": 180
+    },
+    "bag=black,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_black",
+      "y": 180
+    },
+    "bag=none,facing=south,tanks=false": {
+      "model": "travelersbackpack:block/sandstone_none",
+      "y": 180
+    },
+    "bag=red,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks",
+      "y": 180
+    },
+    "bag=white,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_white",
+      "y": 180
+    },
+    "bag=orange,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_orange",
+      "y": 180
+    },
+    "bag=magenta,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_magenta",
+      "y": 180
+    },
+    "bag=light_blue,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_light_blue",
+      "y": 180
+    },
+    "bag=yellow,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_yellow",
+      "y": 180
+    },
+    "bag=lime,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_lime",
+      "y": 180
+    },
+    "bag=pink,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_pink",
+      "y": 180
+    },
+    "bag=gray,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_gray",
+      "y": 180
+    },
+    "bag=light_gray,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_light_gray",
+      "y": 180
+    },
+    "bag=cyan,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_cyan",
+      "y": 180
+    },
+    "bag=purple,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_purple",
+      "y": 180
+    },
+    "bag=blue,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_blue",
+      "y": 180
+    },
+    "bag=brown,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_brown",
+      "y": 180
+    },
+    "bag=green,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_green",
+      "y": 180
+    },
+    "bag=black,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_black",
+      "y": 180
+    },
+    "bag=none,facing=south,tanks=true": {
+      "model": "travelersbackpack:block/sandstone_tanks_none",
+      "y": 180
+    }
+  }
+}

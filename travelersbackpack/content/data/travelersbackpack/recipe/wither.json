@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:wither_skeleton_skull",
+    "B": "minecraft:soul_sand",
+    "C": "travelersbackpack:standard"
+  },
+  "pattern": [
+    "AAA",
+    "BCB",
+    " B "
+  ],
+  "result": {
+    "id": "travelersbackpack:wither"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "#c:gems/quartz",
+    "B": "#c:crops/nether_wart",
+    "C": "minecraft:netherrack",
+    "D": "travelersbackpack:standard",
+    "E": "minecraft:blackstone",
+    "F": "minecraft:lava_bucket"
+  },
+  "pattern": [
+    "ABA",
+    "CDC",
+    "EFE"
+  ],
+  "result": {
+    "id": "travelersbackpack:nether"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "travelersbackpack:item/nether",
+  "textures": {
+    "0": "travelersbackpack:block/backpack/nether",
+    "bag": "travelersbackpack:block/bag/cyan_sleeping_bag",
+    "particle": "minecraft:block/netherrack"
+  }
+}

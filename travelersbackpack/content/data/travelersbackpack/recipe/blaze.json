@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "#c:rods/blaze",
+    "B": "minecraft:fire_charge",
+    "C": "travelersbackpack:standard",
+    "D": "minecraft:blaze_powder",
+    "E": "minecraft:lava_bucket"
+  },
+  "pattern": [
+    "ABA",
+    "ACA",
+    "DED"
+  ],
+  "result": {
+    "id": "travelersbackpack:blaze"
+  }
+}

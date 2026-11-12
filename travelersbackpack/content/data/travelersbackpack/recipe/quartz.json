@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:quartz_block",
+    "B": "#c:gems/quartz",
+    "C": "travelersbackpack:standard"
+  },
+  "pattern": [
+    "ABA",
+    "BCB",
+    "ABA"
+  ],
+  "result": {
+    "id": "travelersbackpack:quartz"
+  }
+}

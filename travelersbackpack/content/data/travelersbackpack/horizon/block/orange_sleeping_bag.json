@@ -1,0 +1,36 @@
+{
+  "template": "minecraft:orange_bed",
+  "properties": {
+    "hardness": 0.2,
+    "explosion_resistance": 0.2,
+    "sounds": "minecraft:white_wool",
+    "occludes": false,
+    "render_shape": "MODEL"
+  },
+  "shapes": {
+    "property": "part",
+    "values": {
+      "foot": [
+        [
+          0,
+          0,
+          0,
+          1,
+          0.125,
+          1
+        ]
+      ],
+      "head": [
+        [
+          0,
+          0,
+          0,
+          1,
+          0.125,
+          1
+        ]
+      ]
+    }
+  },
+  "item": true
+}

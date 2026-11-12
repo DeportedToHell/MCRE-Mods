@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:dragon_breath",
+    "B": "minecraft:dragon_head",
+    "C": "minecraft:end_stone",
+    "D": "travelersbackpack:standard",
+    "E": "#c:ender_pearls"
+  },
+  "pattern": [
+    "ABA",
+    "CDC",
+    "ECE"
+  ],
+  "result": {
+    "id": "travelersbackpack:dragon"
+  }
+}

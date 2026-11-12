@@ -1,0 +1,8 @@
+{
+  "parent": "travelersbackpack:block/sandstone_tanks",
+  "textures": {
+    "0": "travelersbackpack:block/backpack/sandstone",
+    "bag": "travelersbackpack:block/bag/green_sleeping_bag",
+    "particle": "minecraft:block/cut_sandstone"
+  }
+}

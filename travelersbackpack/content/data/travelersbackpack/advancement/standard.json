@@ -1,0 +1,35 @@
+{
+  "parent": "travelersbackpack:sleeping_bag",
+  "display": {
+    "icon": {
+      "id": "travelersbackpack:standard",
+      "count": 1
+    },
+    "title": {
+      "translate": "advancements.travelersbackpack.standard.title"
+    },
+    "description": {
+      "translate": "advancements.travelersbackpack.standard.description"
+    },
+    "frame": "task"
+  },
+  "criteria": {
+    "standard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "travelersbackpack:standard"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "standard"
+    ]
+  ]
+}

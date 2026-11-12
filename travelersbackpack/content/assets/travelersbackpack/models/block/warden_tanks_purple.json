@@ -1,0 +1,8 @@
+{
+  "parent": "travelersbackpack:block/warden_tanks",
+  "textures": {
+    "0": "travelersbackpack:block/backpack/warden",
+    "bag": "travelersbackpack:block/bag/purple_sleeping_bag",
+    "particle": "minecraft:block/sculk_catalyst_side"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:echo_shard",
+    "B": "minecraft:ward_armor_trim_smithing_template",
+    "C": "travelersbackpack:standard"
+  },
+  "pattern": [
+    "AAA",
+    "ACA",
+    "ABA"
+  ],
+  "result": {
+    "id": "travelersbackpack:warden"
+  }
+}

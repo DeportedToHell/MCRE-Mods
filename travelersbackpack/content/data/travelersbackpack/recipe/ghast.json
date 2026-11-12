@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:ghast_tear",
+    "B": "minecraft:fire_charge",
+    "C": "minecraft:gunpowder",
+    "D": "travelersbackpack:standard"
+  },
+  "pattern": [
+    "ABA",
+    "CDC",
+    "ACA"
+  ],
+  "result": {
+    "id": "travelersbackpack:ghast"
+  }
+}

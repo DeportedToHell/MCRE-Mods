@@ -1,0 +1,2173 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:condition",
+        "property": "minecraft:has_component",
+        "component": "minecraft:dyed_color",
+        "on_true": {
+          "type": "minecraft:condition",
+          "property": "minecraft:custom_model_data",
+          "index": 0,
+          "on_true": {
+            "type": "minecraft:select",
+            "property": "minecraft:custom_model_data",
+            "index": 0,
+            "fallback": {
+              "type": "minecraft:model",
+              "model": "travelersbackpack:item/standard_dyed_tanks_red",
+              "tints": [
+                {
+                  "type": "minecraft:dye",
+                  "default": -1
+                }
+              ]
+            },
+            "cases": [
+              {
+                "when": "white",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_white",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "orange",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_orange",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "magenta",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_magenta",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "light_blue",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_light_blue",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "yellow",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_yellow",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "lime",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_lime",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "pink",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_pink",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "gray",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_gray",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "light_gray",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_light_gray",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "cyan",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_cyan",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "purple",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_purple",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "blue",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_blue",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "brown",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_brown",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "green",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_green",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "black",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_black",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "none",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_tanks_none",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "on_false": {
+            "type": "minecraft:select",
+            "property": "minecraft:custom_model_data",
+            "index": 0,
+            "fallback": {
+              "type": "minecraft:model",
+              "model": "travelersbackpack:item/standard_dyed_red",
+              "tints": [
+                {
+                  "type": "minecraft:dye",
+                  "default": -1
+                }
+              ]
+            },
+            "cases": [
+              {
+                "when": "white",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_white",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "orange",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_orange",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "magenta",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_magenta",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "light_blue",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_light_blue",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "yellow",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_yellow",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "lime",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_lime",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "pink",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_pink",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "gray",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_gray",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "light_gray",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_light_gray",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "cyan",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_cyan",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "purple",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_purple",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "blue",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_blue",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "brown",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_brown",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "green",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_green",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "black",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_black",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              },
+              {
+                "when": "none",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_dyed_none",
+                  "tints": [
+                    {
+                      "type": "minecraft:dye",
+                      "default": -1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "on_false": {
+          "type": "minecraft:condition",
+          "property": "minecraft:custom_model_data",
+          "index": 0,
+          "on_true": {
+            "type": "minecraft:select",
+            "property": "minecraft:custom_model_data",
+            "index": 0,
+            "fallback": {
+              "type": "minecraft:model",
+              "model": "travelersbackpack:item/standard_tanks"
+            },
+            "cases": [
+              {
+                "when": "white",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_white"
+                }
+              },
+              {
+                "when": "orange",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_orange"
+                }
+              },
+              {
+                "when": "magenta",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_magenta"
+                }
+              },
+              {
+                "when": "light_blue",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_light_blue"
+                }
+              },
+              {
+                "when": "yellow",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_yellow"
+                }
+              },
+              {
+                "when": "lime",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_lime"
+                }
+              },
+              {
+                "when": "pink",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_pink"
+                }
+              },
+              {
+                "when": "gray",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_gray"
+                }
+              },
+              {
+                "when": "light_gray",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_light_gray"
+                }
+              },
+              {
+                "when": "cyan",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_cyan"
+                }
+              },
+              {
+                "when": "purple",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_purple"
+                }
+              },
+              {
+                "when": "blue",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_blue"
+                }
+              },
+              {
+                "when": "brown",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_brown"
+                }
+              },
+              {
+                "when": "green",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_green"
+                }
+              },
+              {
+                "when": "black",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_black"
+                }
+              },
+              {
+                "when": "none",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_tanks_none"
+                }
+              },
+              {
+                "when": "creative_tab",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_creative_tab",
+                  "tints": [
+                    {
+                      "type": "minecraft:constant",
+                      "value": 4159204
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "on_false": {
+            "type": "minecraft:select",
+            "property": "minecraft:custom_model_data",
+            "index": 0,
+            "fallback": {
+              "type": "minecraft:model",
+              "model": "travelersbackpack:item/standard"
+            },
+            "cases": [
+              {
+                "when": "white",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_white"
+                }
+              },
+              {
+                "when": "orange",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_orange"
+                }
+              },
+              {
+                "when": "magenta",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_magenta"
+                }
+              },
+              {
+                "when": "light_blue",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_light_blue"
+                }
+              },
+              {
+                "when": "yellow",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_yellow"
+                }
+              },
+              {
+                "when": "lime",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_lime"
+                }
+              },
+              {
+                "when": "pink",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_pink"
+                }
+              },
+              {
+                "when": "gray",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_gray"
+                }
+              },
+              {
+                "when": "light_gray",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_light_gray"
+                }
+              },
+              {
+                "when": "cyan",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_cyan"
+                }
+              },
+              {
+                "when": "purple",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_purple"
+                }
+              },
+              {
+                "when": "blue",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_blue"
+                }
+              },
+              {
+                "when": "brown",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_brown"
+                }
+              },
+              {
+                "when": "green",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_green"
+                }
+              },
+              {
+                "when": "black",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_black"
+                }
+              },
+              {
+                "when": "none",
+                "model": {
+                  "type": "minecraft:model",
+                  "model": "travelersbackpack:item/standard_none"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "type": "minecraft:select",
+        "property": "minecraft:custom_model_data",
+        "index": 1,
+        "fallback": {
+          "type": "minecraft:empty"
+        },
+        "cases": [
+          {
+            "when": "water",
+            "model": {
+              "type": "minecraft:range_dispatch",
+              "property": "minecraft:custom_model_data",
+              "index": 0,
+              "fallback": {
+                "type": "minecraft:empty"
+              },
+              "entries": [
+                {
+                  "threshold": 0.03125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_1",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.09375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_2",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.15625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_3",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.21875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_4",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.28125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_5",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.34375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_6",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.40625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_7",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.46875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_8",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.53125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_9",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.59375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_10",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.65625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_11",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.71875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_12",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.78125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_13",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.84375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_14",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.90625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_15",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.96875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_water_16",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "when": "lava",
+            "model": {
+              "type": "minecraft:range_dispatch",
+              "property": "minecraft:custom_model_data",
+              "index": 0,
+              "fallback": {
+                "type": "minecraft:empty"
+              },
+              "entries": [
+                {
+                  "threshold": 0.03125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_1",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.09375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_2",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.15625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_3",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.21875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_4",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.28125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_5",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.34375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_6",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.40625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_7",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.46875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_8",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.53125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_9",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.59375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_10",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.65625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_11",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.71875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_12",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.78125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_13",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.84375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_14",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.90625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_15",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.96875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_lava_16",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "when": "milk",
+            "model": {
+              "type": "minecraft:range_dispatch",
+              "property": "minecraft:custom_model_data",
+              "index": 0,
+              "fallback": {
+                "type": "minecraft:empty"
+              },
+              "entries": [
+                {
+                  "threshold": 0.03125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_1",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.09375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_2",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.15625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_3",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.21875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_4",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.28125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_5",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.34375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_6",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.40625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_7",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.46875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_8",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.53125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_9",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.59375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_10",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.65625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_11",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.71875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_12",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.78125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_13",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.84375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_14",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.90625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_15",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.96875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_left_milk_16",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 0,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "minecraft:select",
+        "property": "minecraft:custom_model_data",
+        "index": 2,
+        "fallback": {
+          "type": "minecraft:empty"
+        },
+        "cases": [
+          {
+            "when": "water",
+            "model": {
+              "type": "minecraft:range_dispatch",
+              "property": "minecraft:custom_model_data",
+              "index": 1,
+              "fallback": {
+                "type": "minecraft:empty"
+              },
+              "entries": [
+                {
+                  "threshold": 0.03125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_1",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.09375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_2",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.15625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_3",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.21875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_4",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.28125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_5",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.34375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_6",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.40625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_7",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.46875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_8",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.53125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_9",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.59375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_10",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.65625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_11",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.71875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_12",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.78125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_13",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.84375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_14",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.90625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_15",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.96875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_water_16",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "when": "lava",
+            "model": {
+              "type": "minecraft:range_dispatch",
+              "property": "minecraft:custom_model_data",
+              "index": 1,
+              "fallback": {
+                "type": "minecraft:empty"
+              },
+              "entries": [
+                {
+                  "threshold": 0.03125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_1",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.09375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_2",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.15625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_3",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.21875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_4",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.28125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_5",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.34375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_6",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.40625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_7",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.46875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_8",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.53125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_9",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.59375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_10",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.65625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_11",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.71875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_12",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.78125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_13",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.84375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_14",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.90625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_15",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.96875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_lava_16",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "when": "milk",
+            "model": {
+              "type": "minecraft:range_dispatch",
+              "property": "minecraft:custom_model_data",
+              "index": 1,
+              "fallback": {
+                "type": "minecraft:empty"
+              },
+              "entries": [
+                {
+                  "threshold": 0.03125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_1",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.09375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_2",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.15625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_3",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.21875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_4",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.28125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_5",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.34375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_6",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.40625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_7",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.46875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_8",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.53125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_9",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.59375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_10",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.65625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_11",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.71875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_12",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.78125,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_13",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.84375,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_14",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.90625,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_15",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                },
+                {
+                  "threshold": 0.96875,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "travelersbackpack:item/fluid_right_milk_16",
+                    "tints": [
+                      {
+                        "type": "minecraft:custom_model_data",
+                        "index": 1,
+                        "default": 16777215
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

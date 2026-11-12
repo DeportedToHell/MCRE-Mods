@@ -1,0 +1,8 @@
+{
+  "parent": "travelersbackpack:block/snow_tanks",
+  "textures": {
+    "0": "travelersbackpack:block/backpack/snow",
+    "bag": "travelersbackpack:block/bag/lime_sleeping_bag",
+    "particle": "minecraft:block/snow"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:cactus",
+    "B": "#c:dyes/green",
+    "C": "travelersbackpack:standard",
+    "D": "minecraft:sand"
+  },
+  "pattern": [
+    "ABA",
+    "ACA",
+    "DDD"
+  ],
+  "result": {
+    "id": "travelersbackpack:cactus"
+  }
+}

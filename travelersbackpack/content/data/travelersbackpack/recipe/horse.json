@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "#c:leathers",
+    "B": "minecraft:apple",
+    "C": "#c:crops/wheat",
+    "D": "travelersbackpack:standard"
+  },
+  "pattern": [
+    "ABA",
+    "CDC",
+    "ACA"
+  ],
+  "result": {
+    "id": "travelersbackpack:horse"
+  }
+}

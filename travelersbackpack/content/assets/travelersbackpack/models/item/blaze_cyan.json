@@ -1,0 +1,8 @@
+{
+  "parent": "travelersbackpack:item/blaze",
+  "textures": {
+    "0": "travelersbackpack:block/backpack/blaze",
+    "bag": "travelersbackpack:block/bag/cyan_sleeping_bag",
+    "particle": "minecraft:block/gold_block"
+  }
+}

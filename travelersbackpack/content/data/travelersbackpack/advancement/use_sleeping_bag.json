@@ -1,0 +1,29 @@
+{
+  "parent": "travelersbackpack:standard",
+  "display": {
+    "icon": {
+      "id": "travelersbackpack:red_sleeping_bag",
+      "count": 1
+    },
+    "title": {
+      "translate": "advancements.travelersbackpack.use_sleeping_bag.title"
+    },
+    "description": {
+      "translate": "advancements.travelersbackpack.use_sleeping_bag.description"
+    },
+    "frame": "task"
+  },
+  "criteria": {
+    "use_sleeping_bag": {
+      "trigger": "travelersbackpack:action_type",
+      "conditions": {
+        "action": "use_sleeping_bag"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "use_sleeping_bag"
+    ]
+  ]
+}

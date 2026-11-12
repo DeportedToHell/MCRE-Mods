@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:pumpkin",
+    "B": "minecraft:carved_pumpkin",
+    "C": "travelersbackpack:standard",
+    "D": "minecraft:pumpkin_seeds"
+  },
+  "pattern": [
+    "ABA",
+    "ACA",
+    "ADA"
+  ],
+  "result": {
+    "id": "travelersbackpack:pumpkin"
+  }
+}

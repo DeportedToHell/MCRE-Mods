@@ -1,0 +1,8 @@
+{
+  "parent": "travelersbackpack:item/bat_tanks",
+  "textures": {
+    "0": "travelersbackpack:block/backpack/bat",
+    "bag": "travelersbackpack:block/bag/gray_sleeping_bag",
+    "particle": "minecraft:block/brown_wool"
+  }
+}

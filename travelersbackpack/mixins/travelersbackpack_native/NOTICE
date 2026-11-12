@@ -1,0 +1,24 @@
+Traveler's Backpack for Horizon
+A port of Traveler's Backpack to Horizon (Minecraft: Java Edition 26.3
+rewritten in Rust): a content mod (content/) and a native mod
+(mixins/travelersbackpack_native).
+
+Traveler's Backpack
+Copyright (c) Tiviacz1337
+https://github.com/Tiviacz1337/Travelers-Backpack (branch 26.1-fabric, 11.2.12)
+Licensed under the GNU Lesser General Public License v3.0.
+
+The textures, models, sounds, language files, recipes, loot tables, tags and
+advancements in content/ come from the original mod (tools/content.mjs builds
+them from its checkout; the backpack models are merged from its model parts).
+Some Russian lines were translated for this port.
+
+This port, by DispatchedToHeaven, rewrites Traveler's Backpack's Java code in
+Rust for Horizon's native mod API. It uses no code from LambDynamicLights: the
+lantern lights through Horizon's own dynamic lights or Better Dynamic Lights.
+
+This is an independent port of the original project. It is not affiliated
+with, endorsed by, or officially associated with the original author,
+Tiviacz1337. All original credits and attributions belong to their respective
+authors. This port is developed independently. Not affiliated with Mojang or
+Microsoft.

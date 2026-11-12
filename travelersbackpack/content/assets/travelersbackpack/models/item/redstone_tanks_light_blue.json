@@ -1,0 +1,8 @@
+{
+  "parent": "travelersbackpack:item/redstone_tanks",
+  "textures": {
+    "0": "travelersbackpack:block/backpack/redstone",
+    "bag": "travelersbackpack:block/bag/light_blue_sleeping_bag",
+    "particle": "minecraft:block/redstone_block"
+  }
+}

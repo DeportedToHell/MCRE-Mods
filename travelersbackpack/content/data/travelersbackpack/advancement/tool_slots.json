@@ -1,0 +1,29 @@
+{
+  "parent": "travelersbackpack:standard",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_pickaxe",
+      "count": 1
+    },
+    "title": {
+      "translate": "advancements.travelersbackpack.swap_tools.title"
+    },
+    "description": {
+      "translate": "advancements.travelersbackpack.swap_tools.description"
+    },
+    "frame": "task"
+  },
+  "criteria": {
+    "swap_tools": {
+      "trigger": "travelersbackpack:action_type",
+      "conditions": {
+        "action": "swap_tools"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "swap_tools"
+    ]
+  ]
+}

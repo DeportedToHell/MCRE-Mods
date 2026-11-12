@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:honeycomb",
+    "B": "minecraft:honey_bottle",
+    "C": "travelersbackpack:standard"
+  },
+  "pattern": [
+    "ABA",
+    "BCB",
+    "ABA"
+  ],
+  "result": {
+    "id": "travelersbackpack:bee"
+  }
+}

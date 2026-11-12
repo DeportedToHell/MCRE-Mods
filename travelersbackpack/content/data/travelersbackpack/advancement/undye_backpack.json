@@ -1,0 +1,29 @@
+{
+  "parent": "travelersbackpack:standard",
+  "display": {
+    "icon": {
+      "id": "minecraft:cauldron",
+      "count": 1
+    },
+    "title": {
+      "translate": "advancements.travelersbackpack.undye_backpack.title"
+    },
+    "description": {
+      "translate": "advancements.travelersbackpack.undye_backpack.description"
+    },
+    "frame": "task"
+  },
+  "criteria": {
+    "undye_backpack": {
+      "trigger": "travelersbackpack:action_type",
+      "conditions": {
+        "action": "undye_backpack"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "undye_backpack"
+    ]
+  ]
+}

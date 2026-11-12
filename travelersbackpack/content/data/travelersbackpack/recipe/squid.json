@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:glow_ink_sac",
+    "B": "minecraft:ink_sac",
+    "C": "travelersbackpack:standard"
+  },
+  "pattern": [
+    "ABA",
+    "BCB",
+    "ABA"
+  ],
+  "result": {
+    "id": "travelersbackpack:squid"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "#c:storage_blocks/lapis",
+    "B": "#c:gems/lapis",
+    "C": "travelersbackpack:standard"
+  },
+  "pattern": [
+    "ABA",
+    "BCB",
+    "ABA"
+  ],
+  "result": {
+    "id": "travelersbackpack:lapis"
+  }
+}

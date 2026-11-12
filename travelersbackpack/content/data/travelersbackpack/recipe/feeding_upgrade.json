@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:golden_carrot",
+    "B": "travelersbackpack:blank_upgrade",
+    "C": "minecraft:golden_apple",
+    "D": "#c:dusts/redstone"
+  },
+  "pattern": [
+    "ABC",
+    "DDD"
+  ],
+  "result": {
+    "id": "travelersbackpack:feeding_upgrade"
+  }
+}

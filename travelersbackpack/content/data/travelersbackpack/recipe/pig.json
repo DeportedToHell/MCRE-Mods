@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:porkchop",
+    "B": "#c:crops/carrot",
+    "C": "travelersbackpack:standard"
+  },
+  "pattern": [
+    "ABA",
+    "ACA",
+    "AAA"
+  ],
+  "result": {
+    "id": "travelersbackpack:pig"
+  }
+}

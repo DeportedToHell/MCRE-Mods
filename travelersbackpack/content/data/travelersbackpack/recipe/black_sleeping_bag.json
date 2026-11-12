@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "sleeping_bag",
+  "key": {
+    "#": "minecraft:black_wool",
+    "X": "minecraft:white_wool"
+  },
+  "pattern": [
+    "##X"
+  ],
+  "result": {
+    "id": "travelersbackpack:black_sleeping_bag"
+  }
+}

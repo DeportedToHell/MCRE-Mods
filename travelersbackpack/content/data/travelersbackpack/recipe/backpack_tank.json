@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "#c:ingots/iron",
+    "B": "#c:glass_blocks/colorless"
+  },
+  "pattern": [
+    "BAB",
+    "B B",
+    "BAB"
+  ],
+  "result": {
+    "id": "travelersbackpack:backpack_tank"
+  }
+}

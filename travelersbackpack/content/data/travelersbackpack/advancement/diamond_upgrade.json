@@ -1,0 +1,35 @@
+{
+  "parent": "travelersbackpack:gold_upgrade",
+  "display": {
+    "icon": {
+      "id": "travelersbackpack:diamond_tier_upgrade",
+      "count": 1
+    },
+    "title": {
+      "translate": "advancements.travelersbackpack.diamond_upgrade.title"
+    },
+    "description": {
+      "translate": "advancements.travelersbackpack.diamond_upgrade.description"
+    },
+    "frame": "task"
+  },
+  "criteria": {
+    "diamond_upgrade": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "travelersbackpack:diamond_tier_upgrade"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "diamond_upgrade"
+    ]
+  ]
+}

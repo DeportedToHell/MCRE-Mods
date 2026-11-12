@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:melon_slice",
+    "B": "travelersbackpack:standard",
+    "C": "minecraft:melon_seeds"
+  },
+  "pattern": [
+    "A A",
+    "ABA",
+    "ACA"
+  ],
+  "result": {
+    "id": "travelersbackpack:melon"
+  }
+}

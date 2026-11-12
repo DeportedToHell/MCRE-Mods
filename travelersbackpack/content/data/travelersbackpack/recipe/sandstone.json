@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:sandstone",
+    "B": "minecraft:chiseled_sandstone",
+    "C": "travelersbackpack:standard"
+  },
+  "pattern": [
+    "ABA",
+    "ACA",
+    "AAA"
+  ],
+  "result": {
+    "id": "travelersbackpack:sandstone"
+  }
+}

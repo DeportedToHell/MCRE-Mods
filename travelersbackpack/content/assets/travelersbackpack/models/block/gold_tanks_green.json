@@ -1,0 +1,8 @@
+{
+  "parent": "travelersbackpack:block/gold_tanks",
+  "textures": {
+    "0": "travelersbackpack:block/backpack/gold",
+    "bag": "travelersbackpack:block/bag/green_sleeping_bag",
+    "particle": "minecraft:block/gold_block"
+  }
+}

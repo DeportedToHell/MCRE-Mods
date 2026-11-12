@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "standard_travelers_backpack",
+  "key": {
+    "B": "#c:strings",
+    "D": "#c:chests/wooden",
+    "S": "#travelersbackpack:sleeping_bags",
+    "X": "#c:leathers"
+  },
+  "pattern": [
+    "XBX",
+    " D ",
+    "XSX"
+  ],
+  "result": {
+    "id": "travelersbackpack:standard"
+  }
+}

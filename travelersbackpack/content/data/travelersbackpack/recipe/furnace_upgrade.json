@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": "minecraft:furnace",
+    "B": "travelersbackpack:blank_upgrade",
+    "C": "#c:chests"
+  },
+  "pattern": [
+    "A",
+    "B",
+    "C"
+  ],
+  "result": {
+    "id": "travelersbackpack:furnace_upgrade"
+  }
+}
