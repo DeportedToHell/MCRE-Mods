@@ -11,8 +11,9 @@ Ported by **DispatchedToHeaven**.
 >
 > Original mod: https://github.com/Tiviacz1337/Travelers-Backpack
 > License: GNU LGPL-3.0.
->
-> Special thanks to Tiviacz1337 for creating the original mod.
+
+
+Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the original mod.
 
 ## ✨Features
 
