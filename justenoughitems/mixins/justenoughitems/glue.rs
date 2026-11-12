@@ -77,6 +77,8 @@ static PLUGINS: std::sync::Mutex<Vec<PluginCategory>> = std::sync::Mutex::new(Ve
 
 /// Adds a recipe category (once per id; calling again does nothing). JEI's
 /// tables are made again the next frame, with its recipes.
+// Called by other native mods, never by JEI itself.
+#[allow(dead_code)]
 pub(super) fn register_category(category: PluginCategory) {
     if let Ok(mut v) = PLUGINS.lock()
         && !v.iter().any(|c| c.id == category.id)
