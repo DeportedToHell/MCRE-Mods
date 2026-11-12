@@ -1,0 +1,287 @@
+[mod]
+id = "invmove"
+version = "1.0.0"
+# Last of the mods at a shared hook point: the character hook then sees
+# whether another mod's text field took a typed character.
+priority = 0
+
+# Built for this Nightly: besides the hook points it sets what the local
+# player's input tick reads, and hooks the keyboard focus of screens, the
+# screens' background tint and the in-world menu background.
+[compatibility]
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+
+[[module]]
+id = "config"
+file = "crates/horizon-client/src/game.rs"
+name = "invmove_config"
+source = "config.rs"
+
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "invmove_glue"
+source = "glue.rs"
+
+[[module]]
+id = "screen"
+file = "crates/horizon-client/src/game.rs"
+name = "invmove_screen"
+source = "screen.rs"
+
+# The config screen is Cloth Config's (cloth.rs, drawn with Cloth Config's
+# texture, cloth_sprites.rs), as InvMove builds it (screen.rs).
+[[module]]
+id = "cloth"
+file = "crates/horizon-client/src/game.rs"
+name = "invmove_cloth"
+source = "cloth.rs"
+
+[[module]]
+id = "cloth_sprites"
+file = "crates/horizon-client/src/game.rs"
+name = "invmove_cloth_sprites"
+source = "cloth_sprites.rs"
+
+# The keys InvMove set for this tick's input, beside the input's keys.
+[[module]]
+id = "keys"
+file = "crates/horizon-client/src/sprint.rs"
+name = "invmove_keys"
+visibility = "pub"
+source = "keys.rs"
+
+# Whether the open screen's in-world menu background is hidden this frame,
+# beside the function that draws it.
+[[module]]
+id = "background"
+file = "crates/horizon-client-render/src/ui.rs"
+name = "invmove_background"
+visibility = "pub"
+source = "background.rs"
+
+# The local player's input tick (`MovementMixin`): at the start of the
+# game's tick the keys a screen lets the player hold are worked out
+# (glue.rs), and they become the input's keys where the game makes them
+# (`Keys::with_stick`, called once a tick for the local player).
+[[injection]]
+id = "tick"
+target = "horizon_client::game::remote::Game<'_>::tick_remote_level"
+kind = "HEAD"
+helper = "h_tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "input_keys"
+target = "horizon_client_lib::sprint::Keys::with_stick"
+kind = "HEAD"
+helper = "h_keys.rs"
+bindings = [
+  { name = "keys", ty = "&mut crate::sprint::Keys", value = "&mut self" },
+]
+
+# The jump key and a screen's focused button (`ButtonJumpKeyFixMixin`).
+[[injection]]
+id = "jump_key"
+target = "horizon_client::game::pad_menu::Game<'_>::key_focus_key"
+kind = "HEAD"
+cancellable = true
+helper = "h_jump_key.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "winit::keyboard::KeyCode", value = "key" },
+]
+
+# The background (`BackgroundMixin`): the screens' dark tint, the menu blur
+# and the in-world menu background.
+[[injection]]
+id = "tint"
+target = "horizon_client::game::native_hooks::Game<'_>::native_screen_transparent_background"
+kind = "HEAD"
+helper = "h_tint.rs"
+bindings = [
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "blur"
+hook = "menu_background"
+hook_version = 1
+kind = "HEAD"
+helper = "h_blur.rs"
+bindings = [
+  { name = "radius", ty = "&mut Option<f32>", value = "&mut *radius" },
+]
+
+[[injection]]
+id = "menu_background"
+target = "horizon_client_render::ui::menu_background"
+kind = "HEAD"
+cancellable = true
+helper = "h_menu_background.rs"
+bindings = [
+  { name = "in_world", ty = "bool", value = "in_world" },
+]
+
+# Options > Mods and Mod Menu.
+[[injection]]
+id = "list"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "list.rs"
+bindings = [
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+[[injection]]
+id = "settings"
+hook = "settings"
+hook_version = 1
+kind = "HEAD"
+helper = "settings.rs"
+bindings = [
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "buttons", ty = "&mut Vec<String>", value = "&mut *buttons" },
+]
+
+[[injection]]
+id = "click"
+hook = "settings_click"
+hook_version = 1
+kind = "HEAD"
+helper = "click.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "mod_id", ty = "&str", value = "mod_id" },
+  { name = "button", ty = "usize", value = "button" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+# The config screen over the options: drawn after them, and the options
+# themselves held back while it covers them.
+[[injection]]
+id = "render"
+hook = "screen_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_render.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+]
+
+[[injection]]
+id = "options_cover"
+target = "horizon_client::game::options::Game<'_>::draw_options"
+kind = "HEAD"
+cancellable = true
+helper = "h_options_cover.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+# The mouse and keys on a screen: the config screen's, and what tells that
+# a mod's text field has the keyboard.
+[[injection]]
+id = "press"
+hook = "screen_mouse_button_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_press.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "release"
+hook = "screen_mouse_button_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_release.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "drag"
+hook = "screen_mouse_dragged_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_drag.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "scroll"
+hook = "screen_mouse_scrolled_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_scroll.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "scroll", ty = "[f64; 2]", value = "scroll" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_pressed"
+hook = "screen_key_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_pressed.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key_released"
+hook = "screen_key_released_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key_released.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "char"
+hook = "screen_char_typed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_char.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "c", ty = "char", value = "c" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]

@@ -1,0 +1,29 @@
+InvMove for Horizon
+A port of InvMove to Horizon (Minecraft: Java Edition 26.3 rewritten in Rust)
+as a native mod.
+
+InvMove
+Copyright (c) PieKing1215
+https://github.com/PieKing1215/InvMove (branch main, commit 194f3f1, version
+0.9.6, the 26.3 build)
+Licensed under the GNU Lesser General Public License version 3 only
+(LICENSE), which builds on the GNU General Public License version 3
+(LICENSE.GPL-3.0). This port is under the same licence.
+
+From InvMove, unchanged: the icon (mixins/invmove/data/icon.png, from
+common/src/main/resources/icon.png) and the English texts
+(common/src/main/resources/assets/invmove/lang/en_us.json, in
+mixins/invmove/config.rs). The Russian texts are this port's own
+translations of them (InvMove has no Russian file).
+
+The config screen follows Cloth Config by shedaniel
+(https://github.com/shedaniel/cloth-config, LGPL-3.0), which InvMove builds its
+screen with: its look is rewritten in Rust (mixins/invmove/cloth.rs), and its
+arrows in mixins/invmove/cloth_sprites.rs are parts of Cloth Config's texture
+(assets/cloth-config2/textures/gui/cloth_config.png), converted to rows of
+pixels by tools/sprites.mjs.
+
+This port rewrites InvMove's logic (InvMove, InvMoveConfig, VanillaModule,
+ModuleImpl and its mixins) in Rust for Horizon's native mod API. Where it
+differs from the original, README.md says how. It is not affiliated with
+PieKing1215, Mojang or Microsoft.
