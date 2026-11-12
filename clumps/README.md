@@ -1,5 +1,5 @@
 <h1 align="left">
-  <img src="../.github/assets/stickers/clumps.gif" height="32" alt="">
+  <img src="../.github/assets/stickers/clumps.gif" height="64" alt="">
   <img src="../.github/assets/stickers/clumps.png" height="64" alt="">
 </h1>
 
