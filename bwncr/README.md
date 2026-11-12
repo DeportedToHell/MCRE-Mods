@@ -1,4 +1,4 @@
-# 🔇Bad Wither No Cookie - Reloaded for Horizon
+# <img src="../.github/assets/stickers/bwncr.png" height="32" alt=""> Bad Wither No Cookie - Reloaded for Horizon
 
 An independent port of [Bad Wither No Cookie - Reloaded](https://gitlab.com/kreezxil/BadWitherNoCookie) by Kreezxil and contributors to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
 
