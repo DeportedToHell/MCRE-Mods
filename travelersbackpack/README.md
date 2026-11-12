@@ -4,7 +4,7 @@ An independent port of [Traveler's Backpack](https://github.com/Tiviacz1337/Trav
 
 **Version 0.9.5** — nearly all original features implemented. Remaining work is listed below.
 
-Ported by **DispatchedToHeaven**.
+Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 
 > This is an independent port of the original project.
 > It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
