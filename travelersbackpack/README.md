@@ -12,29 +12,25 @@ Ported by **DispatchedToHeaven**.
 >
 > Original mod: https://github.com/Tiviacz1337/Travelers-Backpack — licence: GNU LGPL-3.0.
 
-The port consists of two required parts: `content/` — a content mod (`.hmod`) containing blocks, items, models, textures, recipes, loot, advancements and translations; and `mixins/travelersbackpack_native/` — a native mod (`.hnmod`) implementing backpack functionality and mechanics.
+The port consists of two required parts: `content/` — a content mod (`.hmod`) with blocks, items, models, textures, recipes and other assets; and `mixins/travelersbackpack_native/` — a native mod (`.hnmod`) implementing the actual mechanics.
 
 ## Features
 
-**Backpacks and inventory.** The port includes all 44 original designs, covering standard backpacks, ores, mobs, plants and more, with five tiers ranging from leather to netherite. Backpacks can be opened from the hand, placed as blocks (Shift + right-click), or worn on the player's back using the menu button, Shift + right-click on a placed backpack, or the B key. Other players can see worn backpacks, and dying while wearing one places it as a block. The inventory menu retains the original functionality, including sorting, quick stacking, item transfers, tool slots, configurable slot behaviour, scrolling and tooltips.
+**Backpacks.** All 44 original designs and five tiers, from leather to netherite. Backpacks can be opened, placed as blocks or worn on the player's back. Other players can see them, and dying while wearing one places it as a block.
 
-**Upgrades and fluids.** Available upgrades include tanks, crafting, furnace, smoker, blast furnace, pickup, magnet, void (with a trash bin), feeding, refill, jukebox and lantern. Filters support item, mod and tag modes, with a dedicated tag selector. Every upgrade can be toggled independently. Tanks store water, lava, milk and potions, while the hose can suck, spill and drink fluids. Tank contents are displayed on held, worn and placed backpacks, as well as in an on-screen bar.
+**Inventory and upgrades.** The original backpack menu, sorting, quick stacking, tool slots and settings. Upgrades include crafting, furnaces, pickup, magnet, void, feeding, refill, tanks, jukebox and lantern, with configurable filters and toggles.
 
-**Abilities and customization.** All original design-specific abilities are implemented, including armour, effects, creeper death protection, spider wall climbing and more. Abilities have individual toggles and cooldowns. Standard backpacks can be dyed and washed in cauldrons, while shears can restore placed backpacks. A sleeping bag is available in every colour and can be deployed from a placed backpack.
+**Fluids and abilities.** Tanks support water, lava, milk and potions. The hose can suck, spill and drink fluids. Original design-specific abilities are implemented, alongside the sleeping bag, dyeing, cauldron washing and backpack restoration.
 
-**Lighting and tools.** The lantern provides dynamic lighting while worn, using either Horizon's Dynamic Lights or Better Dynamic Lights. The tool radial menu (hold Z) allows swapping held tools with those stored in backpack tool slots. When holding the hose, the same menu provides access to its modes and tanks.
-
-**Other features.** The port also includes advancements, the wandering trader's trade, a creative tab and keybinds in Options → Mods. All original keybinds are present, including B, Z and six additional keys that are unbound by default. English and Russian translations are included.
+**Other features.** Dynamic lighting, tool radial menu, advancements, wandering trader trade, creative tab and keybinds. English and Russian translations.
 
 ## Remaining work
 
-The original config file settings are not yet exposed, so the port currently uses their default values. Mod Menu metadata is also missing.
+Original config settings and Mod Menu metadata are not yet implemented. Compatibility with other Java mods supported by the original, including Accessories / Trinkets, JEI / EMI / REI, Comforts and grave mods, is also missing.
 
-Compatibility with other Java mods supported by the original has not been implemented yet. This includes Accessories / Trinkets, JEI / EMI / REI, Comforts, grave mods and other integrations.
+Minor differences include 16-step fluid levels in item tanks, no icon growth animation in the tool radial menu, and tool swap sounds audible only to the player.
 
-There are also a few minor differences: fluid levels in item tanks are displayed in 16 steps, the tool radial menu does not reproduce the original icon growth animation, and tool swap sounds are only audible to the player.
-
-Some features still need in-game verification. These include the cake, chicken, bee, warden, lapis, pumpkin, ghast, hay, sponge, cactus, melon and bookshelf abilities; upgrade toggle keybinds; the hose section of the radial menu; jukebox audio; and death and quick sleeping while wearing a backpack.
+Some abilities and interactions still need in-game verification, including several design-specific abilities, upgrade keybinds, the hose radial menu, jukebox audio and sleeping or dying while wearing a backpack.
 
 ## Installation
 
@@ -51,11 +47,11 @@ content/                         Content mod, generated from the original checko
 horizon-native.json              Native bundle manifest
 mixins/travelersbackpack_native/
   horizon-mixin.toml             Modules and injections
-  runtime.rs                     Tiers, designs and names (no game types)
+  runtime.rs                     Tiers, designs and names
   glue.rs                        Main mod implementation
   menu.rs, spider.rs, screen_relayout.rs
                                   Additional modules
-  h_*.rs                         Small injection helpers
+  h_*.rs                         Injection helpers
 tools/
   content.mjs                    Generates content/ from the original checkout
   check.sh                       Stages the mod on pinned Horizon source and checks/builds the game
@@ -64,6 +60,11 @@ tools/
 
 ## Licence
 
-GNU LGPL-3.0, same as the original (Tiviacz1337; port: DispatchedToHeaven). See `LICENSE`, `LICENSE.LGPL-3.0`, `LICENSE.GPL-3.0` and `NOTICE`.
+GNU LGPL-3.0, same as the original.
+
+**Author:** Tiviacz1337  
+**Port:** DispatchedToHeaven
+
+See `LICENSE`, `LICENSE.LGPL-3.0`, `LICENSE.GPL-3.0` and `NOTICE`.
 
 Not affiliated with Tiviacz1337, Mojang or Microsoft.
