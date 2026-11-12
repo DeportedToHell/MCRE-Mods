@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="../.github/assets/stickers/bwncr.gif" height="32" alt="">
+  <img src="../.github/assets/stickers/bwncr.png" height="32" alt="">
   Bad Wither No Cookie - Reloaded
   <br>
   <sub>A port for Horizon</sub>
