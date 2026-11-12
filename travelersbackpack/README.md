@@ -6,13 +6,13 @@ An independent port of [Traveler's Backpack](https://github.com/Tiviacz1337/Trav
 
 Ported by **DispatchedToHeaven**.
 
-> This is an independent port of the original project. It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
->
-> All original credits and attributions belong to the original author. This port is developed independently.
+> This is an independent port of the original project. 
+> It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
 >
 > Original mod: https://github.com/Tiviacz1337/Travelers-Backpack  
->
 > licence: GNU LGPL-3.0.
+
+> Special thanks to Tiviacz1337 for creating the original mod.
 
 ## Features
 
