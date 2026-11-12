@@ -1,59 +1,69 @@
-# Clumps for Horizon
+# 🟢Clumps for Horizon
 
-A port of [Clumps](https://github.com/jaredlll08/Clumps) by Jaredlll08 to [Horizon](https://github.com/horizon-rust/horizon),
-the Rust rewrite of Minecraft: Java Edition 26.3, as a native mod (`.hnmod`). It behaves like Clumps 26.3.
+An independent port of [Clumps](https://github.com/jaredlll08/Clumps) by Jaredlll08 to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
 
-Ported by DispatchedToHeaven.
+Based on Clumps 26.3.
 
-## Features
+Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 
-- **Experience orbs of any value clump together** into one orb worth all of them: when orbs come near each
-  other, and when new experience drops by an orb that is already there. Less lag with many orbs about.
-- **A player collects an orb whole**, all its points at once: no stream of orbs in your face. Mending repairs
-  with it first, the rest goes to your experience bar, as with any orb.
-- No settings (Clumps has none). Mod Menu shows its icon, credits and links. English and Russian.
+> This is an independent port of the original project.
+> It is not affiliated with, endorsed by, or officially associated with the original author, Jaredlll08.
+>
+> Original mod: https://github.com/jaredlll08/Clumps
 
-Server side: it acts where your game runs the world (single player, a LAN world you host, a Horizon server
-with the mod); joining someone else's server, their server decides. Turned on or off in Options > Mods, it
-changes from the next time the world is loaded (the world's server reads it then).
+Special thanks to [Jaredlll08](https://github.com/jaredlll08) for creating the original mod.
 
-## Install
+## ✨Features
 
-From the launcher: Mods, find **Clumps**, Install, then Native build > Build.
+**Experience orbs.** Nearby orbs merge into a single orb containing their combined XP. New XP drops also merge into existing nearby orbs, reducing entity count and lag.
 
-By hand: put `clumps-<version>.hnmod` in `<game folder>/horizon-native-mods/`, add the line `mod.clumps:true` to
-`horizon-mods.txt`, then Native build > Build in the launcher.
+**Pickup and Mending.** Players collect the entire orb at once instead of picking up a stream of smaller orbs. Mending still takes priority, with remaining XP added to the player's experience bar.
 
-Native mods are compiled into the game and are not sandboxed: build only code you trust.
+**No configuration needed.** Clumps has no settings. Mod Menu integration includes the icon, credits and links. English and Russian translations.
 
-## Differences from the Java mod
+**Server-side.** Works wherever the world runs: singleplayer, hosted LAN worlds and servers with the mod installed. On other servers, the server determines the behaviour. Changes made in Options → Mods take effect when the world is loaded again.
 
-- Clumps keeps how many orbs of each value an orb took in; the port keeps the orb's total (Horizon's orbs have
-  one value and a count). The experience is the same; Mending repairs with the whole orb at once rather than
-  value by value, which can pick the damaged item to repair a little differently.
-- Clumps also lifts the player's pickup delay, so the player collects an orb every tick (the game touches one
-  orb a tick). Horizon's server keeps vanilla's two ticks between two orbs and offers a mod no way to change it yet; orbs that reach
-  the player mostly clump into one first anyway.
-- Clumps' API events for other Java mods (`ValueEvent`, `RepairEvent`) have no Horizon counterpart.
+## 📦Installation
 
-## Source layout
+Find **Clumps** in the launcher's Mods section, select Install, then run **Native build → Build**.
 
-```
-horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
+For manual installation, place `clumps-<version>.hnmod` in `<game folder>/horizon-native-mods/`, add `mod.clumps:true` to `horizon-mods.txt`, then run **Native build → Build** in the launcher.
+
+> Native mods are compiled into the game and are not sandboxed. Only build code you trust.
+
+## 🔧Differences from the Java mod
+
+Horizon represents experience orbs using a value and a count, so the port tracks their combined XP rather than preserving the individual values of merged orbs. The result is effectively the same, although Mending may select a slightly different item to repair.
+
+The original Clumps removes the player's pickup delay, allowing an orb to be collected every tick. Horizon currently retains the vanilla two-tick delay and provides no way for mods to change it. In practice, nearby orbs usually merge before reaching the player.
+
+Clumps' API events (`ValueEvent`, `RepairEvent`) have no equivalent in Horizon yet.
+
+## 🗂️Source layout
+
+```text id="clumps"
+horizon-native.json              Native bundle manifest
 mixins/clumps/
-  horizon-mixin.toml           modules and injections
-  runtime.rs                   names and the clump's arithmetic: no game types (unit tests)
-  glue.rs                      merging, the pickup, the mod's row and Mod Menu's files
-  h_*.rs                       one small helper per injection
-  data/icon.png                Clumps' icon
-  LICENSE, NOTICE
-tools/check.sh                 stages the mod on the pinned Horizon source and cargo-checks the game
-tools/package.mjs              makes the .hnmod
-Cargo.toml                     runs runtime.rs's tests
+  horizon-mixin.toml             Modules and injections
+  runtime.rs                     Names and XP calculations
+  glue.rs                        Merging, pickup and Mod Menu integration
+  h_*.rs                          Injection helpers
+  data/icon.png                  Original Clumps icon
+tools/
+  check.sh                       Checks and builds against pinned Horizon source
+  package.mjs                    Packages the .hnmod
+Cargo.toml                       Rust project and tests
 ```
 
 Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
-## Licence
+## ⚖️License
 
-MIT, as Clumps (Jaredlll08; the port: DispatchedToHeaven): see `LICENSE` and `NOTICE`. Not affiliated with Jaredlll08, Mojang or Microsoft.
+Licensed under **MIT**, same as the original project.
+
+**Original author:** [Jaredlll08](https://github.com/jaredlll08)  
+**Port author:** [DispatchedToHeaven](https://github.com/DispatchedToHeaven)
+
+See `LICENSE` and `NOTICE` for details.
+
+This project is an independent port and is not affiliated with or endorsed by Jaredlll08, Mojang or Microsoft.
