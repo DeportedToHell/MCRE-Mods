@@ -76,7 +76,7 @@ crate::game::justenoughitems_glue::register_category(crate::game::justenoughitem
 Each slot lists stacks named as `/give` does, any one of which fits (shown in turn). R and U find a
 plugin's recipes by their outputs and inputs, as JEI's own. A mod that should also build without this
 JEI (or with an older one) can keep the call behind a check of the staged `game.rs` for
-`pub fn register_category(category: PluginCategory)`.
+`fn register_category(category: PluginCategory)`.
 
 ## Source layout
 

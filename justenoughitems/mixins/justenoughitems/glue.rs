@@ -45,39 +45,39 @@ pub(super) struct Ingredient {
 /// own module (`crate::game::justenoughitems_glue::register_category`), at
 /// any time; the recipes screen shows it after JEI's own categories.
 #[derive(Clone, Copy)]
-pub struct PluginCategory {
+pub(super) struct PluginCategory {
     /// The mod's own name for it, once (`modid:category`).
-    pub id: &'static str,
+    pub(super) id: &'static str,
     /// Its title on the recipes screen, in the game's language.
-    pub title: fn(&Game<'_>) -> String,
+    pub(super) title: fn(&Game<'_>) -> String,
     /// Its recipes' size (`getWidth`, `getHeight`): the inputs in a row at the
     /// top left, an arrow and the outputs after them, the lines below.
-    pub width: f32,
-    pub height: f32,
+    pub(super) width: f32,
+    pub(super) height: f32,
     /// The items that make its recipes (`registerRecipeCatalysts`), the first
     /// one the tab's icon: "uses" of one of them shows every recipe.
-    pub catalysts: &'static [&'static str],
+    pub(super) catalysts: &'static [&'static str],
     /// Its recipes, read when JEI makes its tables (once a world, again when the
     /// recipes or the language change).
-    pub recipes: fn(&Game<'_>) -> Vec<PluginRecipe>,
+    pub(super) recipes: fn(&Game<'_>) -> Vec<PluginRecipe>,
 }
 
 /// One recipe of a plugin category. Each slot is a list of stacks, any one of
 /// which fits (shown in turn), named as `/give` does: `minecraft:sugar`,
 /// `minecraft:potion[potion_contents={potion:"minecraft:water"}]`.
 #[derive(Clone, Default)]
-pub struct PluginRecipe {
-    pub inputs: Vec<Vec<String>>,
-    pub outputs: Vec<Vec<String>>,
+pub(super) struct PluginRecipe {
+    pub(super) inputs: Vec<Vec<String>>,
+    pub(super) outputs: Vec<Vec<String>>,
     /// Text under the slots, one line each, drawn in JEI's grey.
-    pub lines: Vec<String>,
+    pub(super) lines: Vec<String>,
 }
 
 static PLUGINS: std::sync::Mutex<Vec<PluginCategory>> = std::sync::Mutex::new(Vec::new());
 
 /// Adds a recipe category (once per id; calling again does nothing). JEI's
 /// tables are made again the next frame, with its recipes.
-pub fn register_category(category: PluginCategory) {
+pub(super) fn register_category(category: PluginCategory) {
     if let Ok(mut v) = PLUGINS.lock()
         && !v.iter().any(|c| c.id == category.id)
     {

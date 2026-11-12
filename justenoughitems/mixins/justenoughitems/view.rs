@@ -949,12 +949,12 @@ fn flame(game: &Game<'_>, batch: &mut HudBatch, x: f32, y: f32, ticks: u32, mill
     blit_part(game, batch, &sprites::ICON_FLAME, (x, y + f32::from(top)), (0, 14), (top, 14));
 }
 
-#[allow(clippy::too_many_arguments)]
 /// Where a plugin recipe's outputs start: after its inputs and the arrow.
 fn plugin_outputs_x(r: &Recipe) -> f32 {
     1.0 + CELL * r.inputs.len() as f32 + 28.0
 }
 
+#[allow(clippy::too_many_arguments)]
 fn draw_recipe(
     ctx: &Context<'_, '_>,
     batch: &mut HudBatch,
