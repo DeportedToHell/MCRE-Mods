@@ -1,17 +1,17 @@
-# 🎒Traveler's Backpack for Horizon
+# 🎒 Traveler's Backpack for Horizon
 
 An independent port of [Traveler's Backpack](https://github.com/Tiviacz1337/Travelers-Backpack) by Tiviacz1337 to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
 
-**Version 0.9.5** — almost all original features implemented. Remaining work is listed below.
+**Version 0.9.5** — nearly all original features implemented. Remaining work is listed below.
 
 Ported by **DispatchedToHeaven**.
 
-> This is an independent port of the original project. 
+> This is an independent port of the original project.
 > It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
 >
-> Original mod: https://github.com/Tiviacz1337/Travelers-Backpack  
-> licence: GNU LGPL-3.0.
-
+> Original mod: https://github.com/Tiviacz1337/Travelers-Backpack
+> License: GNU LGPL-3.0.
+>
 > Special thanks to Tiviacz1337 for creating the original mod.
 
 ## ✨Features
