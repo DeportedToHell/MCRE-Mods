@@ -362,6 +362,8 @@ pub enum Category {
     Grindstone,
     Smithing,
     Compostable,
+    /// A category another native mod adds (`register_category` in the glue), by its order of registration.
+    Plugin(u16),
 }
 
 impl Category {
@@ -382,7 +384,11 @@ impl Category {
         Category::Compostable,
     ];
     pub fn index(self) -> usize {
-        Category::ALL.iter().position(|c| *c == self).unwrap_or(0)
+        match self {
+            // After JEI's own, in the order they were added.
+            Category::Plugin(n) => Category::ALL.len() + usize::from(n),
+            _ => Category::ALL.iter().position(|c| *c == self).unwrap_or(0),
+        }
     }
     /// The items that make its recipes (`registerRecipeCatalysts`), first one
     /// the tab's icon.
@@ -399,6 +405,8 @@ impl Category {
             Category::Grindstone => &["minecraft:grindstone"],
             Category::Smithing => &["minecraft:smithing_table"],
             Category::Compostable => &["minecraft:composter"],
+            // The mod names them (`Index::add_catalysts`).
+            Category::Plugin(_) => &[],
         }
     }
 }
@@ -451,6 +459,8 @@ pub struct Recipe {
     pub render_only_output: bool,
     /// Anvil: the cost of each output, when it varies (enchanted books).
     pub costs: Vec<u32>,
+    /// A plugin category's text, under its slots, one line each.
+    pub lines: Vec<String>,
 }
 
 impl Recipe {
@@ -595,6 +605,21 @@ impl Index {
         index.recipes = recipes;
         index
     }
+    /// A plugin category's catalysts (its tab's icon first): what `catalysts` gives vanilla's.
+    pub fn add_catalysts(&mut self, c: Category, ids: Vec<u32>) {
+        self.catalysts.insert(c, ids);
+    }
+    /// Every category: JEI's, then the plugins' that have recipes or catalysts, in order.
+    fn categories(&self) -> Vec<Category> {
+        let mut all: Vec<Category> = Category::ALL.to_vec();
+        for c in self.by_category.keys().chain(self.catalysts.keys()) {
+            if matches!(c, Category::Plugin(_)) && !all.contains(c) {
+                all.push(*c);
+            }
+        }
+        all.sort_by_key(|c| c.index());
+        all
+    }
     pub fn catalysts(&self, c: Category) -> &[u32] {
         self.catalysts.get(&c).map_or(&[], Vec::as_slice)
     }
@@ -622,7 +647,7 @@ impl Index {
                 }
             }
             Lookup::Uses(id) => {
-                for c in Category::ALL {
+                for c in self.categories() {
                     if self.catalysts(c).contains(&id) {
                         for &i in self.of_category(c) {
                             add(c, i, &mut tabs);
@@ -635,7 +660,7 @@ impl Index {
             }
             // "Show all recipes": every category, this one selected.
             Lookup::Category(_) => {
-                for c in Category::ALL {
+                for c in self.categories() {
                     for &i in self.of_category(c) {
                         add(c, i, &mut tabs);
                     }
@@ -1045,6 +1070,8 @@ pub fn category_title(ru: bool, c: Category) -> &'static str {
         Category::Grindstone => ("Grinding", "Заточка"),
         Category::Smithing => ("Smithing Table", "Кузнечный стол"),
         Category::Compostable => ("Composting", "Биоразлагаемость"),
+        // Its mod names it (the glue's `plugin_title`).
+        Category::Plugin(_) => ("", ""),
     };
     if ru { ru_text } else { en }
 }
@@ -1276,6 +1303,24 @@ mod tests {
         assert!(!screen.back(&index));
         assert!(screen.open(&index, Lookup::Category(Category::Smelting)));
         assert_eq!(screen.recipes(), &[2]);
+    }
+
+    #[test]
+    fn plugin_categories_come_after_jei_s_own() {
+        let one = |id: u32| vec![Stack::one(id)];
+        let recipes = vec![
+            Recipe { category: Some(Category::Crafting), inputs: vec![one(1)], outputs: vec![one(2)], ..Recipe::default() },
+            Recipe { category: Some(Category::Plugin(0)), inputs: vec![one(1), one(7)], lines: vec!["text".into()], ..Recipe::default() },
+            Recipe { category: Some(Category::Plugin(0)), inputs: vec![one(3), one(7)], ..Recipe::default() },
+        ];
+        let mut index = Index::new(recipes, |_| None);
+        index.add_catalysts(Category::Plugin(0), vec![7]);
+        // Uses of an input: JEI's categories first, then the plugin's.
+        assert_eq!(index.lookup(Lookup::Uses(1)), vec![(Category::Crafting, vec![0]), (Category::Plugin(0), vec![1])]);
+        // Uses of its catalyst: all of its recipes.
+        assert_eq!(index.lookup(Lookup::Uses(7)), vec![(Category::Plugin(0), vec![1, 2])]);
+        assert_eq!(index.catalysts(Category::Plugin(0)), &[7]);
+        assert_eq!(index.lookup(Lookup::Category(Category::Plugin(0))).last(), Some(&(Category::Plugin(0), vec![1, 2])));
     }
 
     #[test]

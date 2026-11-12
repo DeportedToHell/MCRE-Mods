@@ -39,11 +39,69 @@ pub(super) struct Ingredient {
     tabs: Vec<String>,
 }
 
+// ---- other mods' recipe categories (JEI's IRecipeCategory and IRecipeManagerPlugin) ----
+
+/// A recipe category another native mod adds: `register_category` from its
+/// own module (`crate::game::justenoughitems_glue::register_category`), at
+/// any time; the recipes screen shows it after JEI's own categories.
+#[derive(Clone, Copy)]
+pub struct PluginCategory {
+    /// The mod's own name for it, once (`modid:category`).
+    pub id: &'static str,
+    /// Its title on the recipes screen, in the game's language.
+    pub title: fn(&Game<'_>) -> String,
+    /// Its recipes' size (`getWidth`, `getHeight`): the inputs in a row at the
+    /// top left, an arrow and the outputs after them, the lines below.
+    pub width: f32,
+    pub height: f32,
+    /// The items that make its recipes (`registerRecipeCatalysts`), the first
+    /// one the tab's icon: "uses" of one of them shows every recipe.
+    pub catalysts: &'static [&'static str],
+    /// Its recipes, read when JEI makes its tables (once a world, again when the
+    /// recipes or the language change).
+    pub recipes: fn(&Game<'_>) -> Vec<PluginRecipe>,
+}
+
+/// One recipe of a plugin category. Each slot is a list of stacks, any one of
+/// which fits (shown in turn), named as `/give` does: `minecraft:sugar`,
+/// `minecraft:potion[potion_contents={potion:"minecraft:water"}]`.
+#[derive(Clone, Default)]
+pub struct PluginRecipe {
+    pub inputs: Vec<Vec<String>>,
+    pub outputs: Vec<Vec<String>>,
+    /// Text under the slots, one line each, drawn in JEI's grey.
+    pub lines: Vec<String>,
+}
+
+static PLUGINS: std::sync::Mutex<Vec<PluginCategory>> = std::sync::Mutex::new(Vec::new());
+
+/// Adds a recipe category (once per id; calling again does nothing). JEI's
+/// tables are made again the next frame, with its recipes.
+pub fn register_category(category: PluginCategory) {
+    if let Ok(mut v) = PLUGINS.lock()
+        && !v.iter().any(|c| c.id == category.id)
+    {
+        v.push(category);
+    }
+}
+
+fn plugins() -> Vec<PluginCategory> {
+    PLUGINS.lock().map(|v| v.clone()).unwrap_or_default()
+}
+
+/// A plugin category, by its place.
+pub(super) fn plugin(c: Category) -> Option<PluginCategory> {
+    let Category::Plugin(n) = c else { return None };
+    PLUGINS.lock().ok()?.get(usize::from(n)).copied()
+}
+
 /// The game's items and recipes as JEI shows them, made once a world (again
 /// when the recipes or the language change).
 pub(super) struct Data {
     language: String,
     recipes_at: usize,
+    /// How many plugin categories it holds: made again when one is added.
+    plugins: usize,
     pub(super) ingredients: Vec<Ingredient>,
     by_key: HashMap<String, u32>,
     /// The ingredient list's order: the creative inventory's search tab, then
@@ -317,7 +375,7 @@ fn sync(game: &mut Game<'_>) {
     let fresh = with(|s| {
         s.data
             .as_ref()
-            .is_some_and(|d| d.recipes_at == at && d.language == language)
+            .is_some_and(|d| d.recipes_at == at && d.language == language && d.plugins == plugins().len())
     })
     .unwrap_or(true);
     if fresh {
@@ -494,10 +552,44 @@ fn build(
         .filter(|id| game.res.items().get(id).is_some())
         .map(|id| (id.to_string(), b.id(&ItemStack::new(id, 1))))
         .collect();
-    let index = Index::new(out, |id| catalysts.get(id).copied());
+    let plugins = plugins();
+    let plugin_stacks = |b: &mut Builder<'_, '_>, slots: &[Vec<String>]| -> Vec<Vec<Stack>> {
+        slots
+            .iter()
+            .map(|alts| {
+                alts.iter()
+                    .filter_map(|key| made(key))
+                    .filter(|stack| game.res.items().get(&*stack.item).is_some())
+                    .map(|stack| Stack { id: b.id(&stack), count: stack.count.max(1), damage: stack.damage })
+                    .collect()
+            })
+            .collect()
+    };
+    for (n, p) in plugins.iter().enumerate() {
+        for r in (p.recipes)(game) {
+            out.push(Recipe {
+                category: Some(Category::Plugin(n as u16)),
+                inputs: plugin_stacks(&mut b, &r.inputs),
+                outputs: plugin_stacks(&mut b, &r.outputs),
+                lines: r.lines,
+                ..Recipe::default()
+            });
+        }
+    }
+    let mut index = Index::new(out, |id| catalysts.get(id).copied());
+    for (n, p) in plugins.iter().enumerate() {
+        let ids = p
+            .catalysts
+            .iter()
+            .filter(|id| game.res.items().get(**id).is_some())
+            .map(|id| b.id(&ItemStack::new(id, 1)))
+            .collect();
+        index.add_catalysts(Category::Plugin(n as u16), ids);
+    }
     Data {
         language,
         recipes_at: at,
+        plugins: plugins.len(),
         ingredients: b.ingredients,
         by_key: b.by_key,
         list,

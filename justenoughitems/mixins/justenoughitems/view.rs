@@ -617,6 +617,7 @@ fn category_size(game: &Game<'_>, ru: bool, c: Category) -> (f32, f32) {
         Category::Grindstone => (73.0, 52.0),
         Category::Smithing => (108.0, 28.0),
         Category::Compostable => (120.0, 18.0),
+        Category::Plugin(_) => glue::plugin(c).map_or((120.0, 18.0), |p| (p.width, p.height)),
     }
 }
 
@@ -625,6 +626,7 @@ fn title(game: &Game<'_>, ru: bool, c: Category) -> String {
     match c {
         Category::Anvil => game.translate("block.minecraft.anvil", jei::category_title(ru, c)),
         Category::Smithing => game.translate("block.minecraft.smithing_table", jei::category_title(ru, c)),
+        Category::Plugin(_) => glue::plugin(c).map(|p| (p.title)(game)).unwrap_or_default(),
         _ => jei::category_title(ru, c).to_owned(),
     }
 }
@@ -948,6 +950,11 @@ fn flame(game: &Game<'_>, batch: &mut HudBatch, x: f32, y: f32, ticks: u32, mill
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Where a plugin recipe's outputs start: after its inputs and the arrow.
+fn plugin_outputs_x(r: &Recipe) -> f32 {
+    1.0 + CELL * r.inputs.len() as f32 + 28.0
+}
+
 fn draw_recipe(
     ctx: &Context<'_, '_>,
     batch: &mut HudBatch,
@@ -1030,6 +1037,17 @@ fn draw_recipe(
         Category::Compostable => {
             add(batch, &mut hits, input(0), 1.0, 1.0, Frame::Standard, 0, Vec::new());
         }
+        // A plugin's: its inputs in a row, then its outputs after an arrow.
+        Category::Plugin(_) => {
+            for i in 0..r.inputs.len() {
+                add(batch, &mut hits, input(i), 1.0 + CELL * i as f32, 1.0, Frame::Standard, 0, Vec::new());
+            }
+            let out_x = plugin_outputs_x(r);
+            for (i, stacks) in r.outputs.iter().enumerate() {
+                let lines = if i == 0 { id_lines.clone() } else { Vec::new() };
+                add(batch, &mut hits, stacks, out_x + CELL * i as f32, 1.0, Frame::Standard, 0, lines);
+            }
+        }
     }
     // The widgets and texts, over the slots.
     match category {
@@ -1110,6 +1128,15 @@ fn draw_recipe(
             let t = jei::compost_chance(ru, r.chance);
             let tw = width(game, &t);
             text(game, batch, &t, x + 24.0 + ((96.0 - tw) / 2.0).round(), y + 5.0, GREY, false);
+        }
+        Category::Plugin(_) => {
+            if !r.outputs.is_empty() {
+                blit(game, batch, &sprites::RECIPE_ARROW, x + plugin_outputs_x(r) - 24.0, y + 1.0, 1.0);
+            }
+            let top = if r.inputs.is_empty() && r.outputs.is_empty() { 0.0 } else { 22.0 };
+            for (i, line) in r.lines.iter().enumerate() {
+                text(game, batch, &fit(game, line, w), x, y + top + 10.0 * i as f32, GREY, false);
+            }
         }
     }
     (hits, tip)
