@@ -1,8 +1,6 @@
-<h1 align="center">
-  <img src="../.github/assets/stickers/travelersbackpack.gif" height="32" alt="">
-  Traveler's Backpack
-  <br>
-  <sub>A port for Horizon</sub>
+<h1 align="left">
+  <img src="../.github/assets/stickers/travelersbackpack.gif" height="64" alt="">
+  <img src="../.github/assets/stickers/travelersbackpack.png" height="64" alt="">
 </h1>
 
 An independent port of [Traveler's Backpack](https://github.com/Tiviacz1337/Travelers-Backpack) by Tiviacz1337 to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
