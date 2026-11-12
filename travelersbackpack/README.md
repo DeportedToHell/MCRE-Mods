@@ -58,13 +58,13 @@ tools/
   package.mjs                    Packages the .hnmod
 ```
 
-## Licence
+## ⚖️License
 
-GNU LGPL-3.0, same as the original.
+Licensed under **GNU LGPL-3.0**, same as the original project.
 
-**Author:** Tiviacz1337  
-**Port:** DispatchedToHeaven
+**Original author:** [Tiviacz1337](https://github.com/Tiviacz1337)  
+**Port author:** [DispatchedToHeaven](https://github.com/DispatchedToHeaven)
 
-See `LICENSE`, `LICENSE.LGPL-3.0`, `LICENSE.GPL-3.0` and `NOTICE`.
+See `LICENSE`, `LICENSE.LGPL-3.0`, `LICENSE.GPL-3.0`, and `NOTICE` for details.
 
-Not affiliated with Tiviacz1337, Mojang or Microsoft.
+This project is an independent port and is not affiliated with or endorsed by Tiviacz1337, Mojang, or Microsoft.
