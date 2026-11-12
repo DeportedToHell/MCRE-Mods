@@ -1,4 +1,4 @@
-<h1 align="center">
+<h1 align="left">
   <img src="../.github/assets/stickers/clumps.gif" height="512" alt="">
   <img src="../.github/assets/stickers/minecraft-text (5).png" height="64" alt="">
 </h1>
