@@ -31,6 +31,7 @@ body:
         - Roughly Enough Items
         - Shulker Box Tooltip
         - Smooth Swapping
+        - Traveler's Backpack
         - Zoomify
     validations:
       required: true
