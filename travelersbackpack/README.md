@@ -10,7 +10,7 @@ Ported by **DispatchedToHeaven**.
 >
 > All original credits and attributions belong to the original author. This port is developed independently.
 >
-> Original mod: https://github.com/Tiviacz1337/Travelers-Backpack — 
+> Original mod: https://github.com/Tiviacz1337/Travelers-Backpack  
 >
 > licence: GNU LGPL-3.0.
 
