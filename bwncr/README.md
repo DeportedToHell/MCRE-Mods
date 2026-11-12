@@ -1,5 +1,5 @@
 <h1 align="left">
-  <img src="../.github/assets/stickers/bwncr.png" height="64" alt="">
+  <img src="../.github/assets/stickers/bwncr.png" height="72" alt="">
   <img src="../.github/assets/stickers/bwncrn.png" height="64" alt="">
 </h1>
 
