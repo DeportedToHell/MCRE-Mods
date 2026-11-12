@@ -1,8 +1,6 @@
-<h1 align="center">
-  <img src="../.github/assets/stickers/bwncr.png" height="32" alt="">
-  Bad Wither No Cookie - Reloaded
-  <br>
-  <sub>A port for Horizon</sub>
+<h1 align="left">
+  <img src="../.github/assets/stickers/bwncr.png" height="64" alt="">
+  <img src="../.github/assets/stickers/bwncrn.png" height="64" alt="">
 </h1>
 
 An independent port of [Bad Wither No Cookie - Reloaded](https://gitlab.com/kreezxil/BadWitherNoCookie) by Kreezxil and contributors to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
