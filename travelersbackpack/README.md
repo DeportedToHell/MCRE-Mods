@@ -12,7 +12,7 @@ An independent port of [Traveler's Backpack](https://github.com/Tiviacz1337/Trav
 <img src="../.github/assets/stickers/info.png" height="14" alt=""> I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
 
-## <img src="../.github/assets/stickers/info.png" height="14" alt="">This is an independent port of the original project.
+## <img src="../.github/assets/stickers/info.png" height="32" alt="">This is an independent port of the original project.
 
 It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
 
