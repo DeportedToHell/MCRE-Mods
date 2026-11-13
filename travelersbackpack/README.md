@@ -11,16 +11,15 @@ An independent port of [Traveler's Backpack](https://github.com/Tiviacz1337/Trav
 
 <img src="../.github/assets/stickers/info.png" height="14" alt=""> I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
-
-Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
-
+<h1 align="left">
 > This is an independent port of the original project.
 > It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
 >
 > Original mod: https://github.com/Tiviacz1337/Travelers-Backpack
 > License: GNU LGPL-3.0.
+</h1>
 
-
+Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the original mod.
 
 ## ✨Features
