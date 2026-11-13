@@ -7,12 +7,14 @@ An independent port of [Clumps](https://github.com/jaredlll08/Clumps) by Jaredll
 
 Based on Clumps 26.3.
 
-Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 
-> This is an independent port of the original project.
+## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
+
 > It is not affiliated with, endorsed by, or officially associated with the original author, Jaredlll08.
 >
 > Original mod: https://github.com/jaredlll08/Clumps
+
+Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 
 Special thanks to [Jaredlll08](https://github.com/jaredlll08) for creating the original mod.
 
