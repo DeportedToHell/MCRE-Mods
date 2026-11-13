@@ -1,6 +1,6 @@
 id = "travelersbackpack"
 name = "Traveler's Backpack"
-version = "0.9.6"
+version = "0.9.7"
 description = "Unique and upgradeable backpacks with customisation."
 authors = ["Tiviacz1337"]
 api = "0.2"

@@ -1,6 +1,6 @@
 [mod]
 id = "travelersbackpack_native"
-version = "0.9.6"
+version = "0.9.7"
 priority = 100
 
 # Built for this Nightly: besides the hook points it opens a menu of the
@@ -988,4 +988,31 @@ bindings = [
   { name = "dimension", ty = "&str", value = "dimension" },
   { name = "kind", ty = "&str", value = "kind" },
   { name = "pos", ty = "[f64; 3]", value = "pos" },
+]
+
+# `DeathHandler` (`ALLOW_DEATH`): the creeper backpack's wearer, about to die
+# after armor and effects took their share, is saved (where `ServerPlayer.die`
+# begins: the game's own death hook there is only told with API mods loaded).
+[[injection]]
+id = "guest_die"
+target = "horizon_client::game::lan_actions::Game<'_>::guest_die"
+kind = "HEAD"
+cancellable = true
+helper = "h_guest_die.rs"
+bindings = [
+  { name = "host", ty = "&mut LanHost", value = "&mut *host" },
+  { name = "gi", ty = "usize", value = "gi" },
+]
+
+# `ShulkerBoxBlockEntityMixin`: a hopper puts no backpack into a shulker box
+# (`canPlaceItemThroughFace`).
+[[injection]]
+id = "shulker_insert"
+target = "horizon_client::game::machines::Containers<'_>::can_place"
+kind = "HEAD"
+cancellable = true
+helper = "h_shulker_insert.rs"
+bindings = [
+  { name = "view", ty = "&View", value = "view" },
+  { name = "stack", ty = "&ItemStack", value = "stack" },
 ]

@@ -5,7 +5,7 @@
 
 An independent port of [Traveler's Backpack](https://github.com/Tiviacz1337/Travelers-Backpack) by Tiviacz1337 to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
 
-**Version 0.9.6** — nearly all original features implemented. Remaining work is listed below.
+**Version 0.9.7** — nearly all original features implemented. Remaining work is listed below.
 
 > Two files are needed: the content mod (`travelersbackpack.hmod`) and the native mod (`travelersbackpack_native.hnmod`). One alone does not work.
 
@@ -32,6 +32,13 @@ Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the
 
 **Other features.** Dynamic lighting, tool radial menu, advancements, wandering trader trade, creative tab and keybinds. The original's config files (`config/travelersbackpack-{common,server,client}.toml`), Mod Menu info, the `/tb` commands (`access`, `remove`, `clear`, `restore`, `unpack`) with backups made on death, and `/tb_client`. English and Russian translations.
 
+### What's new in 0.9.7
+
+- The creeper design saves its wearer from a blow that kills after armor and effects, as the original (before, from any blow bigger than their health).
+- A placed backpack's refill upgrade refills the players within 3 blocks; an item on the cursor counts as carried.
+- Sleeping bags laid out from a worn backpack are remembered in the world and taken up after a restart, never dropped.
+- Hoppers put no backpack into a shulker box.
+
 ### What's new in 0.9.6
 
 - Fixed item duplication with placed backpacks in multiplayer: only one player can have a placed backpack open, and taking, breaking, shearing or unpacking it closes that menu first.
@@ -45,11 +52,16 @@ Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the
 
 ## 🚧Remaining work
 
-Compatibility with other Java mods supported by the original, including Accessories / Trinkets, JEI / EMI / REI, Comforts and grave mods, is missing.
+Not implemented compared to the original:
 
-Minor differences include 16-step fluid levels in item tanks, no icon growth animation in the tool radial menu, and tool swap sounds audible only to the player. The creeper design counts damage before armor and resistance; temporary sleeping bags are kept only in memory, so one left out when the server stops stays in the world; smelting upgrades give no experience; the refill upgrade does nothing in a placed backpack; the tag filter mode matches any shared tag instead of a chosen one.
+- **Other mods' integration.** Accessories / Trinkets (a back slot, `backSlotIntegration`), JEI / EMI / REI (recipe transfer into the crafting upgrade, dragging items into filters), Crafting Tweaks, Polymorph, Comforts, grave mods (Pneumono Gravestones, Universal Graves), Tough As Nails, Trash Slot, VinURL and Entity Model Features. Dynamic lighting works without LambDynamicLights.
+- **Supporter badge.** The star on the backpacks of the original's supporters needs their list from the internet; the port makes no network requests.
+- **Tier sizes in the config.** `inventorySlotCount`, `upgradeSlotCount` and `toolSlotCount` of each tier stay at the original's defaults.
+- **Music that follows the wearer.** Horizon has no moving sound, so a worn backpack's jukebox plays where it was started.
 
-Some abilities and interactions still need in-game verification, including several design-specific abilities, upgrade keybinds, the hose radial menu and two players sharing backpacks over LAN.
+Minor differences: 16-step fluid levels in item tanks, no icon growth animation in the tool radial menu, tool swap sounds heard only by the player.
+
+Still to be checked in game: several design-specific abilities, upgrade keybinds, the hose radial menu and two players sharing backpacks over LAN.
 
 ## 📦Installation
 

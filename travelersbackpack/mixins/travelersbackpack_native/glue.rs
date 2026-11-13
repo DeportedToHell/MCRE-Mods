@@ -299,7 +299,7 @@ fn toggle_worn_upgrade(game: &mut Game<'_>, uuid: u128, i: usize) {
 /// The native mod's id, for its key binding.
 const MOD_ID: &str = "travelersbackpack_native";
 /// The port's version (`horizon-native.json`).
-const VERSION: &str = "0.9.6";
+const VERSION: &str = "0.9.7";
 
 /// The backpack `uuid` wears, if any.
 fn worn(game: &Game<'_>, uuid: u128) -> Option<ItemStack> {
@@ -1765,6 +1765,7 @@ fn use_sleeping_bag(game: &mut Game<'_>, uuid: u128, dimension: &str, source: So
             game.lan = Some(host);
             if asleep {
                 with(|s| s.temporary_bags.insert(uuid, (foot, head, dimension.to_owned())));
+                save_temporary_bags(game);
             } else {
                 // Day, monsters, no room: no sleep, no bag.
                 remove_bag(game, dimension, foot, head);
@@ -1776,6 +1777,7 @@ fn use_sleeping_bag(game: &mut Game<'_>, uuid: u128, dimension: &str, source: So
 
 /// A worn backpack's bag goes once its sleeper is up (`SleepHandler`).
 fn tick_temporary_bags(game: &mut Game<'_>) {
+    load_temporary_bags(game);
     let dimension = game.dim.id().to_owned();
     let bags: Vec<(u128, ([i32; 3], [i32; 3], String))> =
         with(|s| s.temporary_bags.iter().map(|(u, b)| (*u, b.clone())).collect());
@@ -1787,10 +1789,70 @@ fn tick_temporary_bags(game: &mut Game<'_>) {
             .lan
             .as_ref()
             .is_some_and(|h| h.hub.guests.iter().any(|g| g.uuid == uuid && g.bed == Some(head)));
-        if !asleep {
+        // One left from before a restart waits for its chunk to load.
+        let loaded = [foot, head].iter().all(|p| game.world.chunks.contains_key(&(p[0] >> 4, p[2] >> 4)));
+        if !asleep && loaded {
             remove_bag(game, &dimension, foot, head);
             with(|s| s.temporary_bags.remove(&uuid));
+            save_temporary_bags(game);
         }
+    }
+}
+
+thread_local! {
+    /// The world whose temporary bags were read.
+    static TEMPORARY_BAGS_READ: RefCell<Option<std::path::PathBuf>> = const { RefCell::new(None) };
+}
+
+/// The laid-out bags of worn backpacks, kept in the world (the original keeps
+/// them as blocks that drop nothing, `CAN_DROP`): a server stopped with one
+/// out finds it at the next start and takes it up, nothing dropped.
+fn temporary_bags_file(game: &Game<'_>) -> Option<std::path::PathBuf> {
+    Some(game.native_world_dir()?.join("data").join("travelersbackpack_temporary_bags.txt"))
+}
+
+fn load_temporary_bags(game: &Game<'_>) {
+    let Some(file) = temporary_bags_file(game) else {
+        return;
+    };
+    if TEMPORARY_BAGS_READ.with(|r| r.borrow().as_ref() == Some(&file)) {
+        return;
+    }
+    TEMPORARY_BAGS_READ.with(|r| *r.borrow_mut() = Some(file.clone()));
+    let text = std::fs::read_to_string(&file).unwrap_or_default();
+    let bags: Vec<(u128, ([i32; 3], [i32; 3], String))> = text
+        .lines()
+        .filter_map(|line| {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            let [uuid, fx, fy, fz, hx, hy, hz, dimension] = parts[..] else {
+                return None;
+            };
+            let n = |t: &str| t.parse::<i32>().ok();
+            Some((u128::from_str_radix(uuid, 16).ok()?, ([n(fx)?, n(fy)?, n(fz)?], [n(hx)?, n(hy)?, n(hz)?], dimension.to_owned())))
+        })
+        .collect();
+    with(|s| {
+        s.temporary_bags.clear();
+        s.temporary_bags.extend(bags);
+    });
+}
+
+fn save_temporary_bags(game: &Game<'_>) {
+    let Some(file) = temporary_bags_file(game) else {
+        return;
+    };
+    let text: String = with(|s| {
+        s.temporary_bags
+            .iter()
+            .map(|(u, (f, h, d))| format!("{u:032x} {} {} {} {} {} {} {d}
+", f[0], f[1], f[2], h[0], h[1], h[2]))
+            .collect()
+    });
+    if text.is_empty() {
+        let _ = std::fs::remove_file(&file);
+    } else if let Some(dir) = file.parent() {
+        let _ = std::fs::create_dir_all(dir);
+        let _ = std::fs::write(&file, text);
     }
 }
 
@@ -2986,8 +3048,12 @@ fn filter_of(items: &[Option<ItemStack>], tier: tb::Tier, tab: tb::Tab) -> Vec<I
         .collect()
 }
 
+/// `RefillUpgrade.REFILL_RANGE`.
+const REFILL_RANGE: f64 = 3.0;
+
 /// `RefillUpgrade.refill`: each filtered item the player carries less than a
 /// stack of is topped up from the storage (into its stack, else a free slot).
+/// A placed backpack refills the players within 3 blocks of it (`REFILL_RANGE`).
 fn refill(game: &mut Game<'_>, uuid: u128, items: &mut [Option<ItemStack>], tier: tb::Tier) -> bool {
     let wanted = filter_of(items, tier, tb::Tab::Refill);
     let mut changed = false;
@@ -2996,7 +3062,8 @@ fn refill(game: &mut Game<'_>, uuid: u128, items: &mut [Option<ItemStack>], tier
         let Some(g) = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)) else {
             return changed;
         };
-        let held: u32 = g.inventory.iter().take(36).flatten().filter(|s| same_item(s, &want)).map(|s| s.count).sum();
+        // The stack on their cursor counts too (`countAndSupply`).
+        let held: u32 = g.inventory.iter().take(36).chain(std::iter::once(&g.carried)).flatten().filter(|s| same_item(s, &want)).map(|s| s.count).sum();
         if held >= max {
             continue;
         }
@@ -3727,6 +3794,29 @@ pub(super) fn block_entity_tick(
     }
     smelt_kept(game, &mut entity.items, tier);
     lantern_light(game, pos, entity, has("travelersbackpack:lantern_upgrade"));
+    if has("travelersbackpack:refill_upgrade") && tick % cfg().refill_tick_rate == 0 {
+        // `AABB(pos).inflate(REFILL_RANGE)`: the block and 3 around it.
+        let near: Vec<u128> = game
+            .lan
+            .as_ref()
+            .map(|h| {
+                h.hub
+                    .guests
+                    .iter()
+                    .filter(|g| {
+                        g.placed
+                            && !g.dead
+                            && g.dimension == game.dim.id()
+                            && (0..3).all(|i| (g.position[i] - centre[i]).abs() <= REFILL_RANGE + 0.5)
+                    })
+                    .map(|g| g.uuid)
+                    .collect()
+            })
+            .unwrap_or_default();
+        for uuid in near {
+            refill(game, uuid, &mut entity.items, tier);
+        }
+    }
     if has("travelersbackpack:feeding_upgrade") && tick % FEEDING_HUNGRY_RATE == 0 {
         let near: Vec<u128> = game
             .lan
@@ -7092,7 +7182,18 @@ fn harmful(id: &str) -> bool {
 /// 100 ticks every 100; off or taken off, its modifiers go.
 fn tick_abilities(game: &mut Game<'_>) {
     remember_players(game);
-    for uuid in CREEPER_SAVES.with(|c| std::mem::take(&mut *c.borrow_mut())) {
+    // Saved in their own level's pass (its effects and blast are there).
+    let here: Vec<u128> = game
+        .lan
+        .as_ref()
+        .map(|h| h.hub.guests.iter().filter(|g| g.dimension == game.dim.id()).map(|g| g.uuid).collect())
+        .unwrap_or_default();
+    let saves = CREEPER_SAVES.with(|c| {
+        let (mine, rest): (Vec<u128>, Vec<u128>) = std::mem::take(&mut *c.borrow_mut()).into_iter().partition(|u| here.contains(u));
+        *c.borrow_mut() = rest;
+        mine
+    });
+    for uuid in saves {
         creeper_save(game, uuid);
     }
     let tick = game.world.game_time;
@@ -7317,7 +7418,7 @@ fn remember_players(game: &Game<'_>) {
 
 /// `LivingEntity.hurtServer`: the blaze backpack takes no fall (`blazeAbility`
 /// resets the fall); the creeper backpack's own blast spares its wearer.
-pub(super) fn living_incoming_damage(entity: i32, kind: &str, damage_type: &str, amount: f32, canceled: &mut bool) {
+pub(super) fn living_incoming_damage(entity: i32, kind: &str, damage_type: &str, _amount: f32, canceled: &mut bool) {
     if kind != "minecraft:player" {
         return;
     }
@@ -7330,13 +7431,20 @@ pub(super) fn living_incoming_damage(entity: i32, kind: &str, damage_type: &str,
     if damage_type.contains("explosion") && BLASTED.with(|b| *b.borrow() == Some(uuid)) {
         *canceled = true;
     }
-    // `DeathHandler`: the blow that would kill the creeper backpack's wearer
-    // (the host's death isn't heard) is turned away, and they are saved.
-    if !*canceled && wears(uuid, "creeper") && CREEPER_READY.with(|c| c.borrow().get(&entity).is_some_and(|&hp| amount >= hp)) {
-        *canceled = true;
-        CREEPER_READY.with(|c| c.borrow_mut().remove(&entity));
+}
+
+/// `DeathHandler` (`ALLOW_DEATH`): the creeper backpack's wearer whose
+/// ability is ready doesn't die (kept at 1 health) and is saved this tick:
+/// the blow counted after armor and effects, as the original.
+pub(super) fn creeper_spares(entity: i32) -> bool {
+    let Some(uuid) = player_of(entity) else {
+        return false;
+    };
+    if wears(uuid, "creeper") && CREEPER_READY.with(|c| c.borrow_mut().remove(&entity).is_some()) {
         CREEPER_SAVES.with(|c| c.borrow_mut().push(uuid));
+        return true;
     }
+    false
 }
 
 /// `SmallFireballEntityMixin`: a blaze's small fireball does nothing to the
@@ -7362,6 +7470,13 @@ pub(super) fn projectile_impact(game: &mut Game<'_>, kind: &str, entity: Option<
 /// a cooldown (`creeperAbility`): at 1 health, its effects gone, Regeneration
 /// II, Absorption II and Fire Resistance, a blast around them.
 fn creeper_save(game: &mut Game<'_>, uuid: u128) {
+    // The blow marked them dead (`LivingEntity.die`): alive again, at 1 health.
+    as_player(game, uuid, |g| {
+        if let Some(p) = g.player.as_mut() {
+            p.health.dead = false;
+            let _ = p.set_health(1.0, false);
+        }
+    });
     if !wears(uuid, "creeper") {
         return;
     }
@@ -7372,11 +7487,6 @@ fn creeper_save(game: &mut Game<'_>, uuid: u128) {
     if settings.cooldown > 0 {
         return;
     }
-    as_player(game, uuid, |g| {
-        if let Some(p) = g.player.as_mut() {
-            let _ = p.set_health(1.0, false);
-        }
-    });
     game.native_set_effects(uuid, &[]);
     let effect = |id: &str, amplifier: u8, duration: i32| super::native_player_state::NativeEffect {
         id: id.to_owned(),
