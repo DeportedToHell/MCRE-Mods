@@ -11,10 +11,8 @@ Based on Clumps 26.3.
 > It is not affiliated with, endorsed by, or officially associated with the original author, Jaredlll08.
 >
 > Original mod: https://github.com/jaredlll08/Clumps
-
-Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
-
-Special thanks to [Jaredlll08](https://github.com/jaredlll08) for creating the original mod.
+>
+> Special thanks to [Jaredlll08](https://github.com/jaredlll08) for creating the original mod.
 
 
 ## ✨Features
