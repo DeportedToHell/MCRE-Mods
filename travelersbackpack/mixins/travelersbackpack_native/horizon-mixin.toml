@@ -1,6 +1,6 @@
 [mod]
 id = "travelersbackpack_native"
-version = "0.9.5"
+version = "0.9.6"
 priority = 100
 
 # Built for this Nightly: besides the hook points it opens a menu of the
@@ -58,7 +58,7 @@ bindings = [
 
 [[injection]]
 id = "server_tick"
-hook = "server_tick"
+hook = "level_tick_post"
 hook_version = 1
 kind = "HEAD"
 helper = "h_server_tick.rs"
@@ -208,7 +208,8 @@ target = "horizon_client::game::lan_actions::Game<'_>::lan_inventory_click_hooks
 kind = "HEAD"
 helper = "h_lock_slot.rs"
 bindings = [
-  { name = "host", ty = "&crate::game::lan::LanHost", value = "&*host" },
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "host", ty = "&mut crate::game::lan::LanHost", value = "&mut *host" },
   { name = "conn", ty = "u32", value = "conn" },
   { name = "p", ty = "&mut horizon_protocol::packets::play::ContainerClick", value = "&mut *p" },
 ]
@@ -317,6 +318,7 @@ kind = "HEAD"
 helper = "h_mob_layer.rs"
 bindings = [
   { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "mob", ty = "&crate::game::native_mob_draw::NativeMobRender<'_>", value = "mob" },
   { name = "who", ty = "Option<&crate::game::native_mob_draw::NativePlayerRender<'_>>", value = "who" },
   { name = "draw", ty = "&mut crate::game::native_block_entity_draw::BlockEntityDraw", value = "&mut *draw" },
 ]
@@ -439,6 +441,7 @@ bindings = [
   { name = "view", ty = "&View<'_>", value = "&*self" },
   { name = "i", ty = "usize", value = "i" },
   { name = "stack", ty = "&ItemStack", value = "stack" },
+  { name = "rules", ty = "&dyn Rules", value = "rules" },
 ]
 
 # The tanks' fluid on a placed backpack's model.
@@ -797,6 +800,7 @@ hook_version = 1
 kind = "HEAD"
 helper = "h_screen_scrolled.rs"
 bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
   { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
   { name = "scroll", ty = "[f64; 2]", value = "scroll" },
   { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
@@ -854,4 +858,134 @@ bindings = [
   { name = "stack", ty = "&ItemStack", value = "stack" },
   { name = "x", ty = "f32", value = "x" },
   { name = "y", ty = "f32", value = "y" },
+]
+
+# The original's config files (`TravelersBackpackConfig`), in config/.
+[[module]]
+id = "config"
+file = "crates/horizon-client/src/game.rs"
+name = "travelersbackpack_config"
+source = "config.rs"
+
+# `LootHandler`: backpacks and tier upgrades in structures' chests.
+[[injection]]
+id = "loot_table_load"
+hook = "loot_table_load"
+hook_version = 1
+kind = "HEAD"
+helper = "h_loot_table_load.rs"
+bindings = [
+  { name = "id", ty = "&str", value = "id" },
+  { name = "table", ty = "&mut serde_json::Value", value = "&mut *table" },
+]
+
+# A sleeping bag sets the respawn point only as the config says.
+[[injection]]
+id = "bag_spawn"
+target = "horizon_client::game::respawn_anchor::Game<'_>::bed_sets_spawn"
+kind = "HEAD"
+cancellable = true
+helper = "h_bag_spawn.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "state", ty = "horizon_world::registry::BlockStateId", value = "state" },
+]
+
+# `/tb_client hide|show` (`BackpackIconCommands`).
+[[injection]]
+id = "client_command"
+hook = "command"
+hook_version = 1
+kind = "HEAD"
+helper = "h_client_command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+[[injection]]
+id = "client_commands"
+hook = "commands"
+hook_version = 1
+kind = "HEAD"
+helper = "h_client_commands.rs"
+bindings = [
+  { name = "commands", ty = "&mut Vec<&'static str>", value = "&mut *commands" },
+]
+
+# `/tb access|remove|clear|restore|unpack`, for operators.
+[[injection]]
+id = "register_commands"
+hook = "register_commands"
+hook_version = 1
+kind = "HEAD"
+helper = "h_register_commands.rs"
+bindings = [
+  { name = "commands", ty = "&mut Vec<horizon_client::mod_api::NativeCommand>", value = "&mut *commands" },
+]
+
+[[injection]]
+id = "perform_command"
+hook = "perform_command"
+hook_version = 1
+kind = "HEAD"
+helper = "h_perform_command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "&horizon_client::mod_api::NativeServerPlayer", value = "player" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+# The backpack open from the hand stays in its slot: no throwing it, no
+# swapping it into the other hand (its menu would copy what it holds).
+[[injection]]
+id = "drop_held"
+target = "horizon_client::game::Game<'_>::drop_held"
+kind = "HEAD"
+cancellable = true
+helper = "h_drop_held.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "swap_hands"
+hook = "player_swap_hands"
+hook_version = 1
+kind = "HEAD"
+helper = "h_swap_hands.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "cancel", ty = "&mut bool", value = "&mut *cancel" },
+]
+
+# `rightClickUnequip`: the worn backpack put down on a block.
+[[injection]]
+id = "right_click_v2"
+target = "horizon_client::game::native_hooks::Game<'_>::native_right_click_block_v2"
+kind = "HEAD"
+helper = "h_right_click_v2.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "pos", ty = "[i32; 3]", value = "pos" },
+  { name = "face", ty = "[i32; 3]", value = "face" },
+  { name = "hand", ty = "horizon_client::first_person::Hand", value = "hand" },
+  { name = "cancel", ty = "&mut bool", value = "&mut *cancel" },
+]
+
+# `MobEntityMixin`: mobs spawning with backpacks.
+[[injection]]
+id = "mob_spawned"
+hook = "mob_spawned"
+hook_version = 1
+kind = "HEAD"
+helper = "h_mob_spawned.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "dimension", ty = "&str", value = "dimension" },
+  { name = "kind", ty = "&str", value = "kind" },
+  { name = "pos", ty = "[f64; 3]", value = "pos" },
 ]

@@ -5,7 +5,9 @@
 
 An independent port of [Traveler's Backpack](https://github.com/Tiviacz1337/Travelers-Backpack) by Tiviacz1337 to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
 
-**Version 0.9.5** — nearly all original features implemented. Remaining work is listed below.
+**Version 0.9.6** — nearly all original features implemented. Remaining work is listed below.
+
+> Two files are needed: the content mod (`travelersbackpack.hmod`) and the native mod (`travelersbackpack_native.hnmod`). One alone does not work.
 
 Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 
@@ -26,15 +28,28 @@ Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the
 
 **Fluids and abilities.** Tanks support water, lava, milk and potions. The hose can suck, spill and drink fluids. Original design-specific abilities are implemented, alongside the sleeping bag, dyeing, cauldron washing and backpack restoration.
 
-**Other features.** Dynamic lighting, tool radial menu, advancements, wandering trader trade, creative tab and keybinds. English and Russian translations.
+**World.** Backpacks and tier upgrades in structure chests, zombies, skeletons and other mobs that sometimes spawn wearing a backpack, and tools shown on the wearer's back.
+
+**Other features.** Dynamic lighting, tool radial menu, advancements, wandering trader trade, creative tab and keybinds. The original's config files (`config/travelersbackpack-{common,server,client}.toml`), Mod Menu info, the `/tb` commands (`access`, `remove`, `clear`, `restore`, `unpack`) with backups made on death, and `/tb_client`. English and Russian translations.
+
+### What's new in 0.9.6
+
+- Fixed item duplication with placed backpacks in multiplayer: only one player can have a placed backpack open, and taking, breaking, shearing or unpacking it closes that menu first.
+- Fixed duplication by dropping or swapping a backpack while its menu is open, and by dying with the menu open.
+- The smithing table keeps upgrades and tools in their slots after a tier upgrade, and only accepts backpacks.
+- A bottle is one third of a bucket, as in the original; thrown potions no longer return a bottle.
+- Ability cooldowns, the cactus design, feeding across dimensions, upgrade keys, pickup with the menu open and furnace progress now behave as in the original; a jukebox upgrade stops playing when taken out or when its backpack is broken or picked up.
+- Menus of placed backpacks close at more than 8 blocks or in another dimension; the server tick runs once per dimension.
+- Backpacks, shulker boxes and blacklisted items can't be put into any backpack slot.
+- Added the config files, Mod Menu info, `/tb` commands, chest loot, mobs with backpacks, tools on the back, the worn backpack's icon in the inventory and right-click insertion into the backpack.
 
 ## 🚧Remaining work
 
-Original config settings and Mod Menu metadata are not yet implemented. Compatibility with other Java mods supported by the original, including Accessories / Trinkets, JEI / EMI / REI, Comforts and grave mods, is also missing.
+Compatibility with other Java mods supported by the original, including Accessories / Trinkets, JEI / EMI / REI, Comforts and grave mods, is missing.
 
-Minor differences include 16-step fluid levels in item tanks, no icon growth animation in the tool radial menu, and tool swap sounds audible only to the player.
+Minor differences include 16-step fluid levels in item tanks, no icon growth animation in the tool radial menu, and tool swap sounds audible only to the player. The creeper design counts damage before armor and resistance; temporary sleeping bags are kept only in memory, so one left out when the server stops stays in the world; smelting upgrades give no experience; the refill upgrade does nothing in a placed backpack; the tag filter mode matches any shared tag instead of a chosen one.
 
-Some abilities and interactions still need in-game verification, including several design-specific abilities, upgrade keybinds, the hose radial menu, jukebox audio and sleeping or dying while wearing a backpack.
+Some abilities and interactions still need in-game verification, including several design-specific abilities, upgrade keybinds, the hose radial menu and two players sharing backpacks over LAN.
 
 ## 📦Installation
 
@@ -53,6 +68,7 @@ mixins/travelersbackpack_native/
   horizon-mixin.toml             Modules and injections
   runtime.rs                     Tiers, designs and names
   glue.rs                        Main mod implementation
+  config.rs                      The original's config files
   menu.rs, spider.rs, screen_relayout.rs
                                   Additional modules
   h_*.rs                         Injection helpers

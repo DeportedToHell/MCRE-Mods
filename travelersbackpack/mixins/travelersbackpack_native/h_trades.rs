@@ -12,6 +12,19 @@ fn travelersbackpack_trades(dir: &Path, out: &mut HashMap<String, Value>) -> cor
     INSIDE.with(|c| c.set(true));
     walk(dir, out);
     INSIDE.with(|c| c.set(false));
+    // `enableVillagerTrade` in config/travelersbackpack-common.toml, on unless set to false.
+    let off = std::env::current_dir()
+        .ok()
+        .and_then(|d| std::fs::read_to_string(d.join("config").join("travelersbackpack-common.toml")).ok())
+        .is_some_and(|text| {
+            text.lines().any(|l| {
+                let l = l.trim();
+                l.starts_with("enableVillagerTrade") && l.split('=').nth(1).is_some_and(|v| v.trim() == "false")
+            })
+        });
+    if off {
+        return core::ops::ControlFlow::Break(());
+    }
     let id = "travelersbackpack:wandering_trader/emerald_villager";
     if dir.ends_with("tags/villager_trade") {
         if let Some(Value::Array(values)) = out

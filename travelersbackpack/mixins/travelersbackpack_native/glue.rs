@@ -12,6 +12,7 @@
 // Ported from Traveler's Backpack by Tiviacz1337 (LGPL-3.0).
 use super::Game;
 use super::travelersbackpack as tb;
+use super::travelersbackpack_config::config as cfg;
 use horizon_client::items::ItemStack;
 use horizon_client::mod_api::{NativeLootDrops, NativeScreen};
 use horizon_client::text::Text;
@@ -28,6 +29,8 @@ enum Source {
     Block([i32; 3]),
     /// Worn on the player's back.
     Worn,
+    /// Worn on another player's back, opened by an operator (`/tb access`).
+    Other(u128),
 }
 
 /// What a player asked of their backpacks, done at the next server tick.
@@ -93,10 +96,19 @@ enum Action {
     ToggleEnabled(usize),
     /// The tag selector of upgrade slot `i` clicked on tag `k` of its list.
     FilterTag(usize, usize),
+    /// Sneaking, the blank upgrade on a placed backpack: it comes apart.
+    Unpack([i32; 3]),
+    /// `allowOnlyEquippedBackpack`: the backpack in the hand put on.
+    EquipHeld,
 }
 
 #[derive(Default)]
 struct State {
+    /// Operators who opened a placed backpack with `/tb access` (no reach limit).
+    access: HashSet<u128>,
+    /// Placed backpacks' menus closed while their dimension wasn't ticking:
+    /// the backpack, its dimension and what to write into it.
+    closed_elsewhere: Vec<([i32; 3], String, Vec<Option<ItemStack>>)>,
     /// Backpacks used, whose menus open at the next tick: the player, the
     /// backpack and the dimension it was used in.
     opening: Vec<(u128, Source, String)>,
@@ -243,6 +255,8 @@ const WORN: &str = "travelersbackpack:worn";
 /// tells clients who wears which design (`<name>\n<backpack id>`, the id empty
 /// for none: `ClientboundSyncAttachmentPacket`).
 const OPEN_CHANNEL: &str = "travelersbackpack:open";
+/// `OPEN_BACKPACK` with a slot: the backpack in that inventory slot (`allowOpeningFromSlot`).
+const OPEN_SLOT_CHANNEL: &str = "travelersbackpack:open_slot";
 const WORN_CHANNEL: &str = "travelersbackpack:worn";
 /// The server tells a wearer which ability works for them now (empty: none).
 const ABILITY_CHANNEL: &str = "travelersbackpack:ability";
@@ -258,15 +272,11 @@ const TOGGLE_UPGRADE_CHANNELS: [&str; 4] = [
     "travelersbackpack:toggle_upgrade_3",
 ];
 
-thread_local! {
-    /// This client's worn backpack has its ability working.
-    static ABILITY_SHOWN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-}
 
 /// `UPGRADE_TAB` with `UPGRADE_ENABLED`: upgrade slot `i` of the worn
 /// backpack on or off, if it can be; not while its menu is open.
 fn toggle_worn_upgrade(game: &mut Game<'_>, uuid: u128, i: usize) {
-    if with(|s| s.open.get(&uuid).is_some_and(|o| o.0 == Source::Worn)) {
+    if worn_menu_open(uuid) {
         return;
     }
     let Some(mut stack) = worn(game, uuid) else {
@@ -284,9 +294,12 @@ fn toggle_worn_upgrade(game: &mut Game<'_>, uuid: u128, i: usize) {
     set_upgrade_enabled(upgrade, !on);
     set_contents(&mut stack, items);
     set_worn(game, uuid, Some(&stack));
+    tell_worn(game, uuid);
 }
 /// The native mod's id, for its key binding.
 const MOD_ID: &str = "travelersbackpack_native";
+/// The port's version (`horizon-native.json`).
+const VERSION: &str = "0.9.6";
 
 /// The backpack `uuid` wears, if any.
 fn worn(game: &Game<'_>, uuid: u128) -> Option<ItemStack> {
@@ -346,7 +359,20 @@ fn tell_worn(game: &mut Game<'_>, uuid: u128) {
         let tier = tb::tier(item_tier(game, &s));
         upgrades_in(&contents(&s, tier.slots()), tier).iter().any(|u| u == "travelersbackpack:lantern_upgrade")
     });
-    let message = format!("{name}\n{design}\n{}", u8::from(lantern));
+    let tools = worn(game, uuid)
+        .filter(|s| !item_settings(s).hidden)
+        .map(|s| {
+            let tier = tb::tier(item_tier(game, &s));
+            let shown: Vec<ItemStack> = contents(&s, tier.slots())[tier.storage + tier.upgrades..].iter().flatten().cloned().collect();
+            let snbt = |t: &ItemStack| horizon_world::snbt_text::to_snbt(&horizon_items::item_nbt::item_to_nbt(t));
+            match shown.as_slice() {
+                [] => String::new(),
+                [one] => snbt(one),
+                [first, .., last] => format!("{}\t{}", snbt(first), snbt(last)),
+            }
+        })
+        .unwrap_or_default();
+    let message = format!("{name}\n{design}\n{}\n{tools}", u8::from(lantern));
     for player in players {
         let _ = game.native_net_send_to_player(player, WORN_CHANNEL, message.as_bytes());
     }
@@ -429,12 +455,14 @@ fn take_placed(game: &mut Game<'_>, dimension: &str, pos: [i32; 3]) -> Option<It
     if game.dim.id() != dimension || !tb::is_backpack(&block) {
         return None;
     }
+    flush_block_menus(game, pos);
     let mut taken = None;
     game.native_with_mod_block_entity(pos, |m| {
-        let items = m.items.iter_mut().map(Option::take).collect();
+        let items: Vec<Option<ItemStack>> = m.items.iter_mut().map(Option::take).collect();
         taken = Some((items, block_tier(&m.nbt), block_bag(&m.nbt), (block_settings(&m.nbt), block_dye(&m.nbt))));
     });
-    let (items, tier, bag, (settings, dye)) = taken?;
+    let (mut items, tier, bag, (settings, dye)) = taken?;
+    stop_jukeboxes(game, items.iter_mut().flatten());
     fold_bag_of(game, dimension, pos);
     unlight(game, dimension, pos);
     let air = game.native_default_state("minecraft:air")?;
@@ -453,6 +481,46 @@ fn take_placed(game: &mut Game<'_>, dimension: &str, pos: [i32; 3]) -> Option<It
     Some(stack)
 }
 
+/// `RightClickHandler`'s blank upgrade: what the placed backpack holds, its
+/// tools and upgrades, the tier upgrades it took, and the bare backpack (no
+/// bag if it had none) drop above it, and it is gone.
+fn unpack(game: &mut Game<'_>, dimension: &str, pos: [i32; 3]) {
+    if game.dim.id() != dimension || !tb::is_backpack(&game.native_block(pos)) {
+        return;
+    }
+    flush_block_menus(game, pos);
+    let block = game.native_block(pos);
+    let mut taken = None;
+    game.native_with_mod_block_entity(pos, |m| {
+        let items: Vec<ItemStack> = m.items.iter_mut().filter_map(Option::take).filter(|s| s.count > 0).collect();
+        taken = Some((items, block_tier(&m.nbt), block_bag(&m.nbt)));
+    });
+    let Some((mut drops, tier, bag)) = taken else {
+        return;
+    };
+    stop_jukeboxes(game, drops.iter_mut());
+    fold_bag_of(game, dimension, pos);
+    unlight(game, dimension, pos);
+    let Some(air) = game.native_default_state("minecraft:air") else {
+        return;
+    };
+    if !game.native_set_block(dimension, pos, air, 3) {
+        return;
+    }
+    for upgrade in ["iron", "gold", "diamond", "netherite"].iter().take(usize::try_from(tier).unwrap_or(0)) {
+        drops.push(ItemStack::new(&format!("travelersbackpack:{upgrade}_tier_upgrade"), 1));
+    }
+    let mut backpack = ItemStack::new(&block, 1);
+    if bag == -1 {
+        set_item_bag(&mut backpack, -1);
+    }
+    drops.push(backpack);
+    let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + 1.5, f64::from(pos[2]) + 0.5];
+    for stack in drops {
+        game.spawn_item(stack, at, super::dispenser::new_item_motion(), 10);
+    }
+}
+
 /// Blocks a dead player's backpack may take the place of.
 fn replaceable(block: &str) -> bool {
     block.ends_with("air")
@@ -466,17 +534,46 @@ fn place_on_death(game: &mut Game<'_>, uuid: u128, dimension: &str, at: [i32; 3]
     let Some(stack) = worn(game, uuid) else {
         return;
     };
-    if game.ui.rules.bool("keep_inventory") || !set_worn(game, uuid, None) {
+    if game.ui.rules.bool("keep_inventory") {
+        return;
+    }
+    // `BackpackManager.addBackpack`: a backup, for `/tb restore`.
+    save_backup(game, uuid, &stack);
+    if !set_worn(game, uuid, None) {
         return;
     }
     tell_worn(game, uuid);
-    let spots = (0..8).map(|dy| [at[0], at[1] + dy, at[2]]).chain((-1..=1).flat_map(move |dx| {
-        (-1..=1).flat_map(move |dz| (0..3).map(move |dy| [at[0] + dx, at[1] + dy, at[2] + dz]))
-    }));
-    let placed = game.native_default_state(&stack.item).and_then(|state| {
-        let spot = spots.into_iter().find(|&p| replaceable(&game.native_block(p)))?;
-        game.native_set_block(dimension, spot, state, 3).then_some(spot)
-    });
+    // `voidProtection`: a death below the world places it 5 above its bottom.
+    let mut at = at;
+    let min_y = game.world.shape.min_y;
+    if cfg().void_protection && at[1] <= min_y {
+        at[1] = min_y + 5;
+    }
+    let placed = if !cfg().backpack_death_place {
+        None
+    } else if cfg().backpack_force_death_place {
+        // `placeBackpack` forced: the first air up the column where the player died.
+        let top = game.world.shape.max_y();
+        let spot = (at[1]..top).map(|y| [at[0], y, at[2]]).find(|&p| game.native_block(p).ends_with("air"));
+        game.native_default_state(&stack.item)
+            .zip(spot)
+            .and_then(|(state, spot)| game.native_set_block(dimension, spot, state, 3).then_some(spot))
+    } else {
+        let spots = (0..8).map(|dy| [at[0], at[1] + dy, at[2]]).chain((-1..=1).flat_map(move |dx| {
+            (-1..=1).flat_map(move |dz| (0..3).map(move |dy| [at[0] + dx, at[1] + dy, at[2] + dz]))
+        }));
+        game.native_default_state(&stack.item).and_then(|state| {
+            let spot = spots.into_iter().find(|&p| replaceable(&game.native_block(p)))?;
+            game.native_set_block(dimension, spot, state, 3).then_some(spot)
+        })
+    };
+    // `ClientboundSendMessagePacket`: where it went, for the player's chat.
+    let (dropped, where_) = match placed {
+        Some(spot) => (false, spot),
+        None => (true, at),
+    };
+    let message = format!("{}\t{}\t{}\t{}", u8::from(dropped), where_[0], where_[1], where_[2]);
+    let _ = game.native_net_send_to_player(uuid, MESSAGE_CHANNEL, message.as_bytes());
     match placed {
         Some(spot) => {
             let mut items = contents(&stack, tb::MAX_SLOTS);
@@ -505,6 +602,7 @@ fn act(game: &mut Game<'_>, uuid: u128, action: Action, dimension: &str) {
     if matches!(
         action,
         Action::TakePlaced(_)
+            | Action::Unpack(_)
             | Action::Shear(_)
             | Action::Died
             | Action::BlockTanks(_)
@@ -545,6 +643,9 @@ fn act(game: &mut Game<'_>, uuid: u128, action: Action, dimension: &str) {
             }
         }
         Action::SleepingBag => {
+            if !cfg().enable_sleeping_bag || (matches!(open, Some((Source::Worn, _, _))) && !cfg().quick_sleeping_bag) {
+                return;
+            }
             if let Some((source, _, window)) = open {
                 use_sleeping_bag(game, uuid, dimension, source, window);
             }
@@ -554,7 +655,12 @@ fn act(game: &mut Game<'_>, uuid: u128, action: Action, dimension: &str) {
                 detach_bag(game, uuid, dimension, source, window);
             }
         }
-        Action::ChangeBag(pos) => change_bag(game, uuid, dimension, pos),
+        Action::ChangeBag(pos) => {
+            if cfg().enable_sleeping_bag {
+                flush_block_menus(game, pos);
+                change_bag(game, uuid, dimension, pos);
+            }
+        }
         Action::Sort(kind, shift) => sort_button(game, uuid, kind, shift),
         Action::TrashBin => trash_bin(game, uuid),
         Action::TankClick(side) => tank_clicked(game, uuid, side),
@@ -584,6 +690,11 @@ fn act(game: &mut Game<'_>, uuid: u128, action: Action, dimension: &str) {
             }
         }
         Action::Died => {
+            // A menu still open: what it shows goes into its backpack first.
+            if with(|s| s.open.contains_key(&uuid)) {
+                sync_menu(game, uuid);
+                close_now(game, uuid);
+            }
             // The body is where it fell until the player respawns.
             let at = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map(|g| g.position);
             if let Some(at) = at {
@@ -627,6 +738,30 @@ fn act(game: &mut Game<'_>, uuid: u128, action: Action, dimension: &str) {
             }
         }
         Action::Shear(pos) => shear(game, uuid, dimension, pos),
+        Action::Unpack(pos) => unpack(game, dimension, pos),
+        Action::EquipHeld => {
+            if worn(game, uuid).is_some() {
+                return;
+            }
+            let held = game.lan.as_mut().and_then(|h| h.hub.guests.iter_mut().find(|g| g.uuid == uuid)).and_then(|g| {
+                let slot = g.selected;
+                let stack = g.inventory.get_mut(slot)?.take()?;
+                if tb::is_backpack(&stack.item) {
+                    Some(stack)
+                } else {
+                    g.inventory[slot] = Some(stack);
+                    None
+                }
+            });
+            if let Some(stack) = held {
+                if set_worn(game, uuid, Some(&stack)) {
+                    tell_worn(game, uuid);
+                } else if let Some(g) = game.lan.as_mut().and_then(|h| h.hub.guests.iter_mut().find(|g| g.uuid == uuid)) {
+                    let slot = g.selected;
+                    g.inventory[slot] = Some(stack);
+                }
+            }
+        }
         Action::TakePlaced(pos) => {
             let wearing = worn(game, uuid).is_some();
             let selected =
@@ -686,6 +821,18 @@ pub(super) fn block_entity_container(block: &str, container: &mut Option<horizon
 
 // ---- using a backpack ---------------------------------------------------------------------
 
+/// `TravelersBackpackItem.use`: the backpack in the hand opens, or with
+/// `allowOnlyEquippedBackpack` is put on when none is worn.
+fn hand_use(game: &mut Game<'_>) {
+    if !cfg().allow_only_equipped_backpack {
+        open_later(game, Source::Hand(usize::MAX));
+        return;
+    }
+    let uuid = game.native_acting_id();
+    let dimension = game.dim.id().to_owned();
+    with(|s| s.actions.push((uuid, Action::EquipHeld, dimension)));
+}
+
 fn open_later(game: &mut Game<'_>, source: Source) {
     let uuid = game.native_acting_id();
     let dimension = game.dim.id().to_owned();
@@ -708,7 +855,7 @@ pub(super) fn use_item(game: &mut Game<'_>, stack: &ItemStack, claimed: &mut boo
         return;
     }
     *claimed = true;
-    open_later(game, Source::Hand(usize::MAX));
+    hand_use(game);
 }
 
 /// `TravelersBackpackItem.useOn`: on a block, sneaking places it, else it opens.
@@ -725,7 +872,7 @@ pub(super) fn use_item_on(game: &mut Game<'_>, stack: &ItemStack, pos: [i32; 3],
         return;
     }
     *claimed = true;
-    open_later(game, Source::Hand(usize::MAX));
+    hand_use(game);
 }
 
 /// `TravelersBackpackBlock.useWithoutItem`: a placed backpack opens. Sneaking
@@ -759,8 +906,16 @@ pub(super) fn right_click_block(game: &mut Game<'_>, pos: [i32; 3], canceled: &m
         with(|s| s.actions.push((uuid, Action::ChangeBag(pos), dimension)));
         return;
     }
+    // `BLANK_UPGRADE`: the backpack taken apart.
+    if held.as_ref().is_some_and(|s| &*s.item == "travelersbackpack:blank_upgrade") {
+        *canceled = true;
+        let dimension = game.dim.id().to_owned();
+        with(|s| s.actions.push((uuid, Action::Unpack(pos), dimension)));
+        return;
+    }
     let block_in_hand = held.as_ref().is_some_and(|s| game.native_default_state(&s.item).is_some());
-    let take = if worn(game, uuid).is_none() { !block_in_hand } else { held.is_none() };
+    // Quick equip (`rightClickEquip`), else quick pick-up into an empty hand.
+    let take = if worn(game, uuid).is_none() && cfg().right_click_equip { !block_in_hand } else { held.is_none() };
     if take {
         *canceled = true;
         let dimension = game.dim.id().to_owned();
@@ -807,15 +962,17 @@ pub(super) fn destroy_block(game: &mut Game<'_>, pos: [i32; 3]) {
         return;
     }
     melon_broken(game, pos);
+    flush_block_menus(game, pos);
     let dimension = game.dim.id().to_owned();
     fold_bag_of(game, &dimension, pos);
     unlight(game, &dimension, pos);
     let mut taken = None;
     game.native_with_mod_block_entity(pos, |m| {
-        let items = m.items.iter_mut().map(Option::take).collect();
+        let items: Vec<Option<ItemStack>> = m.items.iter_mut().map(Option::take).collect();
         taken = Some((items, block_tier(&m.nbt), block_bag(&m.nbt), (block_settings(&m.nbt), block_dye(&m.nbt))));
     });
-    let (items, tier, bag, (settings, dye)) = taken.unwrap_or((Vec::new(), 0, RED, (Settings::default(), None)));
+    let (mut items, tier, bag, (settings, dye)) = taken.unwrap_or((Vec::new(), 0, RED, (Settings::default(), None)));
+    stop_jukeboxes(game, items.iter_mut().flatten());
     if game.creative {
         // `playerWillDestroy`: in creative the backpack still drops, as an item
         // holding what it held (no loot is rolled there).
@@ -838,6 +995,7 @@ pub(super) fn destroy_block(game: &mut Game<'_>, pos: [i32; 3]) {
 /// The backpack a broken one drops, holding its contents and tier
 /// (`BackpackBlockEntity`'s components, copied by its loot table).
 pub(super) fn loot_drops(game: &mut Game<'_>, context: &NativeLootDrops<'_>, drops: &mut Vec<ItemStack>) {
+    mob_backpack_drop(game, context, drops);
     let Some((pos, state)) = context.block else {
         return;
     };
@@ -877,18 +1035,27 @@ pub(super) fn menu_closed(uuid: u128, window: i32, slots: &mut [Option<ItemStack
 /// Each server tick: the players' actions, the closed backpacks to fill (and
 /// an equip or unequip waiting on one), who joined, and the backpacks to open.
 pub(super) fn server_tick(game: &mut Game<'_>) {
+    // Once a tick, whichever level ticks first.
+    let now = game.world.game_time;
+    let first = LAST_TICK.with(|t| t.replace(Some(now)) != Some(now));
+    if first {
+        stacked_sounds(game);
+        loose_jukeboxes(game);
+        backpack_slowness(game);
+        smelt_open_menus(game);
+        send_tag_lists(game);
+        cap_actions();
+    }
+    // This level's own: its items, its players, its placed backpacks' menus.
+    run_commands(game);
+    protect_dropped(game);
     tick_worn(game);
     tick_abilities(game);
-    smelt_open_menus(game);
     sync_open_menus(game);
     tick_temporary_bags(game);
-    send_tag_lists(game);
+    write_closed_elsewhere(game);
     // A broken bag and its drops are one break: none is left for later.
     with(|s| s.bags_back.clear());
-    let actions = with(|s| std::mem::take(&mut s.actions));
-    for (uuid, action, dimension) in actions {
-        act(game, uuid, action, &dimension);
-    }
     let closed = with(|s| std::mem::take(&mut s.closed));
     for (uuid, window, items) in closed {
         let Some((source, dimension, open_window)) = with(|s| s.open.get(&uuid).cloned()) else {
@@ -897,10 +1064,20 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
         if open_window != window {
             continue;
         }
+        let intact = with(|s| s.settings.contains_key(&uuid)) || menu_intact(game, uuid, source, &dimension);
+        unmark_open(game, uuid, source);
         with(|s| {
             s.open.remove(&uuid);
             s.synced.remove(&uuid);
+            s.access.remove(&uuid);
         });
+        if !intact {
+            with(|s| {
+                s.extras.remove(&uuid);
+                s.settings.remove(&uuid);
+            });
+            continue;
+        }
         if with(|s| s.settings.remove(&uuid).is_some()) {
             with(|s| s.extras.remove(&uuid));
             if with(|s| s.reopen.remove(&uuid)) {
@@ -956,12 +1133,24 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
                     unequip(game, uuid);
                 }
             }
+            Source::Other(owner) => {
+                if let Some(mut stack) = worn(game, owner) {
+                    set_contents(&mut stack, items);
+                    set_worn(game, owner, Some(&stack));
+                    tell_worn(game, owner);
+                }
+            }
             Source::Block(pos) => {
                 if game.dim.id() != dimension {
+                    // Written when this tick runs in its dimension.
+                    with(|s| s.closed_elsewhere.push((pos, dimension.clone(), items)));
                     continue;
                 }
                 set_block_tanks(game, &dimension, pos, shows_tanks(&items, tier));
                 game.native_with_mod_block_entity(pos, |m| {
+                    if m.id != tb::BLOCK_ENTITY {
+                        return;
+                    }
                     for (i, item) in items.into_iter().enumerate() {
                         if let Some(slot) = m.items.get_mut(i) {
                             *slot = item;
@@ -970,6 +1159,11 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
                 });
             }
         }
+    }
+    // After the menus closed (their contents back in their backpacks).
+    let actions = with(|s| std::mem::take(&mut s.actions));
+    for (uuid, action, dimension) in actions {
+        act(game, uuid, action, &dimension);
     }
     // `AttachmentUtils.registerJoinEquip`: who joins learns what everyone
     // wears, and everyone what they wear.
@@ -1022,8 +1216,30 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
                 let title = screen_title(stack.data().and_then(|d| d.custom_name.clone()));
                 (contents(&stack, tier.slots()), tier, title, source, tb::Opened::Worn, item_bag(&stack))
             }
+            Source::Other(owner) => {
+                // Not while its wearer, or another, has it open.
+                if with(|s| s.open.iter().any(|(v, o)| (*v == owner && o.0 == Source::Worn) || (*v != uuid && o.0 == source))) {
+                    continue;
+                }
+                let Some(stack) = worn(game, owner) else {
+                    continue;
+                };
+                let tier = tb::tier(item_tier(game, &stack));
+                let title = screen_title(stack.data().and_then(|d| d.custom_name.clone()));
+                (contents(&stack, tier.slots()), tier, title, source, tb::Opened::Worn, item_bag(&stack))
+            }
             Source::Block(pos) => {
                 if game.dim.id() != dimension {
+                    let there = game.lan.as_ref().is_some_and(|h| h.hub.guests.iter().any(|g| g.uuid == uuid && g.dimension == dimension));
+                    if there {
+                        with(|s| s.opening.push((uuid, source, dimension.clone())));
+                    }
+                    continue;
+                }
+                // One viewer at a time: each has their own copy of what it holds
+                // (Java shares one live inventory), so two would duplicate it.
+                // `preventMultiplePlayersAccess` is therefore always on.
+                if with(|s| s.open.iter().any(|(u, o)| *u != uuid && o.0 == Source::Block(pos))) {
                     continue;
                 }
                 let block = game.native_block(pos);
@@ -1099,6 +1315,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
                 s.open.insert(uuid, (source, dimension, window));
                 s.extras.insert(uuid, (tier, extra));
             });
+            mark_open(game, uuid, source);
         }
     }
 }
@@ -1123,6 +1340,9 @@ pub(super) fn net_from_client(game: &mut Game<'_>, player: u128, channel: &str, 
             settings.ability_off = !settings.ability_off;
             set_item_settings(&mut stack, &settings);
             set_worn(game, player, Some(&stack));
+            let key = if settings.ability_off { "screen.travelersbackpack.ability_disabled" } else { "screen.travelersbackpack.ability_enabled" };
+            let line = Text::literal(tr(game, key));
+            game.native_action_bar(player, line);
         }
         return;
     }
@@ -1143,6 +1363,25 @@ pub(super) fn net_from_client(game: &mut Game<'_>, player: u128, channel: &str, 
     if channel == TOOL_SWAP_CHANNEL {
         if let [lo, hi, button] = *data {
             swap_tool(game, player, i32::from(i16::from_le_bytes([lo, hi])), button);
+        }
+        return;
+    }
+    // `allowOpeningFromSlot`: the key over a backpack in the inventory opens it.
+    if channel == OPEN_SLOT_CHANNEL {
+        if let [slot] = *data
+            && cfg().allow_opening_from_slot
+            && !with(|s| s.open.contains_key(&player))
+        {
+            let slot = usize::from(slot);
+            let holds = game
+                .lan
+                .as_ref()
+                .and_then(|h| h.hub.guests.iter().find(|g| g.uuid == player))
+                .and_then(|g| g.inventory.get(slot).cloned().flatten())
+                .is_some_and(|s| tb::is_backpack(&s.item));
+            if holds && slot < 36 {
+                open_later_for(game, player, Source::Hand(slot));
+            }
         }
         return;
     }
@@ -1329,7 +1568,7 @@ fn detach_bag(game: &mut Game<'_>, uuid: u128, dimension: &str, source: Source, 
     let bag = match source {
         Source::Block(pos) => game.native_mod_block_entity(pos).map_or(-1, |m| block_bag(&m.nbt)),
         Source::Worn => worn(game, uuid).map_or(-1, |s| item_bag(&s)),
-        Source::Hand(_) => -1,
+        Source::Hand(_) | Source::Other(_) => -1,
     };
     let Some(item) = bag_block(bag) else {
         return;
@@ -1359,7 +1598,7 @@ fn detach_bag(game: &mut Game<'_>, uuid: u128, dimension: &str, source: Source, 
             set_worn(game, uuid, Some(&stack));
             tell_worn(game, uuid);
         }
-        Source::Hand(_) => return,
+        Source::Hand(_) | Source::Other(_) => return,
     }
     give_or_drop(game, uuid, ItemStack::new(&item, 1));
 }
@@ -1531,7 +1770,7 @@ fn use_sleeping_bag(game: &mut Game<'_>, uuid: u128, dimension: &str, source: So
                 remove_bag(game, dimension, foot, head);
             }
         }
-        Source::Hand(_) => {}
+        Source::Hand(_) | Source::Other(_) => {}
     }
 }
 
@@ -1626,6 +1865,9 @@ fn fits_tool_slot(game: &Game<'_>, stack: &ItemStack) -> bool {
     let id = &*stack.item;
     if tb::is_backpack(id) || id.ends_with("bundle") || id.ends_with("shulker_box") || id == "travelersbackpack:hose" {
         return false;
+    }
+    if cfg().tool_slots_accept_everything || cfg().tool_slots_acceptable_items.iter().any(|i| i == id) {
+        return true;
     }
     let data = stack.data();
     game.items().get(id).is_some_and(|i| i.max_stack == 1)
@@ -1746,8 +1988,8 @@ fn click_upgrade(
                 if fits && &*held.item == TANKS_UPGRADE {
                     let over: Vec<String> = tanks_of(&held)
                         .iter()
-                        .filter(|t| t.1 > tier.tank_capacity())
-                        .map(|t| format!("{}\t{}\t{}", t.0, t.1, tier.tank_capacity()))
+                        .filter(|t| t.1 > tank_capacity(tier))
+                        .map(|t| format!("{}\t{}\t{}", t.0, mb(t.1), mb(tank_capacity(tier))))
                         .collect();
                     if !over.is_empty() {
                         fits = false;
@@ -2368,6 +2610,9 @@ fn smelt(game: &Game<'_>, tab: tb::Tab, state: &mut Smelting, slots: &mut [Optio
                 }
             }
         }
+        // Lit (or about to be) but nothing to cook: the progress is lost; out,
+        // it cools two a tick.
+        _ if *burn > 0 || (slots[0].is_some() && slots[1].is_some()) => *cook = 0,
         _ => *cook = (*cook - 2).max(0),
     }
     if *burn == 0 {
@@ -2402,68 +2647,251 @@ fn smelt_kept(game: &Game<'_>, items: &mut [Option<ItemStack>], tier: tb::Tier) 
 /// only when it closes: a world closed (or a player leaving) with the menu
 /// open keeps what was put in.
 fn sync_open_menus(game: &mut Game<'_>) {
-    let open: Vec<(u128, Source, String, tb::Tier)> = with(|s| {
-        s.open
-            .iter()
-            .filter(|(u, _)| !s.settings.contains_key(u))
-            .filter_map(|(u, o)| s.extras.get(u).map(|e| (*u, o.0, o.1.clone(), e.0)))
-            .collect()
-    });
+    let open: Vec<u128> = with(|s| s.open.keys().copied().filter(|u| !s.settings.contains_key(u)).collect());
+    for uuid in open {
+        sync_menu(game, uuid);
+    }
+}
+
+/// What `uuid`'s open menu holds, into its backpack, when that backpack is
+/// still the one it opened on (`menu_intact`); otherwise the menu closes
+/// with nothing written, so nothing is duplicated.
+fn sync_menu(game: &mut Game<'_>, uuid: u128) {
+    let Some((source, dimension, _)) = with(|s| s.open.get(&uuid).cloned()) else {
+        return;
+    };
+    if with(|s| s.settings.contains_key(&uuid)) {
+        return;
+    }
+    let Some(tier) = with(|s| s.extras.get(&uuid).map(|e| e.0)) else {
+        return;
+    };
     let here = game.dim.id().to_owned();
-    for (uuid, source, dimension, tier) in open {
-        let Some(conn) = game
+    let Some(conn) = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map(|g| g.conn) else {
+        return;
+    };
+    // A placed backpack's menu holds only near it, in its dimension.
+    if let Source::Block(pos) = source {
+        // Written and checked in its own level's pass.
+        if dimension != here {
+            return;
+        }
+        // Out of reach (8 blocks; in another level), unless an operator opened it
+        // with `/tb access`: what it holds goes back, and it closes.
+        let near = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).is_some_and(|g| {
+            g.dimension == dimension && pos.iter().zip(g.position).all(|(b, p)| (f64::from(*b) + 0.5 - p).abs() <= 8.5)
+        });
+        if !near && !with(|s| s.access.contains(&uuid)) {
+            if menu_intact(game, uuid, source, &dimension) {
+                write_menu(game, uuid, conn, source, &dimension, tier);
+            }
+            close_now(game, uuid);
+            return;
+        }
+    }
+    if !menu_intact(game, uuid, source, &dimension) {
+        close_now(game, uuid);
+        return;
+    }
+    write_menu(game, uuid, conn, source, &dimension, tier);
+}
+
+/// `uuid`'s menu as it is now, into its backpack.
+fn write_menu(game: &mut Game<'_>, uuid: u128, conn: u32, source: Source, dimension: &str, tier: tb::Tier) {
+    let Some((mut items, _)) =
+        game.lan.as_ref().and_then(|h| horizon_client::lan::containers::travelersbackpack_menu::items(&h.hub, conn))
+    else {
+        return;
+    };
+    if items.len() < tier.menu_slots() {
+        return;
+    }
+    keep_tab_items(&mut items, tier);
+    items.truncate(tier.slots());
+    if with(|s| s.synced.get(&uuid) == Some(&items)) {
+        return;
+    }
+    match source {
+        Source::Hand(slot) => {
+            let Some(g) = game.lan.as_mut().and_then(|h| h.hub.guests.iter_mut().find(|g| g.uuid == uuid)) else {
+                return;
+            };
+            if let Some(stack) = g.inventory.get_mut(slot).and_then(Option::as_mut)
+                && tb::is_backpack(&stack.item)
+            {
+                set_contents(stack, items.clone());
+            }
+        }
+        Source::Worn => {
+            if let Some(mut stack) = worn(game, uuid) {
+                set_contents(&mut stack, items.clone());
+                set_worn(game, uuid, Some(&stack));
+            }
+        }
+        Source::Other(owner) => {
+            if let Some(mut stack) = worn(game, owner) {
+                set_contents(&mut stack, items.clone());
+                set_worn(game, owner, Some(&stack));
+            }
+        }
+        Source::Block(pos) => {
+            if game.dim.id() != dimension {
+                return;
+            }
+            let copy = items.clone();
+            game.native_with_mod_block_entity(pos, |m| {
+                if m.id != tb::BLOCK_ENTITY {
+                    return;
+                }
+                for (i, item) in copy.into_iter().enumerate() {
+                    if let Some(slot) = m.items.get_mut(i) {
+                        *slot = item;
+                    }
+                }
+            });
+        }
+    }
+    with(|s| s.synced.insert(uuid, items));
+}
+
+/// The key a backpack holds while a menu is open on it: which opening.
+const OPEN_TOKEN_KEY: &str = "TravelersBackpackOpen";
+
+thread_local! {
+    /// Each open menu's token, the one on its backpack.
+    static TOKENS: RefCell<HashMap<u128, i64>> = RefCell::new(HashMap::new());
+    static NEXT_TOKEN: std::cell::Cell<i64> = const { std::cell::Cell::new(1) };
+}
+
+/// The menu just opened marks its backpack (an item in the hand, or a placed one).
+fn mark_open(game: &mut Game<'_>, uuid: u128, source: Source) {
+    let token = NEXT_TOKEN.with(|n| {
+        let t = n.get();
+        n.set(t.wrapping_add(1));
+        t ^ (game.world.game_time << 20)
+    });
+    TOKENS.with(|t| t.borrow_mut().insert(uuid, token));
+    match source {
+        Source::Hand(slot) => {
+            if let Some(g) = game.lan.as_mut().and_then(|h| h.hub.guests.iter_mut().find(|g| g.uuid == uuid))
+                && let Some(stack) = g.inventory.get_mut(slot).and_then(Option::as_mut)
+            {
+                let mut data = custom_data(stack);
+                data.insert(OPEN_TOKEN_KEY.into(), Tag::Long(token));
+                set_custom_data(stack, data);
+            }
+        }
+        Source::Block(pos) => {
+            game.native_with_mod_block_entity(pos, |m| {
+                m.nbt.insert(OPEN_TOKEN_KEY.into(), Tag::Long(token));
+            });
+        }
+        Source::Worn | Source::Other(_) => {}
+    }
+}
+
+/// Whether `uuid`'s open menu's backpack is still where it was opened, the
+/// same one: the item in that slot, or the placed backpack, with its token.
+fn menu_intact(game: &Game<'_>, uuid: u128, source: Source, dimension: &str) -> bool {
+    let Some(token) = TOKENS.with(|t| t.borrow().get(&uuid).copied()) else {
+        return !matches!(source, Source::Hand(_) | Source::Block(_));
+    };
+    let key = horizon_world::nbt::JavaString::from(OPEN_TOKEN_KEY);
+    match source {
+        Source::Hand(slot) => game
             .lan
             .as_ref()
-            .and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid && g.dimension == here))
-            .map(|g| g.conn)
-        else {
-            continue;
-        };
-        let Some((mut items, _)) =
-            game.lan.as_ref().and_then(|h| horizon_client::lan::containers::travelersbackpack_menu::items(&h.hub, conn))
-        else {
-            continue;
-        };
-        if items.len() < tier.menu_slots() {
-            continue;
+            .and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid))
+            .and_then(|g| g.inventory.get(slot).cloned().flatten())
+            .is_some_and(|s| tb::is_backpack(&s.item) && custom_data(&s).get(&key) == Some(&Tag::Long(token))),
+        Source::Block(pos) => {
+            game.dim.id() == dimension
+                && tb::is_backpack(&game.native_block(pos))
+                && game.native_mod_block_entity(pos).is_some_and(|m| m.id == tb::BLOCK_ENTITY && m.nbt.get(&key) == Some(&Tag::Long(token)))
         }
-        keep_tab_items(&mut items, tier);
-        items.truncate(tier.slots());
-        if with(|s| s.synced.get(&uuid) == Some(&items)) {
-            continue;
-        }
-        match source {
-            Source::Hand(slot) => {
-                let Some(g) = game.lan.as_mut().and_then(|h| h.hub.guests.iter_mut().find(|g| g.uuid == uuid)) else {
-                    continue;
-                };
-                if let Some(stack) = g.inventory.get_mut(slot).and_then(Option::as_mut)
-                    && tb::is_backpack(&stack.item)
-                {
-                    set_contents(stack, items.clone());
+        Source::Worn => worn(game, uuid).is_some(),
+        Source::Other(owner) => worn(game, owner).is_some(),
+    }
+}
+
+/// The open menu's token off its backpack (the menu closed).
+fn unmark_open(game: &mut Game<'_>, uuid: u128, source: Source) {
+    TOKENS.with(|t| t.borrow_mut().remove(&uuid));
+    let key = horizon_world::nbt::JavaString::from(OPEN_TOKEN_KEY);
+    match source {
+        Source::Hand(slot) => {
+            if let Some(g) = game.lan.as_mut().and_then(|h| h.hub.guests.iter_mut().find(|g| g.uuid == uuid))
+                && let Some(stack) = g.inventory.get_mut(slot).and_then(Option::as_mut)
+            {
+                let mut data = custom_data(stack);
+                if data.remove(&key).is_some() {
+                    set_custom_data(stack, data);
                 }
             }
-            Source::Worn => {
-                if let Some(mut stack) = worn(game, uuid) {
-                    set_contents(&mut stack, items.clone());
-                    set_worn(game, uuid, Some(&stack));
-                }
-            }
-            Source::Block(pos) => {
-                if dimension != here {
-                    continue;
-                }
-                let copy = items.clone();
+        }
+        Source::Block(pos) => {
+            if tb::is_backpack(&game.native_block(pos)) {
                 game.native_with_mod_block_entity(pos, |m| {
-                    for (i, item) in copy.into_iter().enumerate() {
-                        if let Some(slot) = m.items.get_mut(i) {
-                            *slot = item;
-                        }
-                    }
+                    m.nbt.remove(&key);
                 });
             }
         }
-        with(|s| s.synced.insert(uuid, items));
+        Source::Worn | Source::Other(_) => {}
+    }
+}
+
+/// `uuid`'s menu closes now, nothing written back (its backpack is gone or another).
+fn close_now(game: &mut Game<'_>, uuid: u128) {
+    let Some((source, _, window)) = with(|s| s.open.remove(&uuid)) else {
+        return;
+    };
+    let tier = with(|s| s.extras.get(&uuid).map(|e| e.0));
+    // A tank tab's buckets and bottles are the player's: they go back.
+    let conn = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map(|g| g.conn);
+    if let (Some(tier), Some(conn)) = (tier, conn)
+        && let Some((items, _)) = game.lan.as_ref().and_then(|h| horizon_client::lan::containers::travelersbackpack_menu::items(&h.hub, conn))
+        && items.len() >= tier.menu_slots()
+    {
+        let tabs = shown_tabs(&items, tier);
+        let back: Vec<ItemStack> = items[tier.slots()..]
+            .iter()
+            .enumerate()
+            .filter(|(n, _)| tabs.get(n / tb::TAB_SLOTS) == Some(&tb::Tab::Tanks))
+            .filter_map(|(_, s)| s.clone())
+            .collect();
+        for stack in back {
+            give_back(game, uuid, stack);
+        }
+    }
+    with(|s| {
+        s.synced.remove(&uuid);
+        s.extras.remove(&uuid);
+        s.settings.remove(&uuid);
+        s.access.remove(&uuid);
+    });
+    unmark_open(game, uuid, source);
+    let Some(conn) = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map(|g| g.conn) else {
+        return;
+    };
+    if let Some(host) = game.lan.as_mut() {
+        // The menu's slots are a copy of the backpack: emptied first, or
+        // closing would hand them to the player (`closeContainer`).
+        use horizon_client::lan::containers::travelersbackpack_menu as menu;
+        let open = host.hub.guests.iter().find(|g| g.conn == conn).is_some_and(|g| g.menu.as_ref().is_some_and(|m| m.window == window));
+        if open && let Some((items, carried)) = menu::items(&host.hub, conn) {
+            menu::set_items(&mut host.hub, conn, vec![None; items.len()], carried);
+        }
+        menu::close(&mut host.hub, conn, window);
+    }
+}
+
+/// The menus open on the placed backpack at `pos`: what they hold goes into
+/// it first, then they close (it is about to be taken, broken or changed).
+fn flush_block_menus(game: &mut Game<'_>, pos: [i32; 3]) {
+    let viewers: Vec<u128> = with(|s| s.open.iter().filter(|(_, o)| o.0 == Source::Block(pos)).map(|(u, _)| *u).collect());
+    for uuid in viewers {
+        sync_menu(game, uuid);
+        close_now(game, uuid);
     }
 }
 
@@ -2629,7 +3057,7 @@ fn menu_data(items: &[Option<ItemStack>], tier: tb::Tier) -> Vec<i32> {
         let values: [i32; 5] = match tab {
             tb::Tab::Tanks => {
                 let t = tanks_of(upgrade);
-                [fluid_code(&t[0].0), t[0].1, fluid_code(&t[1].0), t[1].1, tier.tank_capacity()]
+                [fluid_code(&t[0].0), t[0].1, fluid_code(&t[1].0), t[1].1, tank_capacity(tier)]
             }
             t if t.cooking().is_some() => {
                 let s = smelting_of(upgrade);
@@ -2658,9 +3086,19 @@ const FLUIDS: [(&str, &str, u32); 4] = [
     ("minecraft:milk", "minecraft:milk_bucket", 0xFFF2_F2F2),
     ("potion", "", 0xFFB0_3FD0),
 ];
-/// A bucket and a bottle, in mB (`FluidConstants.BUCKET`, `BOTTLE`).
-const BUCKET: i32 = 1000;
-const BOTTLE: i32 = 250;
+/// A bucket and a bottle (`FluidConstants.BUCKET`, `BOTTLE`), in thirds of a
+/// millibucket: a bottle is a third of a bucket, as on Fabric (27000 droplets
+/// of 81000). Shown in mB (`FLUID_UNIT` a millibucket).
+const BUCKET: i32 = 3000;
+const BOTTLE: i32 = 1000;
+const FLUID_UNIT: i32 = 3;
+/// Tanks saved before thirds (in mB) have no unit; they are read times three.
+const FLUID_UNIT_KEY: &str = "Unit";
+
+/// An amount in mB, to show.
+fn mb(amount: i32) -> i32 {
+    amount / FLUID_UNIT
+}
 /// Where the tanks upgrade keeps its fluids (`ModDataComponents.FLUIDS`): its
 /// `minecraft:custom_data`, under this key.
 const FLUIDS_KEY: &str = "TravelersBackpackFluids";
@@ -2755,7 +3193,7 @@ fn container_of(stack: &ItemStack) -> Option<Container> {
         "minecraft:splash_potion" | "minecraft:lingering_potion" => {
             let potion = potion_of(stack)?;
             let kind = stack.item.strip_prefix("minecraft:").unwrap_or_default();
-            Some(Container::Pour { fluid: format!("{kind}:{potion}"), amount: BOTTLE, empty: "minecraft:glass_bottle" })
+            Some(Container::Pour { fluid: format!("{kind}:{potion}"), amount: BOTTLE, empty: "" })
         }
         item => FLUIDS.iter().find(|f| !f.1.is_empty() && f.1 == item).map(|f| Container::Pour {
             fluid: f.0.to_owned(),
@@ -2787,9 +3225,10 @@ fn tanks_of(stack: &ItemStack) -> Tanks {
         return empty();
     };
     let get = |k: &str| f.get(&horizon_world::nbt::JavaString::from(k)).cloned();
+    let scale = if matches!(get(FLUID_UNIT_KEY), Some(Tag::Int(FLUID_UNIT))) { 1 } else { FLUID_UNIT };
     let tank = |fluid: &str, amount: &str| {
         let amount = match get(amount) {
-            Some(Tag::Int(n)) => n.max(0),
+            Some(Tag::Int(n)) => n.max(0).saturating_mul(scale),
             _ => 0,
         };
         let fluid = match get(fluid) {
@@ -2811,6 +3250,7 @@ fn set_tanks(stack: &mut ItemStack, tanks: &Tanks) {
         f.insert(format!("{side}Fluid").as_str().into(), Tag::String(fluid.as_str().into()));
         f.insert(side.into(), Tag::Int(*amount));
     }
+    f.insert(FLUID_UNIT_KEY.into(), Tag::Int(FLUID_UNIT));
     data.insert(FLUIDS_KEY.into(), Tag::Compound(f));
     set_custom_data(stack, data);
 }
@@ -2829,7 +3269,7 @@ fn has_tanks_upgrade(items: &[Option<ItemStack>], tier: tb::Tier) -> bool {
 fn tank_levels(items: &[Option<ItemStack>], tier: tb::Tier) -> Option<[(i32, f32); 2]> {
     let i = tanks_slot(items, tier)?;
     let tanks = tanks_of(items[tier.storage + i].as_ref()?);
-    let capacity = tier.tank_capacity().max(1) as f32;
+    let capacity = tank_capacity(tier).max(1) as f32;
     Some(tanks.map(|(f, a)| (tank_code(&f), (a as f32 / capacity).clamp(0.0, 1.0))))
 }
 
@@ -2849,7 +3289,7 @@ fn work_tanks(items: &mut [Option<ItemStack>], tier: tb::Tier) {
         return;
     }
     let mut tanks = tanks_of(&upgrade);
-    let capacity = tier.tank_capacity();
+    let capacity = tank_capacity(tier);
     for (side, tank) in tanks.iter_mut().enumerate() {
         let (input, output) = (base + 2 * side, base + 2 * side + 1);
         loop {
@@ -2880,17 +3320,20 @@ fn work_tanks(items: &mut [Option<ItemStack>], tier: tb::Tier) {
                     let max = if empty == "minecraft:bucket" { 16 } else { 64 };
                     match &items[output] {
                         None => {}
+                        _ if empty.is_empty() => {}
                         Some(out) if &*out.item == empty && out.count < max => {}
                         Some(_) => break,
                     }
                     tank.0 = fluid;
                     tank.1 += amount;
-                    ItemStack::new(empty, 1)
+                    ItemStack::new(empty, if empty.is_empty() { 0 } else { 1 })
                 }
             };
-            match items[output].as_mut() {
-                Some(out) if same_item(out, &result) => out.count += 1,
-                _ => items[output] = Some(result),
+            if result.count > 0 {
+                match items[output].as_mut() {
+                    Some(out) if same_item(out, &result) => out.count += 1,
+                    _ => items[output] = Some(result),
+                }
             }
             let mut rest = held;
             rest.count -= 1;
@@ -2945,13 +3388,12 @@ fn set_block_tanks(game: &mut Game<'_>, dimension: &str, pos: [i32; 3], tanks: b
 
 // ---- the upgrades at work (`ITickableUpgrade`) ---------------------------------------------
 
-/// `MagnetUpgradeSettings`: every 10 ticks, items within 5 blocks.
-const MAGNET_RATE: u64 = 10;
-const MAGNET_RANGE: f64 = 5.0;
 /// `AutoPickupUpgrade`: every 5 ticks, items within a block of the backpack.
+/// The magnet's, the feeding's and the refill's rates and the magnet's range
+/// are the config's (`MagnetUpgradeSettings`: every 10 ticks within 5 blocks;
+/// `FeedingUpgradeSettings`: every 100; `RefillUpgradeSettings`: every 5).
 const PICKUP_RATE: u64 = 5;
-/// `FeedingUpgrade`: every 100 ticks (10 while still hungry), players within 3.
-const FEEDING_RATE: u64 = 100;
+/// `FeedingUpgrade`: every 10 ticks while still hungry, players within 3.
 const FEEDING_HUNGRY_RATE: u64 = 10;
 const FEEDING_RANGE: f64 = 3.0;
 
@@ -2962,15 +3404,23 @@ fn upgrades_in(items: &[Option<ItemStack>], tier: tb::Tier) -> Vec<String> {
         .skip(tier.storage)
         .take(tier.upgrades)
         .flatten()
-        .filter(|s| upgrade_enabled(s))
+        .filter(|s| upgrade_enabled(s) && !upgrade_disabled(&s.item))
         .map(|s| s.item.to_string())
         .collect()
 }
 
+/// An upgrade the config turns off (`enableTanksUpgrade` and the like).
+fn upgrade_disabled(item: &str) -> bool {
+    item.strip_prefix("travelersbackpack:").is_some_and(|name| cfg().disabled_upgrades.contains(&name))
+}
+
 /// `BackpackSlotItemHandler.isItemValid`: no backpack in a backpack, nor a
-/// shulker box.
-fn fits_storage(stack: &ItemStack) -> bool {
-    !tb::is_backpack(&stack.item) && !stack.item.ends_with("shulker_box")
+/// shulker box (`allowShulkerBoxes`), nor one of `blacklistedItems`.
+fn fits_storage(game: &Game<'_>, stack: &ItemStack) -> bool {
+    !tb::is_backpack(&stack.item)
+        && (cfg().allow_shulker_boxes || !stack.item.ends_with("shulker_box"))
+        && !cfg().blacklisted_items.iter().any(|i| **i == *stack.item)
+        && !game.items().item_in_tag("travelersbackpack:blacklisted_items", &stack.item)
 }
 
 /// `stack` as the four ints an entity's UUID is saved as.
@@ -3024,9 +3474,9 @@ fn magnet(game: &mut Game<'_>, at: [f64; 3], to: [f64; 3], wearer: Option<u128>,
             continue;
         }
         let p = item.position;
-        let near = (f64::from(p.x) - at[0]).abs() <= MAGNET_RANGE
-            && (f64::from(p.y) - at[1]).abs() <= MAGNET_RANGE
-            && (f64::from(p.z) - at[2]).abs() <= MAGNET_RANGE;
+        let near = (f64::from(p.x) - at[0]).abs() <= f64::from(cfg().magnet_pull_range)
+            && (f64::from(p.y) - at[1]).abs() <= f64::from(cfg().magnet_pull_range)
+            && (f64::from(p.z) - at[2]).abs() <= f64::from(cfg().magnet_pull_range);
         let thrown_by_wearer = own.is_some() && item.thrower == own && item.age <= 80;
         if near && item.stack.count > 0 && !thrown_by_wearer {
             (item.position.x, item.position.y, item.position.z) = (to[0], to[1], to[2]);
@@ -3049,7 +3499,7 @@ fn pickup(game: &mut Game<'_>, at: [i32; 3], items: &mut [Option<ItemStack>], ti
     for item in &mut dropped {
         let p = [item.position.x, item.position.y, item.position.z];
         let inside = (0..3).all(|i| f64::from(p[i]) >= f64::from(lo[i]) && f64::from(p[i]) < f64::from(hi[i]));
-        if !inside || (item.pickup_delay > 0 && !touched) || item.stack.count == 0 || !fits_storage(&item.stack) {
+        if !inside || (item.pickup_delay > 0 && !touched) || item.stack.count == 0 || !fits_storage(game, &item.stack) {
             continue;
         }
         if filter_matches(game, items, tier, tb::Tab::Pickup, &item.stack) == Some(false) {
@@ -3177,7 +3627,7 @@ fn tick_worn(game: &mut Game<'_>) {
         })
         .unwrap_or_default();
     for (uuid, at) in wearers {
-        if with(|s| s.open.get(&uuid).is_some_and(|o| o.0 == Source::Worn)) {
+        if worn_menu_open(uuid) {
             continue;
         }
         let Some(mut stack) = worn(game, uuid) else {
@@ -3191,7 +3641,7 @@ fn tick_worn(game: &mut Game<'_>) {
         }
         let has = |u: &str| upgrades.iter().any(|x| x == u);
         let mut changed = false;
-        if has("travelersbackpack:magnet_upgrade") && tick % MAGNET_RATE == 0 {
+        if has("travelersbackpack:magnet_upgrade") && tick % cfg().magnet_tick_rate == 0 {
             magnet(game, at, at, Some(uuid), &items, tier);
         }
         // What the wearer touched (`ItemEntityMixin.playerTouch`).
@@ -3205,7 +3655,7 @@ fn tick_worn(game: &mut Game<'_>) {
                 changed |= pickup(game, at.map(|c| c.floor() as i32), &mut items, tier, true);
             }
         }
-        if has("travelersbackpack:refill_upgrade") && tick % PICKUP_RATE == 0 {
+        if has("travelersbackpack:refill_upgrade") && tick % cfg().refill_tick_rate == 0 {
             changed |= refill(game, uuid, &mut items, tier);
         }
         changed |= smelt_kept(game, &mut items, tier);
@@ -3214,7 +3664,7 @@ fn tick_worn(game: &mut Game<'_>) {
             if due {
                 let (ate, hungry) = feed(game, uuid, &mut items, tier);
                 changed |= ate;
-                let next = tick + if ate && hungry { FEEDING_HUNGRY_RATE } else { FEEDING_RATE };
+                let next = tick + if ate && hungry { FEEDING_HUNGRY_RATE } else { cfg().feeding_tick_rate };
                 with(|s| s.feed_at.insert(uuid, next));
             }
         }
@@ -3260,7 +3710,7 @@ pub(super) fn block_entity_tick(
     let tick = u64::try_from(game.world.game_time).unwrap_or(0);
     let has = |u: &str| upgrades.iter().any(|x| x == u);
     let centre = pos.map(|c| f64::from(c) + 0.5);
-    if has("travelersbackpack:magnet_upgrade") && tick % MAGNET_RATE == 0 {
+    if has("travelersbackpack:magnet_upgrade") && tick % cfg().magnet_tick_rate == 0 {
         // In front of it, a block from its centre on the side it faces.
         let [dx, dz] = match game.native_block_property(pos, "facing").as_deref() {
             Some("south") => [0.0, 1.0],
@@ -3285,7 +3735,7 @@ pub(super) fn block_entity_tick(
                 h.hub
                     .guests
                     .iter()
-                    .filter(|g| g.placed && (0..3).all(|i| (g.position[i] - centre[i]).abs() <= FEEDING_RANGE + 0.5))
+                    .filter(|g| g.placed && g.dimension == game.dim.id() && (0..3).all(|i| (g.position[i] - centre[i]).abs() <= FEEDING_RANGE + 0.5))
                     .map(|g| g.uuid)
                     .collect()
             })
@@ -3295,7 +3745,7 @@ pub(super) fn block_entity_tick(
             let due = with(|s| s.feed_at.get(&(uuid ^ key)).copied().unwrap_or(0)) <= tick;
             if due {
                 let (ate, hungry) = feed(game, uuid, &mut entity.items, tier);
-                let next = tick + if ate && hungry { FEEDING_HUNGRY_RATE } else { FEEDING_RATE };
+                let next = tick + if ate && hungry { FEEDING_HUNGRY_RATE } else { cfg().feeding_tick_rate };
                 with(|s| s.feed_at.insert(uuid ^ key, next));
             }
         }
@@ -3758,6 +4208,8 @@ struct Worn {
     fluids: Option<[(i32, f32); 2]>,
     bag: String,
     dye: Option<i32>,
+    /// The tools strapped to it (`StackModelPart`): the first, then the last.
+    tools: Vec<ItemStack>,
 }
 
 /// `KeybindHandler.OPEN_BACKPACK` (B by default): while playing, the server
@@ -3779,6 +4231,15 @@ pub(super) fn key(game: &mut Game<'_>, key: &str, pressed: bool) {
         return;
     }
     if !game.native_playing() {
+        // `allowOpeningFromSlot`: on an inventory screen, the key over a backpack opens it.
+        if cfg().allow_opening_from_slot && key == game.native_mod_key(MOD_ID, "inventory", "key.keyboard.b") {
+            let hovered = HOVERED_SLOT.with(std::cell::Cell::get).filter(|(_, at)| at.elapsed().as_millis() < 200).map(|(i, _)| i);
+            if let Some(slot) = hovered.filter(|&i| i < 36)
+                && game.inventory.get(slot).cloned().flatten().is_some_and(|s| tb::is_backpack(&s.item))
+            {
+                let _ = game.native_net_send_to_server(OPEN_SLOT_CHANNEL, &[slot as u8]);
+            }
+        }
         return;
     }
     // `ABILITY` (unbound at first): the worn backpack's ability on or off.
@@ -3786,10 +4247,8 @@ pub(super) fn key(game: &mut Game<'_>, key: &str, pressed: bool) {
         let me = game.own_profile_name();
         let design = WEARING.with(|w| w.borrow().get(&me).map(|w| design_of(&w.backpack).to_owned()));
         if design.is_some_and(|d| ability(&d).is_some()) {
+            // The server answers with the state it has now, in the action bar.
             let _ = game.native_net_send_to_server(ABILITY_TOGGLE_CHANNEL, &[]);
-            let on = ABILITY_SHOWN.with(std::cell::Cell::get);
-            let msg = tr(game, if on { "screen.travelersbackpack.ability_disabled" } else { "screen.travelersbackpack.ability_enabled" });
-            game.native_client_action_bar(Text::literal(msg), false);
         }
     }
     // `TOGGLE_UPGRADE_0`..`3` (unbound at first): an upgrade slot of the worn backpack on or off.
@@ -3826,10 +4285,15 @@ pub(super) fn net_from_server(channel: &str, data: &[u8]) {
         tools_received(data);
         return;
     }
+    if channel == MESSAGE_CHANNEL {
+        if let Ok(text) = std::str::from_utf8(data) {
+            PENDING_MESSAGES.with(|m| m.borrow_mut().push(text.to_owned()));
+        }
+        return;
+    }
     if channel == ABILITY_CHANNEL {
         // `spiderAbility`: this player climbs walls.
         horizon_client::motion::travelersbackpack_spider::set(data == b"spider");
-        ABILITY_SHOWN.with(|a| a.set(!data.is_empty()));
         return;
     }
     if channel != WORN_CHANNEL {
@@ -3841,7 +4305,16 @@ pub(super) fn net_from_server(channel: &str, data: &[u8]) {
     let Some((name, rest)) = text.split_once('\n') else {
         return;
     };
-    let (worn, lantern) = rest.split_once('\n').unwrap_or((rest, "0"));
+    let mut lines = rest.splitn(3, '\n');
+    let worn = lines.next().unwrap_or_default();
+    let lantern = lines.next().unwrap_or("0");
+    let tools: Vec<ItemStack> = lines
+        .next()
+        .unwrap_or_default()
+        .split('\t')
+        .filter(|t| !t.is_empty())
+        .filter_map(|t| horizon_world::nbt::parse_snbt(t).ok().and_then(|(tag, _)| horizon_items::item_nbt::item_from_nbt(&tag)))
+        .collect();
     LANTERNS.with(|l| {
         let mut l = l.borrow_mut();
         if lantern == "1" {
@@ -3861,7 +4334,7 @@ pub(super) fn net_from_server(channel: &str, data: &[u8]) {
     WEARING.with(|w| {
         let mut w = w.borrow_mut();
         if tb::is_backpack(backpack) {
-            w.insert(name.to_owned(), Worn { backpack: backpack.to_owned(), tanks, fluids, bag, dye });
+            w.insert(name.to_owned(), Worn { backpack: backpack.to_owned(), tanks, fluids, bag, dye, tools });
         } else {
             w.remove(name);
         }
@@ -3879,13 +4352,15 @@ pub(super) fn render_listened(listened: &mut bool) {
 /// the back of the body, two pixels behind its middle.
 pub(super) fn mob_layer(
     game: &Game<'_>,
+    mob: &super::native_mob_draw::NativeMobRender<'_>,
     who: Option<&super::native_mob_draw::NativePlayerRender<'_>>,
     draw: &mut super::native_block_entity_draw::BlockEntityDraw,
 ) {
     let Some(who) = who else {
+        mob_backpack_layer(game, mob, draw);
         return;
     };
-    let Some(Worn { backpack, tanks, fluids, bag, dye }) = WEARING.with(|w| w.borrow().get(who.name).cloned()) else {
+    let Some(Worn { backpack, tanks, fluids, bag, dye, tools }) = WEARING.with(|w| w.borrow().get(who.name).cloned()) else {
         return;
     };
     draw.push();
@@ -3902,6 +4377,31 @@ pub(super) fn mob_layer(
     }
     if let Some(levels) = fluids.filter(|_| tanks == "true") {
         draw_tank_fluids(game, draw, levels, model_turn("south"));
+    }
+    // `StackModelPart` (`renderTools`): the first tool across the top of the
+    // backpack's outside, the last one standing at its side, half size.
+    if cfg().render_tools {
+        use horizon_assets::item_model::DisplayContext;
+        let context = |t: &ItemStack| {
+            if matches!(&*t.item, "minecraft:trident" | "minecraft:spyglass") { DisplayContext::Gui } else { DisplayContext::None }
+        };
+        if let Some(upper) = tools.first() {
+            draw.push();
+            draw.translate([0.5, 0.42, 4.6 / 16.0]);
+            draw.rotate_about([0.0, 0.0, 1.0], 45.0, [0.0, 0.0, 0.0]);
+            draw.scale([0.5, 0.5, 0.5]);
+            game.native_draw_item(draw, upper, context(upper), None, 0);
+            draw.pop();
+        }
+        if let Some(lower) = tools.get(1) {
+            draw.push();
+            draw.translate([12.6 / 16.0, 0.25, 7.0 / 16.0]);
+            draw.rotate_about([0.0, 1.0, 0.0], 90.0, [0.0, 0.0, 0.0]);
+            draw.rotate_about([0.0, 0.0, 1.0], 45.0, [0.0, 0.0, 0.0]);
+            draw.scale([0.5, 0.5, 0.5]);
+            game.native_draw_item(draw, lower, context(lower), None, 0);
+            draw.pop();
+        }
     }
     draw.pop();
 }
@@ -4201,7 +4701,7 @@ pub(super) fn screen_tooltip(game: &Game<'_>, menu: &str, data: &[i32], at: [f32
                     continue;
                 }
             }
-            lines.push(format!("§7{amount}/{capacity} mB"));
+            lines.push(format!("§7{}/{} mB", mb(amount), mb(capacity)));
         }
     }
 }
@@ -4527,7 +5027,7 @@ pub(super) fn screen_draw(
 /// first (or the void upgrade destroys it), so the player's own pickup waits
 /// and the upgrade's tick takes it in.
 pub(super) fn item_picked_up(game: &Game<'_>, player: u128, stack: &ItemStack, position: [f64; 3], canceled: &mut bool) {
-    if *canceled {
+    if *canceled || worn_menu_open(player) {
         return;
     }
     let Some(backpack) = worn(game, player) else {
@@ -4539,7 +5039,7 @@ pub(super) fn item_picked_up(game: &Game<'_>, player: u128, stack: &ItemStack, p
     if !upgrades.iter().any(|u| u == "travelersbackpack:pickup_upgrade") {
         return;
     }
-    if !fits_storage(stack) {
+    if !fits_storage(game, stack) {
         return;
     }
     if filter_matches(game, &items, tier, tb::Tab::Pickup, stack) == Some(false) {
@@ -4696,7 +5196,7 @@ struct Settings {
 impl Settings {
     fn of(tag: Option<&Tag>) -> Self {
         let Some(Tag::Compound(c)) = tag else {
-            return Self::default();
+            return Self { ability_off: !cfg().force_ability_enabled, ..Self::default() };
         };
         let get = |k: &str| c.get(&horizon_world::nbt::JavaString::from(k));
         let int = |k: &str| match get(k) {
@@ -4733,13 +5233,13 @@ impl Settings {
             unsortable,
             memory,
             hidden: int("Hidden") != 0,
-            ability_off: int("AbilityOff") != 0,
+            ability_off: if get("AbilityOff").is_some() { int("AbilityOff") != 0 } else { !cfg().force_ability_enabled },
             cooldown: int("Cooldown").max(0),
         }
     }
 
     fn tag(&self) -> Option<Tag> {
-        if *self == Self::default() {
+        if *self == Self::default() && cfg().force_ability_enabled {
             return None;
         }
         let mut c = Compound::new();
@@ -4816,6 +5316,7 @@ fn source_settings(game: &Game<'_>, uuid: u128, source: Source) -> Settings {
             .map(|s| item_settings(&s))
             .unwrap_or_default(),
         Source::Worn => worn(game, uuid).map(|s| item_settings(&s)).unwrap_or_default(),
+        Source::Other(owner) => worn(game, owner).map(|s| item_settings(&s)).unwrap_or_default(),
         Source::Block(pos) => game.native_mod_block_entity(pos).map(|m| block_settings(&m.nbt)).unwrap_or_default(),
     }
 }
@@ -4850,9 +5351,19 @@ fn set_source_settings(game: &mut Game<'_>, uuid: u128, source: Source, settings
         }
         Source::Worn => {
             if let Some(mut stack) = worn(game, uuid) {
+                // The cooldown ran on while the screen was open: it stays as it is now.
+                let settings = &Settings { cooldown: item_settings(&stack).cooldown, ..settings.clone() };
                 set_item_settings(&mut stack, settings);
                 set_worn(game, uuid, Some(&stack));
                 tell_worn(game, uuid);
+            }
+        }
+        Source::Other(owner) => {
+            if let Some(mut stack) = worn(game, owner) {
+                let settings = &Settings { cooldown: item_settings(&stack).cooldown, ..settings.clone() };
+                set_item_settings(&mut stack, settings);
+                set_worn(game, owner, Some(&stack));
+                tell_worn(game, owner);
             }
         }
         Source::Block(pos) => {
@@ -5636,7 +6147,7 @@ fn hose_switch(game: &mut Game<'_>, player: u128, tank: bool, value: i32) {
 /// The worn backpack's tanks, when it wears one with the tanks upgrade and
 /// its menu isn't open: the backpack, its slots, its tier, the upgrade's slot.
 fn worn_tanks(game: &Game<'_>, uuid: u128) -> Option<(ItemStack, Vec<Option<ItemStack>>, tb::Tier, usize)> {
-    if with(|s| s.open.get(&uuid).is_some_and(|o| o.0 == Source::Worn)) {
+    if worn_menu_open(uuid) {
         return None;
     }
     let stack = worn(game, uuid)?;
@@ -5717,7 +6228,7 @@ fn hose_use(game: &mut Game<'_>, claimed: &mut bool) {
     };
     let mut tanks = tanks_of(upgrade);
     let side = usize::try_from(which - 1).unwrap_or(0).min(1);
-    let capacity = tier.tank_capacity();
+    let capacity = tank_capacity(tier);
     let dimension = game.dim.id().to_owned();
     let ray = hose_ray(game, uuid);
     let mut changed = false;
@@ -6182,7 +6693,7 @@ fn backpack_tooltip(game: &Game<'_>, stack: &ItemStack, add: &mut Vec<(Text, u32
     if filled && !game.native_has_control_down() {
         add.push((legacy(game, "item.travelersbackpack.inventory_tooltip"), BLUE));
     }
-    if matches!(design, "bat" | "villager" | "iron_golem") {
+    if cfg().obtain_tips && matches!(design, "bat" | "villager" | "iron_golem") {
         add.push((legacy(game, &format!("obtain.travelersbackpack.{design}")), BLUE));
     }
     let Some(ability) = ability(design) else {
@@ -6249,7 +6760,7 @@ fn upgrade_tooltip(game: &Game<'_>, stack: &ItemStack, name: &str, add: &mut Vec
             apply(add);
             if name == "tanks_upgrade" {
                 for (fluid, amount) in tanks_of(stack).into_iter().filter(|t| t.1 > 0) {
-                    add.push((Text::literal(format!("{}: {amount}mB", fluid_name(game, &fluid))), BLUE));
+                    add.push((Text::literal(format!("{}: {}mB", fluid_name(game, &fluid), mb(amount))), BLUE));
                 }
             }
         }
@@ -6277,7 +6788,7 @@ pub(super) fn tooltip_component(game: &Game<'_>, stack: &ItemStack, size: &mut O
     }
     let mut w = 20.0 * inside.storage.len().min(9) as f32;
     for (fluid, amount) in &inside.fluids {
-        w = w.max(game.native_text_width(&format!("{}: {amount}mB", fluid_name(game, fluid))));
+        w = w.max(game.native_text_width(&format!("{}: {}mB", fluid_name(game, fluid), mb(*amount))));
     }
     w = w.max(18.0 * inside.upgrades.len().max(inside.tools.len()) as f32);
     if h > 0.0 && w > 0.0 {
@@ -6295,7 +6806,7 @@ pub(super) fn tooltip_component_draw(game: &Game<'_>, stack: &ItemStack, batch: 
     for (fluid, amount) in &inside.fluids {
         let name = format!("{}: ", fluid_name(game, fluid));
         game.native_text(batch, &name, [x, y], 0x00FF_FFFF, true);
-        game.native_text(batch, &format!("{amount}mB"), [x + game.native_text_width(&name), y], 0x0055_55FF, true);
+        game.native_text(batch, &format!("{}mB", mb(*amount)), [x + game.native_text_width(&name), y], 0x0055_55FF, true);
         y += 10.0;
     }
     let row = |batch: &mut horizon_client::hud::HudBatch, y: &mut f32, title: &str, items: &[ItemStack], step: f32| {
@@ -6468,27 +6979,17 @@ fn throw_potion(game: &mut Game<'_>, uuid: u128, potion: ItemStack) {
 /// `COOLDOWNS`, in ticks: the original's `CooldownHelper.createCooldown` draws
 /// from a fresh `RandomSource.create(1337)` each time, so each is this one.
 fn cooldown_ticks(design: &str) -> Option<i32> {
-    match design {
-        "creeper" => Some(26332),
-        "cow" => Some(9614),
-        "chicken" => Some(7635),
-        "cake" => Some(7772),
-        "melon" => Some(5217),
-        _ => None,
+    use horizon_core::random::RandomSource as _;
+    if !["creeper", "cow", "chicken", "cake", "melon"].contains(&design) {
+        return None;
     }
+    let (_, min, max) = cfg().cooldowns.iter().find(|(d, _, _)| d.strip_prefix("travelersbackpack:") == Some(design))?;
+    let (min, max) = (min.saturating_mul(20), max.saturating_mul(20));
+    horizon_core::random::LegacyRandom::new(1337).next_int_between_inclusive(min, max.max(min)).ok()
 }
 
-/// `BACKPACK_EFFECTS`: (design, effect, min ticks, max ticks), level I.
-const BACKPACK_EFFECTS: [(&str, &str, i32, i32); 8] = [
-    ("bat", "minecraft:night_vision", 260, 300),
-    ("magma_cube", "minecraft:fire_resistance", 260, 300),
-    ("squid", "minecraft:water_breathing", 260, 300),
-    ("squid", "minecraft:night_vision", 260, 300),
-    ("dragon", "minecraft:regeneration", 260, 300),
-    ("dragon", "minecraft:strength", 250, 290),
-    ("quartz", "minecraft:haste", 260, 300),
-    ("fox", "minecraft:jump_boost", 260, 300),
-];
+/// `BACKPACK_EFFECTS` are the config's `backpackEffects`: (backpack, effect,
+/// min ticks, max ticks, amplifier).
 
 /// The attribute modifiers (`*_MODIFIER`): (design, attribute, id, amount, operation).
 const BACKPACK_MODIFIERS: [(&str, &str, &str, f64, &str); 9] = [
@@ -6509,12 +7010,17 @@ fn design_of(id: &str) -> &str {
 
 /// Whether `design` has an ability worn (`ITEM_ABILITIES_LIST`) or placed
 /// (`BLOCK_ABILITIES_LIST`).
+/// `enableBackpackAbilities` and `allowedAbilities`: the design's ability may work.
+fn ability_allowed(design: &str) -> bool {
+    cfg().enable_backpack_abilities && cfg().allowed_abilities.iter().any(|a| a.strip_prefix("travelersbackpack:") == Some(design))
+}
+
 fn ability_worn(design: &str) -> bool {
-    ability(design).is_some_and(|a| a.item)
+    ability_allowed(design) && ability(design).is_some_and(|a| a.item)
 }
 
 fn ability_placed(design: &str) -> bool {
-    ability(design).is_some_and(|a| a.block)
+    ability_allowed(design) && ability(design).is_some_and(|a| a.block)
 }
 
 /// The screen's slider (`AbilitySliderButton`): shown for a worn backpack
@@ -6636,9 +7142,11 @@ fn tick_abilities(game: &mut Game<'_>) {
         if counts_down && settings.cooldown > 0 && tick % 100 == 0 {
             settings.cooldown = (settings.cooldown - 100).max(0);
         }
-        if settings.cooldown != was && with(|s| !s.open.get(&uuid).is_some_and(|o| o.0 == Source::Worn)) {
-            let mut stack = stack;
-            set_item_settings(&mut stack, &settings);
+        // Kept at once, its menu open or not (else a ready ability fires every tick).
+        if settings.cooldown != was {
+            let mut stack = worn(game, uuid).unwrap_or(stack);
+            let kept = Settings { cooldown: settings.cooldown, ..item_settings(&stack) };
+            set_item_settings(&mut stack, &kept);
             set_worn(game, uuid, Some(&stack));
         }
     }
@@ -6647,10 +7155,11 @@ fn tick_abilities(game: &mut Game<'_>) {
 /// `abilityTick` of one worn design; true when its cooldown counts down.
 fn ability_tick(game: &mut Game<'_>, uuid: u128, at: [f64; 3], design: &str, settings: &mut Settings, just_put_on: bool) -> bool {
     let tick = game.world.game_time;
-    for (d, effect, min, max) in BACKPACK_EFFECTS {
-        if d != design {
+    for (d, effect, min, max, amplifier) in &cfg().backpack_effects {
+        if d.strip_prefix("travelersbackpack:") != Some(design) {
             continue;
         }
+        let (effect, min, max, amplifier) = (effect.as_str(), *min, *max, *amplifier);
         // The squid's night vision only underwater.
         if design == "squid" && effect == "minecraft:night_vision" {
             let feet = at.map(|c| c.floor() as i32);
@@ -6659,7 +7168,7 @@ fn ability_tick(game: &mut Game<'_>, uuid: u128, at: [f64; 3], design: &str, set
                 continue;
             }
         }
-        timed_effect(game, uuid, effect, min, max, 0);
+        timed_effect(game, uuid, effect, min, max, u8::try_from(amplifier).unwrap_or(0));
     }
     let ready = settings.cooldown <= 0;
     match design {
@@ -6738,7 +7247,7 @@ fn ability_tick(game: &mut Game<'_>, uuid: u128, at: [f64; 3], design: &str, set
         "cactus" => {
             if settings.cooldown >= 1000 {
                 if let Some((stack, items, tier, k)) = worn_tanks(game, uuid) {
-                    let capacity = tier.tank_capacity();
+                    let capacity = tank_capacity(tier);
                     let mut tanks = items[k].as_ref().map(tanks_of).unwrap_or_default();
                     for t in &mut tanks {
                         if (t.0.is_empty() || t.0 == "minecraft:water") && t.1 + BUCKET <= capacity {
@@ -7063,7 +7572,7 @@ fn placed_ability_tick(game: &mut Game<'_>, pos: [i32; 3], entity: &mut horizon_
             let due = SPONGE_CHECK.with(|s| s.borrow_mut().remove(&pos)) || !matches!(entity.nbt.get(&horizon_world::nbt::JavaString::from("Soaked")), Some(Tag::Byte(1)));
             entity.nbt.insert("Soaked".into(), Tag::Byte(1));
             if due && let Some(k) = tanks_at {
-                let capacity = tier.tank_capacity();
+                let capacity = tank_capacity(tier);
                 let mut tanks = entity.items[k].as_ref().map(tanks_of).unwrap_or_default();
                 if soak_up(game, pos, &mut tanks, capacity)
                     && let Some(u) = entity.items[k].as_mut()
@@ -7076,7 +7585,7 @@ fn placed_ability_tick(game: &mut Game<'_>, pos: [i32; 3], entity: &mut horizon_
         "cactus" => {
             if settings.cooldown >= 1000 {
                 if let Some(k) = tanks_at {
-                    let capacity = tier.tank_capacity();
+                    let capacity = tank_capacity(tier);
                     let mut tanks = entity.items[k].as_ref().map(tanks_of).unwrap_or_default();
                     for t in &mut tanks {
                         if (t.0.is_empty() || t.0 == "minecraft:water") && t.1 + BUCKET <= capacity {
@@ -7195,7 +7704,11 @@ pub(super) fn hud_tanks(game: &Game<'_>, layer: &str, batch: &mut horizon_client
     let Some(Worn { tanks: true, fluids, .. }) = WEARING.with(|w| w.borrow().get(&me).cloned()) else {
         return;
     };
-    let (x, y) = (batch.width - 20.0, batch.height - 30.0);
+    if !cfg().overlay_enabled {
+        return;
+    }
+    let [off_x, off_y] = cfg().overlay_offset;
+    let (x, y) = (batch.width - off_x as f32, batch.height - off_y as f32);
     let selected = game
         .inventory
         .get(game.selected)
@@ -7249,7 +7762,7 @@ fn fill_tank(game: &mut Game<'_>, uuid: u128, side: usize) {
         return;
     };
     let mut tanks = tanks_of(upgrade);
-    let capacity = tier.tank_capacity();
+    let capacity = tank_capacity(tier);
     let tank = &mut tanks[side];
     let mut extra = None;
     let sound;
@@ -7261,7 +7774,7 @@ fn fill_tank(game: &mut Game<'_>, uuid: u128, side: usize) {
             sound = if fluid == "minecraft:lava" { "minecraft:item.bucket.empty_lava" } else { "minecraft:item.bucket.empty" };
             tank.0 = fluid;
             tank.1 += amount;
-            carried = Some(ItemStack::new(empty, 1));
+            carried = (!empty.is_empty()).then(|| ItemStack::new(empty, 1));
         }
         Some(Container::Fill { amount, bottle }) => {
             let Some(full) = filled(&tank.0, bottle).filter(|_| tank.1 >= amount) else {
@@ -7483,6 +7996,9 @@ pub(super) fn trash_press(screen: &horizon_client::mod_api::NativeScreenView<'_>
 /// On the client, each tick: the chosen slots to the server.
 pub(super) fn send_trash_clicks(game: &mut Game<'_>) {
     send_radial_clicks(game);
+    inventory_icon_tick(game);
+    show_messages(game);
+    write_mod_menu_files(game);
     if SCROLLED.with(|s| s.replace(false)) {
         super::native_hooks::travelersbackpack_screen::relayout(game);
     }
@@ -7555,6 +8071,7 @@ pub(super) fn screen_render_post(game: &Game<'_>, batch: &mut horizon_client::hu
         draw_radial(game, batch, screen);
         return;
     }
+    draw_inventory_extras(game, batch, screen);
     let Some(menu) = screen.menu else {
         return;
     };
@@ -7822,6 +8339,17 @@ fn trim_to(game: &Game<'_>, text: &str, max: f32) -> String {
 }
 
 /// `mouseScrolled` over a tag list: the selection moves along it.
+/// `ToolsScreen.mouseScrolled`: with `allowHotbarScrolling`, the wheel picks
+/// the hotbar slot while the tools' menu is open (at the next tick).
+pub(super) fn radial_scroll(game: &Game<'_>, scroll: [f64; 2], canceled: &mut bool) {
+    if !radial_open(game) || !cfg().tools_allow_hotbar_scrolling || scroll[1] == 0.0 {
+        return;
+    }
+    *canceled = true;
+    let step = if scroll[1] > 0.0 { 8 } else { 1 };
+    RADIAL_SCROLL.with(|r| r.set(Some((game.selected + step) % 9)));
+}
+
 pub(super) fn tag_scroll(screen: &horizon_client::mod_api::NativeScreenView<'_>, scroll: [f64; 2], canceled: &mut bool) {
     let Some(menu) = screen.menu else {
         return;
@@ -7900,7 +8428,7 @@ pub(super) fn mods(mods: &mut Vec<super::native_hooks::NativeMod>) {
     };
     mods.push(super::native_hooks::NativeMod {
         id: MOD_ID.into(),
-        title: format!("{} 0.1.0", horizon_client::lang::get_or("itemGroup.travelersbackpack", "Traveler's Backpack")),
+        title: format!("{} {VERSION}", horizon_client::lang::get_or("itemGroup.travelersbackpack", "Traveler's Backpack")),
         description: if horizon_client::lang::code().starts_with("ru") {
             "Уникальные и улучшаемые рюкзаки с настройкой. Порт Traveler's Backpack.".into()
         } else {
@@ -7927,8 +8455,6 @@ const ADD_NEW: i32 = -999;
 const RADIAL_ICON: f32 = 16.0;
 const RADIAL_RING: f32 = 42.0;
 const RADIAL_DEADZONE: f32 = 30.0;
-/// `toolsOverlay.opacity`'s default.
-const RADIAL_OPACITY: f32 = 0.75;
 const BACKPACK_TANK: &str = "travelersbackpack:backpack_tank";
 
 /// The open menu, on the client.
@@ -7951,6 +8477,8 @@ thread_local! {
     static RADIAL: RefCell<Option<Radial>> = const { RefCell::new(None) };
     /// Clicks in the menu, sent at the next tick.
     static RADIAL_CLICKS: RefCell<Vec<(i32, u8)>> = const { RefCell::new(Vec::new()) };
+    /// A hotbar slot the wheel picked in the menu.
+    static RADIAL_SCROLL: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) };
 }
 
 /// `ToolsScreen.createHoseMenu`: suck, drink, the right tank, the left, spill.
@@ -8024,7 +8552,7 @@ fn radial_released(game: &mut Game<'_>) {
         let _ = game.native_net_send_to_server(channel, &[value as u8]);
         let text = Text::literal(game.translate(key, key));
         game.native_client_action_bar(text, false);
-    } else if r.hovered != -1 && !r.clicked {
+    } else if r.hovered != -1 && !r.clicked && cfg().tools_swap_on_close {
         send_swap(game, r.hovered, 0);
     }
 }
@@ -8055,6 +8583,9 @@ pub(super) fn radial_press(game: &Game<'_>, button: i32, canceled: &mut bool) {
 
 /// Each client tick: the menu's clicks to the server.
 fn send_radial_clicks(game: &mut Game<'_>) {
+    if let Some(slot) = RADIAL_SCROLL.with(std::cell::Cell::take) {
+        game.selected = slot;
+    }
     for (slot, button) in RADIAL_CLICKS.with(|c| std::mem::take(&mut *c.borrow_mut())) {
         send_swap(game, slot, button);
     }
@@ -8113,7 +8644,7 @@ fn send_tools(game: &mut Game<'_>, uuid: u128) {
         .unwrap_or_default();
     let mut out = vec![
         snbt(&look),
-        format!("{}\t{}\t{}\t{}\t{}", tanks[0].0, tanks[0].1, tanks[1].0, tanks[1].1, tier.tank_capacity()),
+        format!("{}\t{}\t{}\t{}\t{}", tanks[0].0, tanks[0].1, tanks[1].0, tanks[1].1, tank_capacity(tier)),
     ];
     for k in worn_tool_range(tier) {
         out.push(items.get(k).cloned().flatten().map(|s| snbt(&s)).unwrap_or_default());
@@ -8125,7 +8656,10 @@ fn send_tools(game: &mut Game<'_>, uuid: u128) {
 /// places (`ADD_NEW`: the hand's goes into the first free one); a stack
 /// the tool slots don't take stays. Not while the worn backpack's menu is open.
 fn swap_tool(game: &mut Game<'_>, uuid: u128, slot: i32, button: u8) {
-    if with(|s| s.open.get(&uuid).is_some_and(|o| o.0 == Source::Worn)) {
+    if !cfg().allow_tool_swapping {
+        return;
+    }
+    if worn_menu_open(uuid) {
         return;
     }
     let Some(mut stack) = worn(game, uuid) else {
@@ -8171,6 +8705,7 @@ fn swap_tool(game: &mut Game<'_>, uuid: u128, slot: i32, button: u8) {
         }
     }
     advance(game, uuid, "swap_tools");
+    tell_worn(game, uuid);
     let at = [position[0], position[1] + 0.5, position[2]];
     game.native_play_sound_to(uuid, "minecraft:item.armor.equip_leather", "block", Some(at), 1.0, 1.0);
     send_tools(game, uuid);
@@ -8179,6 +8714,9 @@ fn swap_tool(game: &mut Game<'_>, uuid: u128, slot: i32, button: u8) {
 /// `RadialToolsOverlay.buildSegToSlot`: the filled slots in order, and the
 /// first free one when the hand's stack may go in (`displayEmptySlots` off).
 fn radial_segments(tools: &[Option<ItemStack>], can_add: bool) -> (Vec<usize>, Option<usize>) {
+    if cfg().tools_display_empty_slots {
+        return ((0..tools.len()).collect(), None);
+    }
     let mut segments: Vec<usize> = (0..tools.len()).filter(|&i| tools[i].is_some()).collect();
     let plus = can_add.then(|| (0..tools.len()).find(|&i| tools[i].is_none())).flatten();
     if let Some(p) = plus {
@@ -8209,13 +8747,18 @@ fn draw_radial(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, scree
     else {
         return;
     };
-    let centre = [(batch.width / 2.0).floor(), (batch.height / 2.0).floor()];
+    // `getScaledWindow`: the middle, moved by the config's offsets (pixels of a 1920 by 1080 window).
+    let [off_x, off_y] = cfg().tools_offset;
+    let centre = [
+        (batch.width / 2.0 + off_x as f32 / 1920.0 * batch.width).round(),
+        (batch.height / 2.0 + off_y as f32 / 1080.0 * batch.height).round(),
+    ];
     let t = (opened.elapsed().as_secs_f32() * 1000.0 / 180.0).clamp(0.0, 1.0);
     let t = t * t * (3.0 - 2.0 * t);
     // The ring, 256 square, scaled up as it opens.
     if let Some(r) = game.gui.atlas.sprites.get("travelersbackpack:gui/tools_overlay").copied() {
         let size = 256.0 * t;
-        let alpha = (t.min(RADIAL_OPACITY) * 255.0) as u8;
+        let alpha = (t.min(cfg().tools_opacity) * 255.0) as u8;
         batch.rect_uv(centre[0] - size / 2.0, centre[1] - size / 2.0, size, size, r, horizon_client::hud::rgba(255, 255, 255, alpha));
     }
     let main = game.inventory.get(game.selected).cloned().flatten();
@@ -8228,10 +8771,16 @@ fn draw_radial(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, scree
     let hovered_seg = radial_hovered(centre, screen.mouse, segments.len());
     let mut hovered = -1;
     let mut hovered_plus = false;
+    let mut hovered_empty = false;
     if let Some(seg) = hovered_seg {
         let slot = segments[seg];
         if tools[slot].is_some() {
             hovered = slot as i32;
+        } else if cfg().tools_display_empty_slots {
+            // An empty slot shown: the hand's stack goes into it, or it says so.
+            hovered_plus = can_add;
+            hovered_empty = !can_add;
+            hovered = if can_add { slot as i32 } else { -1 };
         } else if can_add && plus == Some(slot) {
             hovered_plus = true;
             hovered = ADD_NEW;
@@ -8248,7 +8797,7 @@ fn draw_radial(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, scree
         let x = centre[0] + (angle.cos() * RADIAL_RING * t).floor() - RADIAL_ICON / 2.0;
         let y = centre[1] + (angle.sin() * RADIAL_RING * t).floor() - RADIAL_ICON / 2.0;
         let stack = tools[slot].as_ref();
-        if hovered_seg == Some(seg) && (stack.is_some() || can_add) {
+        if hovered_seg == Some(seg) && (stack.is_some() || can_add || hovered_empty) {
             game.native_fill(batch, [x - 2.0, y - 2.0, RADIAL_ICON + 4.0, RADIAL_ICON + 4.0], 0x80FF_FFFF);
         }
         match stack {
@@ -8268,7 +8817,7 @@ fn draw_radial(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, scree
     } else if let Some(stack) = usize::try_from(hovered).ok().and_then(|h| tools.get(h)).and_then(Option::as_ref) {
         // `showTooltip` off: the name alone, but all of the hose's.
         let mut lines = game.stack_tooltip(stack);
-        if !hose {
+        if !hose && !cfg().tools_show_tooltip {
             lines.truncate(1);
         }
         if &*stack.item == BACKPACK_TANK {
@@ -8278,7 +8827,7 @@ fn draw_radial(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, scree
                 lines.push((Text::literal(tr(game, "screen.travelersbackpack.empty")), u32::MAX));
             } else {
                 lines.push((Text::literal(fluid_name(game, fluid)), u32::MAX));
-                lines.push((Text::legacy(&format!("§7{amount}/{capacity} mB")), u32::MAX));
+                lines.push((Text::legacy(&format!("§7{}/{} mB", mb(*amount), mb(capacity))), u32::MAX));
             }
         } else {
             centred_item = false;
@@ -8287,8 +8836,12 @@ fn draw_radial(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, scree
         }
         game.draw_tooltip_lines(batch, &lines, mouse[0], mouse[1]);
     }
+    if hovered_empty {
+        centred_item = false;
+        radial_centre_text(game, batch, &tr(game, "screen.travelersbackpack.empty"), centre);
+    }
     // `renderBackpackIconInCenter`.
-    if centred_item && let Some(b) = backpack.as_ref() {
+    if centred_item && cfg().tools_render_backpack_icon_in_center && let Some(b) = backpack.as_ref() {
         game.draw_item(batch, b, centre[0] - 8.0, centre[1] - 8.0);
     }
 }
@@ -8296,4 +8849,972 @@ fn draw_radial(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, scree
 fn radial_centre_text(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, text: &str, centre: [f32; 2]) {
     let w = game.native_text_width(text);
     game.native_text(batch, text, [centre[0] - (w / 2.0).floor(), centre[1] - 4.0], 0x00FF_FFFF, true);
+}
+
+// ---- the death message, dropped backpacks, Mod Menu ----
+
+/// `ClientboundSendMessagePacket`: where a dead player's backpack went
+/// (`<dropped 0/1>\t<x>\t<y>\t<z>`).
+const MESSAGE_CHANNEL: &str = "travelersbackpack:send_message";
+
+thread_local! {
+    /// On the client: messages for the chat, shown at the next tick.
+    static PENDING_MESSAGES: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+    static MOD_MENU_WRITTEN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// The chat line, unless the client's config turns it off.
+fn show_messages(game: &mut Game<'_>) {
+    for text in PENDING_MESSAGES.with(|m| std::mem::take(&mut *m.borrow_mut())) {
+        if !cfg().send_backpack_coordinates_message {
+            continue;
+        }
+        let mut parts = text.split('\t');
+        let dropped = parts.next() == Some("1");
+        let coords: Vec<String> = parts.map(str::to_owned).collect();
+        let key = if dropped { "information.travelersbackpack.backpack_drop" } else { "information.travelersbackpack.backpack_coords" };
+        let line = format_args(&tr(game, key), &coords);
+        game.system_message(Text::literal(line));
+    }
+}
+
+/// `BackpackItemEntity` / `ItemEntityMixin`: a dropped backpack never
+/// despawns (`neverDespawn`), doesn't burn (`fireResistant`), takes no
+/// damage (`invulnerableBackpack`, `explosionResistant`) and, fallen out of
+/// the world, floats back up and stays there (`voidProtection`).
+fn protect_dropped(game: &mut Game<'_>) {
+    let c = cfg();
+    let min_y = f64::from(game.world.shape.min_y);
+    for item in game.dropped.iter_mut().filter(|d| tb::is_backpack(&d.stack.item)) {
+        if c.never_despawn {
+            item.age = 0;
+        }
+        if c.fire_resistant || c.invulnerable_backpack {
+            item.fire_ticks = 0;
+        }
+        if c.invulnerable_backpack || c.explosion_resistant || c.fire_resistant {
+            item.health = item.health.max(1_000_000);
+        }
+        if c.void_protection && !item.no_gravity {
+            if item.position.y < min_y + 1.0 {
+                // Floating up as in a bubble column.
+                item.velocity.y = (item.velocity.y + 0.06).min(0.7);
+                item.needs_sync = true;
+            } else if item.velocity.y > 0.0 && item.position.y < min_y + 2.0 {
+                item.no_gravity = true;
+                item.velocity = horizon_core::geometry::Vec3::new(0.0, 0.0, 0.0);
+                item.needs_sync = true;
+            }
+        }
+    }
+}
+
+/// Mod Menu's icon and metadata (`fabric.mod.json`) in the mod's folder,
+/// each written when it differs, once a run.
+fn write_mod_menu_files(game: &Game<'_>) {
+    if MOD_MENU_WRITTEN.with(|w| w.replace(true)) {
+        return;
+    }
+    const ICON: &[u8] = horizon_client::native_data!("travelersbackpack_native", "icon.png");
+    let dir = game.native_data_dir(MOD_ID);
+    let _ = std::fs::create_dir_all(&dir);
+    let json = format!(
+        r#"{{
+  "schema": 1,
+  "name": "Traveler's Backpack",
+  "version": "{VERSION}",
+  "description": "Unique and upgradeable backpacks with customization and more!",
+  "description_ru": "Уникальные и улучшаемые рюкзаки с настройкой. Порт Traveler's Backpack.",
+  "authors": ["Tiviacz1337"],
+  "contributors": ["DispatchedToHeaven (Horizon port)"],
+  "license": "LGPL-3.0",
+  "links": {{
+    "homepage": "https://www.curseforge.com/minecraft/mc-mods/travelers-backpack-fabric",
+    "sources": "https://github.com/DeportedToHell/MCRE-Mods/tree/main/travelersbackpack",
+    "issues": "https://github.com/DeportedToHell/MCRE-Mods/issues"
+  }},
+  "badges": [],
+  "config_screen": false
+}}
+"#
+    );
+    for (name, bytes) in [("icon.png", ICON), ("modmenu.json", json.as_bytes())] {
+        let path = dir.join(name);
+        if std::fs::read(&path).ok().as_deref() != Some(bytes) {
+            let _ = std::fs::write(&path, bytes);
+        }
+    }
+}
+
+/// `TierConfig.tankCapacity`: each tank holds the config's amount a row of
+/// storage (a bucket by default), two rows more on the wider screen.
+fn tank_capacity(tier: tb::Tier) -> i32 {
+    let i = ["leather", "iron", "gold", "diamond", "netherite"].iter().position(|n| *n == tier.name).unwrap_or(0);
+    let rows = tier.rows() + if tier.extended() { 2 } else { 0 };
+    (rows as i32).saturating_mul(cfg().tank_capacity[i]).saturating_mul(FLUID_UNIT)
+}
+
+/// `PlayerMixin`'s slowness: every 100 ticks, a player (not in creative)
+/// carrying more backpacks than `maxNumberOfBackpacks` (the worn one, the
+/// inventory's, the other hand's) is slowed, a level per
+/// `slownessPerExcessedBackpack` past it, at most 10, for 200 ticks.
+fn backpack_slowness(game: &mut Game<'_>) {
+    let c = cfg();
+    if !c.too_many_backpacks_slowness || game.world.game_time % 100 != 0 {
+        return;
+    }
+    let players: Vec<(u128, usize)> = game
+        .lan
+        .as_ref()
+        .map(|h| {
+            h.hub
+                .guests
+                .iter()
+                .filter(|g| g.placed && !g.dead && g.game_mode != 1)
+                .map(|g| {
+                    let carried = g.inventory.iter().flatten().chain(g.offhand.iter()).filter(|s| tb::is_backpack(&s.item)).count();
+                    (g.uuid, carried)
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    for (uuid, carried) in players {
+        let count = carried + usize::from(worn(game, uuid).is_some());
+        let max = usize::try_from(c.max_number_of_backpacks).unwrap_or(3);
+        if count == 0 || count <= max {
+            continue;
+        }
+        let levels = (((count - max) as f64 * c.slowness_per_excessed_backpack).ceil() as i32).clamp(1, 10);
+        let e = super::native_player_state::NativeEffect {
+            id: "minecraft:slowness".to_owned(),
+            amplifier: (levels - 1) as u8,
+            duration: 200,
+            ambient: false,
+            particles: false,
+        };
+        game.native_add_effect(uuid, &e);
+    }
+}
+
+/// Whether `state` is a sleeping bag's (for its respawn point).
+pub(super) fn is_bag_state(game: &Game<'_>, state: horizon_world::registry::BlockStateId) -> bool {
+    is_sleeping_bag(&game.res.facts().get(state).name)
+}
+
+/// `TravelersBackpackItem.overrideStackedOnOther` and
+/// `overrideOtherStackedOnMe`: a right click (not in creative) with a backpack
+/// held on an item of the inventory, or with an item held on a backpack
+/// there, puts the item into the backpack's storage, as much as fits; the
+/// click does nothing else.
+pub(super) fn stack_into_backpack(
+    game: &Game<'_>,
+    host: &mut super::lan::LanHost,
+    conn: u32,
+    p: &mut horizon_protocol::packets::play::ContainerClick,
+) {
+    if p.input != 0 || p.button != 1 {
+        return;
+    }
+    let Some(g) = host.hub.guest(conn) else {
+        return;
+    };
+    if g.game_mode == 1 {
+        return;
+    }
+    let Ok(clicked) = usize::try_from(p.slot) else {
+        return;
+    };
+    // The inventory slot the click is on: the player's own window (main 9..36,
+    // hotbar 36..45, the other hand 45), or any menu's inventory rows after its own.
+    let size = if p.container == 0 { 9 } else { g.menu.as_ref().filter(|m| m.window == p.container).map_or(usize::MAX, |m| m.size) };
+    let slot = if p.container == 0 {
+        match clicked {
+            9..=35 => Some(clicked),
+            36..=44 => Some(clicked - 36),
+            45 => Some(shield_slot()),
+            _ => None,
+        }
+    } else {
+        clicked.checked_sub(size).and_then(|k| match k {
+            0..=26 => Some(9 + k),
+            27..=35 => Some(k - 27),
+            _ => None,
+        })
+    };
+    let Some(slot) = slot else {
+        return;
+    };
+    let in_slot = if slot == shield_slot() { g.offhand.clone() } else { g.inventory.get(slot).cloned().flatten() };
+    let Some(target) = in_slot else {
+        return;
+    };
+    let Some(carried) = g.carried.clone() else {
+        return;
+    };
+    // Which is the backpack, which the item going in.
+    let (backpack_held, mut backpack, item) = if tb::is_backpack(&carried.item) && carried.count == 1 && fits_storage(game, &target) {
+        (true, carried, target)
+    } else if tb::is_backpack(&target.item) && target.count == 1 && fits_storage(game, &carried) {
+        (false, target, carried)
+    } else {
+        return;
+    };
+    let tier = tb::tier(item_tier(game, &backpack));
+    let mut items = contents(&backpack, tier.slots());
+    let left = insert_stacked(game, &mut items[..tier.storage], item.clone());
+    let moved = item.count - left.as_ref().map_or(0, |l| l.count);
+    // The click is spent either way.
+    (p.slot, p.button, p.input) = (-999, 3 << 2, 5);
+    if moved <= 0 {
+        return;
+    }
+    set_contents(&mut backpack, items);
+    let uuid = {
+        let Some(g) = host.hub.guest_mut(conn) else {
+            return;
+        };
+        let rest = left.filter(|l| l.count > 0);
+        let (held, in_slot) = if backpack_held { (Some(backpack), rest) } else { (rest, Some(backpack)) };
+        g.carried = held;
+        if slot == shield_slot() {
+            g.offhand = in_slot;
+        } else if let Some(s) = g.inventory.get_mut(slot) {
+            *s = in_slot;
+        }
+        g.uuid
+    };
+    STACKED_SOUNDS.with(|s| s.borrow_mut().push(uuid));
+}
+
+/// The other hand's place in a guest's inventory, as `stack_into_backpack` counts.
+fn shield_slot() -> usize {
+    super::shield::OFFHAND_SLOT
+}
+
+thread_local! {
+    /// Players who put something into a backpack, for `BUNDLE_INSERT` at the tick.
+    static STACKED_SOUNDS: RefCell<Vec<u128>> = const { RefCell::new(Vec::new()) };
+}
+
+/// `playInsertSound`.
+fn stacked_sounds(game: &mut Game<'_>) {
+    for uuid in STACKED_SOUNDS.with(|s| std::mem::take(&mut *s.borrow_mut())) {
+        let at = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map(|g| g.position);
+        if let Some(at) = at {
+            let pitch = 0.8 + (game.world.game_time % 5) as f32 * 0.1;
+            game.native_play_sound_to(uuid, "minecraft:item.bundle.insert", "player", Some(at), 0.8, pitch);
+        }
+    }
+}
+
+// ---- the player's inventory (`ScreenRenderHandler`, `BackpackIconCommands`) ----
+
+thread_local! {
+    /// `showBackpackIconInInventory` as `/tb_client hide|show` set it this run.
+    static ICON_SHOWN: std::cell::Cell<Option<bool>> = const { std::cell::Cell::new(None) };
+    /// A left click on the worn backpack's icon, sent at the tick.
+    static ICON_OPEN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// The inventory slot under the pointer, and when it was seen.
+    static HOVERED_SLOT: std::cell::Cell<Option<(usize, std::time::Instant)>> = const { std::cell::Cell::new(None) };
+    /// A chat line from the inventory (`hide_icon_info`), shown at the tick.
+    static ICON_INFO: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+fn icon_shown() -> bool {
+    ICON_SHOWN.with(std::cell::Cell::get).unwrap_or(cfg().show_backpack_icon_in_inventory)
+}
+
+/// The worn backpack's icon's place on the inventory screen (`leftPos + 77`, `topPos + 44`).
+fn icon_rect(screen: &horizon_client::mod_api::NativeScreenView<'_>) -> [f32; 4] {
+    [screen.rect[0] + 77.0, screen.rect[1] + 44.0, 16.0, 16.0]
+}
+
+/// The player's own inventory screen (not a container, not creative).
+fn own_inventory(game: &Game<'_>, screen: &horizon_client::mod_api::NativeScreenView<'_>) -> bool {
+    screen.id == "inventory" && screen.menu.is_none() && !game.creative_inventory_open() && !game.creative_tab_open()
+}
+
+/// The worn backpack as its icon shows it, from what the server told.
+fn worn_icon_stack(game: &Game<'_>) -> Option<ItemStack> {
+    let me = game.own_profile_name();
+    let w = WEARING.with(|w| w.borrow().get(&me).cloned())?;
+    let mut stack = ItemStack::new(&w.backpack, 1);
+    let mut look = Compound::new();
+    look.insert("flags".into(), Tag::List(vec![Tag::Byte(i8::from(w.tanks))]));
+    look.insert("strings".into(), Tag::List(vec![Tag::String(w.bag.as_str().into())]));
+    stack.data_mut().set_other("minecraft:custom_model_data", Some(Tag::Compound(look)));
+    stack.data_mut().wire = Default::default();
+    stack.tidy();
+    set_item_dye(&mut stack, w.dye);
+    Some(stack)
+}
+
+/// `renderAboveContents`: over any inventory screen (not in creative), a
+/// backpack held marks the items it can take (`-`), an item held marks the
+/// backpacks it can go into (`+`), with "Right click to add" over them; on
+/// the player's own inventory, the worn backpack's icon above the armour.
+fn draw_inventory_extras(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, screen: &horizon_client::mod_api::NativeScreenView<'_>) {
+    if screen.id != "inventory" || game.creative_inventory_open() || game.creative_tab_open() {
+        return;
+    }
+    let (ox, oy) = game.inventory_origin(batch);
+    let mouse = screen.mouse;
+    let hovered = game.slot_at(batch, mouse[0], mouse[1]);
+    HOVERED_SLOT.with(|h| h.set(hovered.map(|i| (i, std::time::Instant::now()))));
+    let add = || vec![(Text::literal(format!("§e{}", tr(game, "screen.travelersbackpack.add_to_backpack"))), u32::MAX)];
+    if !game.creative {
+        if let Some(carried) = game.carried.as_ref() {
+            for i in game.slots().into_iter().filter(|&i| i < 36) {
+                let Some(stack) = game.inventory.get(i).cloned().flatten() else {
+                    continue;
+                };
+                let (sx, sy) = game.slot_position(i);
+                let (x, y) = (ox + sx, oy + sy);
+                if tb::is_backpack(&carried.item) {
+                    if fits_storage(game, &stack) {
+                        game.native_text(batch, "-", [x + 2.0, y - 1.0], 0x00FF_FF55, false);
+                        if hovered == Some(i) {
+                            game.draw_tooltip_lines(batch, &add(), mouse[0], mouse[1]);
+                        }
+                    }
+                } else if fits_storage(game, carried) && tb::is_backpack(&stack.item) {
+                    game.native_text(batch, "+", [x + 9.0, y + 8.0], 0x00FF_FF55, false);
+                    if hovered == Some(i) {
+                        game.draw_tooltip_lines(batch, &add(), mouse[0], mouse[1]);
+                    }
+                }
+            }
+        }
+    }
+    if !own_inventory(game, screen) || !icon_shown() {
+        return;
+    }
+    let Some(stack) = worn_icon_stack(game) else {
+        return;
+    };
+    let [x, y, w, h] = icon_rect(screen);
+    let over = inside([x, y, w, h], mouse);
+    if over {
+        game.draw_slot_highlight(batch, false, x, y);
+    }
+    game.draw_item(batch, &stack, x, y);
+    if over {
+        game.draw_slot_highlight(batch, true, x, y);
+        let key = game.native_mod_key(MOD_ID, "inventory", "key.keyboard.b");
+        let name = key.rsplit('.').next().unwrap_or("b").to_uppercase();
+        let mut lines = vec![
+            (Text::legacy(&format_args(&tr(game, "screen.travelersbackpack.open_inventory"), &[name])), u32::MAX),
+            (Text::legacy(&tr(game, "screen.travelersbackpack.unequip_tip")), u32::MAX),
+            (Text::legacy(&tr(game, "screen.travelersbackpack.hide_icon")), u32::MAX),
+        ];
+        lines.extend(game.stack_tooltip(&stack).into_iter().skip(1));
+        game.draw_tooltip_lines(batch, &lines, mouse[0], mouse[1]);
+    }
+}
+
+/// A click on the worn backpack's icon: the left button opens it, shift and
+/// the right one tells how to hide the icon.
+pub(super) fn inventory_icon_press(game: &Game<'_>, screen: &horizon_client::mod_api::NativeScreenView<'_>, button: i32, canceled: &mut bool) {
+    if *canceled || !own_inventory(game, screen) || !icon_shown() || worn_icon_stack(game).is_none() {
+        return;
+    }
+    if !inside(icon_rect(screen), screen.mouse) {
+        return;
+    }
+    if button == 0 {
+        *canceled = true;
+        ICON_OPEN.with(|o| o.set(true));
+    } else if button == 1 && game.native_has_shift_down() {
+        *canceled = true;
+        ICON_INFO.with(|o| o.set(true));
+    }
+}
+
+/// At the client tick: the icon's click done.
+fn inventory_icon_tick(game: &mut Game<'_>) {
+    if ICON_OPEN.with(|o| o.replace(false)) {
+        let _ = game.native_net_send_to_server(OPEN_CHANNEL, &[]);
+    }
+    if ICON_INFO.with(|o| o.replace(false)) {
+        let line = tr(game, "screen.travelersbackpack.hide_icon_info");
+        game.system_message(Text::legacy(&line));
+    }
+}
+
+/// `/tb_client`'s name, for the chat box.
+pub(super) fn client_commands(commands: &mut Vec<&'static str>) {
+    commands.push("tb_client");
+}
+
+/// `/tb_client hide` and `/tb_client show`: the worn backpack's icon in the
+/// inventory, kept in the client config.
+pub(super) fn client_command(game: &mut Game<'_>, command: &str, ran: &mut bool) {
+    let mut words = command.split_whitespace();
+    if words.next() != Some("tb_client") {
+        return;
+    }
+    let show = match words.next() {
+        Some("hide") => false,
+        Some("show") => true,
+        _ => return,
+    };
+    *ran = true;
+    ICON_SHOWN.with(|s| s.set(Some(show)));
+    if let Ok(dir) = Game::native_config_dir() {
+        let path = dir.join("travelersbackpack-client.toml");
+        if let Ok(text) = std::fs::read_to_string(&path) {
+            let changed: Vec<String> = text
+                .lines()
+                .map(|l| {
+                    if l.trim_start().starts_with("showBackpackIconInInventory") {
+                        let indent = &l[..l.len() - l.trim_start().len()];
+                        format!("{indent}showBackpackIconInInventory = {show}")
+                    } else {
+                        l.to_owned()
+                    }
+                })
+                .collect();
+            let _ = std::fs::write(&path, changed.join("\n") + "\n");
+        }
+    }
+    if !show {
+        let line = tr(game, "screen.travelersbackpack.hidden_icon_info");
+        game.system_message(Text::legacy(&line));
+    }
+}
+
+// ---- `/tb` (`AccessCommand`, `ClearCommand`, `RestoreCommand`, `UnpackCommand`) and the backups (`BackpackManager`) ----
+
+/// The commands, for operators (`COMMANDS_GAMEMASTER`: level 2).
+pub(super) fn register_commands(commands: &mut Vec<horizon_client::mod_api::NativeCommand>) {
+    use horizon_client::mod_api::NativeCommand;
+    for usage in [
+        "tb access <pos:block_pos>",
+        "tb access <target:player>",
+        "tb remove [player:player]",
+        "tb clear [player:player]",
+        "tb restore <target:player> <backpack_id:word>",
+        "tb unpack <pos:block_pos>",
+        "tb unpack <target:player>",
+    ] {
+        commands.push(NativeCommand::op(usage, 2));
+    }
+}
+
+/// A coordinate of the command: a number, `~` or `~n` from the player's.
+fn command_coord(word: &str, own: f64) -> Option<i32> {
+    match word.strip_prefix('~') {
+        Some("") => Some(own.floor() as i32),
+        Some(rest) => rest.parse::<f64>().ok().map(|d| (own + d).floor() as i32),
+        None => word.parse::<f64>().ok().map(|n| n.floor() as i32),
+    }
+}
+
+/// A player named in the command (`@s` and `@p` are the one running it).
+fn command_player(game: &Game<'_>, word: Option<&str>, own: u128) -> Option<(u128, String)> {
+    let host = game.lan.as_ref()?;
+    match word {
+        None | Some("@s") | Some("@p") => host.hub.guests.iter().find(|g| g.uuid == own).map(|g| (g.uuid, g.name.clone())),
+        Some(name) => host.hub.guests.iter().find(|g| g.placed && g.name.eq_ignore_ascii_case(name)).map(|g| (g.uuid, g.name.clone())),
+    }
+}
+
+/// `/tb ...`, run for an operator.
+pub(super) fn perform_command(_game: &mut Game<'_>, player: &horizon_client::mod_api::NativeServerPlayer, command: &str, ran: &mut bool) {
+    if command.split_whitespace().next() != Some("tb") || player.permission < 2 {
+        return;
+    }
+    *ran = true;
+    // Run at the next tick: inside the command the player's state is swapped
+    // in, and changes made to their inventory here would be lost.
+    PENDING_COMMANDS.with(|p| p.borrow_mut().push((player.uuid, player.position, command.to_owned())));
+}
+
+thread_local! {
+    /// `/tb` commands to run at the next tick: who, where they stood, the command.
+    static PENDING_COMMANDS: RefCell<Vec<(u128, [f64; 3], String)>> = const { RefCell::new(Vec::new()) };
+}
+
+/// The `/tb` commands waiting, run in their player's level's pass (a placed
+/// backpack is reached there); a player who left drops theirs.
+fn run_commands(game: &mut Game<'_>) {
+    let here = game.dim.id().to_owned();
+    let waiting = PENDING_COMMANDS.with(|p| std::mem::take(&mut *p.borrow_mut()));
+    for (own, at, command) in waiting {
+        let dimension = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == own)).map(|g| g.dimension.clone());
+        match dimension {
+            Some(d) if d == here => run_command(game, own, at, &command),
+            Some(_) => PENDING_COMMANDS.with(|p| p.borrow_mut().push((own, at, command))),
+            None => {}
+        }
+    }
+}
+
+/// One `/tb` command, its answer in the player's chat.
+fn run_command(game: &mut Game<'_>, own: u128, position: [f64; 3], command: &str) {
+    let words: Vec<&str> = command.split_whitespace().collect();
+    let say = |game: &mut Game<'_>, text: String, ok: bool| {
+        game.native_tell(own, Text::literal(if ok { text } else { format!("§c{text}") }));
+    };
+    let pos = |w: &[&str]| -> Option<[i32; 3]> {
+        Some([command_coord(w.first()?, position[0])?, command_coord(w.get(1)?, position[1])?, command_coord(w.get(2)?, position[2])?])
+    };
+    let rest = &words[1..];
+    match rest {
+        ["access", args @ ..] if args.len() == 3 => {
+            let Some(at) = pos(args) else { return };
+            if tb::is_backpack(&game.native_block(at)) && game.native_mod_block_entity(at).is_some() {
+                with(|s| s.access.insert(own));
+
+                open_later_for(game, own, Source::Block(at));
+                say(game, format!("Accessing backpack of {}, {}, {}", at[0], at[1], at[2]), true);
+            } else {
+                say(game, format!("There's no backpack at coordinates {}, {}, {}", at[0], at[1], at[2]), false);
+            }
+        }
+        ["access", target] => match command_player(game, Some(target), own) {
+            Some((uuid, name)) if worn(game, uuid).is_some() => {
+                open_later_for(game, own, if uuid == own { Source::Worn } else { Source::Other(uuid) });
+                say(game, format!("Accessing backpack of {name}"), true);
+            }
+            _ => say(game, "Can't access backpack".into(), false),
+        },
+        ["remove" | "clear", args @ ..] => {
+            let clear = rest[0] == "clear";
+            let Some((uuid, name)) = command_player(game, args.first().copied(), own) else {
+                say(game, "No player was found".into(), false);
+                return;
+            };
+            let Some(stack) = worn(game, uuid) else {
+                say(game, format!("Player {name} is not wearing backpack"), false);
+                return;
+            };
+            close_worn_menus(game, uuid);
+            // A copy into the player's inventory (or at their feet).
+            give_or_drop(game, uuid, stack.clone());
+            let kept = clear.then(|| {
+                let mut bare = ItemStack::new(&stack.item, 1);
+                let tier = item_tier(game, &stack);
+                if tier != 0 {
+                    let _ = game.native_set_component(&mut bare, tb::TIER_COMPONENT, Tag::Int(tier));
+                    refresh_look(&mut bare);
+                }
+                bare
+            });
+            set_worn(game, uuid, kept.as_ref());
+            tell_worn(game, uuid);
+            let text = if clear {
+                format!("Cleared contents of Traveler's Backpack from {name} and added copy to inventory")
+            } else {
+                format!("Removed Traveler's Backpack from {name} and added copy to inventory")
+            };
+            say(game, text, true);
+        }
+        ["restore", target, id] => {
+            let Some((uuid, name)) = command_player(game, Some(target), own) else {
+                say(game, "No player was found".into(), false);
+                return;
+            };
+            match read_backup(game, id) {
+                Some(stack) => {
+                    give_or_drop(game, uuid, stack);
+                    say(game, format!("Successfully restored {name}'s backpack"), true);
+                }
+                None => say(game, format!("Backpack with ID {id} not found"), false),
+            }
+        }
+        ["unpack", args @ ..] if args.len() == 3 => {
+            let Some(at) = pos(args) else { return };
+            if !tb::is_backpack(&game.native_block(at)) {
+                say(game, format!("There's no backpack at coordinates {}, {}, {}", at[0], at[1], at[2]), false);
+                return;
+            }
+            flush_block_menus(game, at);
+            let tier = game.native_mod_block_entity(at).map(|m| tb::tier(block_tier(&m.nbt)));
+            let mut drops = Vec::new();
+            game.native_with_mod_block_entity(at, |m| {
+                let end = tier.map_or(0, tb::Tier::slots).min(m.items.len());
+                drops = m.items[..end].iter_mut().filter_map(Option::take).filter(|s| s.count > 0).collect();
+            });
+            if drops.is_empty() {
+                say(game, format!("There's no contents in backpack at coordinates {}, {}, {}", at[0], at[1], at[2]), false);
+                return;
+            }
+            let dimension = game.dim.id().to_owned();
+            set_block_tanks(game, &dimension, at, false);
+            let spot = at.map(|c| f64::from(c) + 0.5);
+            for stack in drops {
+                game.spawn_item(stack, spot, super::dispenser::new_item_motion(), 10);
+            }
+            say(game, format!("Dropping contents of backpack placed at {}, {}, {}", at[0], at[1], at[2]), true);
+        }
+        ["unpack", target] => {
+            let Some((uuid, name)) = command_player(game, Some(target), own) else {
+                say(game, "No player was found".into(), false);
+                return;
+            };
+            let Some(mut stack) = worn(game, uuid) else {
+                say(game, format!("Player {name} is not wearing backpack"), false);
+                return;
+            };
+            close_worn_menus(game, uuid);
+            let tier = tb::tier(item_tier(game, &stack));
+            let items = contents(&stack, tier.slots());
+            let drops: Vec<ItemStack> = items.into_iter().flatten().filter(|s| s.count > 0).collect();
+            if drops.is_empty() {
+                say(game, format!("There's no contents in {name} backpack"), false);
+                return;
+            }
+            set_contents(&mut stack, vec![None; tier.slots()]);
+            set_worn(game, uuid, Some(&stack));
+            tell_worn(game, uuid);
+            let at = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map(|g| g.position).unwrap_or(position);
+            let feet = at.map(|c| c.floor());
+            for stack in drops {
+                game.spawn_item(stack, [feet[0] + 0.5, feet[1] + 0.5, feet[2] + 0.5], super::dispenser::new_item_motion(), 10);
+            }
+            say(game, format!("Dropping contents of {name} backpack at {}, {}, {}", feet[0], feet[1], feet[2]), true);
+        }
+        _ => say(game, "Unknown or incomplete command".into(), false),
+    }
+}
+
+/// A menu open for `viewer` at the next tick, as a click would open it.
+fn open_later_for(_game: &mut Game<'_>, viewer: u128, source: Source) {
+    let dimension = _game.dim.id().to_owned();
+    with(|s| {
+        if !s.opening.iter().any(|(u, _, _)| *u == viewer) {
+            s.opening.push((viewer, source, dimension));
+        }
+    });
+}
+
+/// The menus showing `uuid`'s worn backpack close first (their contents saved).
+fn close_worn_menus(game: &mut Game<'_>, uuid: u128) {
+    let viewers: Vec<(u128, i32)> = with(|s| {
+        s.open.iter().filter(|(v, o)| (**v == uuid && o.0 == Source::Worn) || o.0 == Source::Other(uuid)).map(|(v, o)| (*v, o.2)).collect()
+    });
+    for (viewer, window) in viewers {
+        let Some(conn) = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == viewer)).map(|g| g.conn) else {
+            continue;
+        };
+        if let Some(host) = game.lan.as_mut() {
+            horizon_client::lan::containers::travelersbackpack_menu::close(&mut host.hub, conn, window);
+        }
+    }
+}
+
+/// `BackpackManager`'s folder: `<world>/backpacks/<player uuid>/`.
+fn backups_dir(game: &Game<'_>) -> Option<std::path::PathBuf> {
+    Some(game.native_world_dir()?.join("backpacks"))
+}
+
+fn uuid_text(uuid: u128) -> String {
+    let h = format!("{uuid:032x}");
+    format!("{}-{}-{}-{}-{}", &h[..8], &h[8..12], &h[12..16], &h[16..20], &h[20..])
+}
+
+/// `BackpackManager.addBackpack`: a dead player's backpack kept in a file
+/// named by its item and the time (`travelersbackpack.cow_12.11.2026-21.05.33.dat`).
+fn save_backup(game: &Game<'_>, uuid: u128, stack: &ItemStack) {
+    let Some(dir) = backups_dir(game) else {
+        return;
+    };
+    let dir = dir.join(uuid_text(uuid));
+    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64);
+    // Days since 1970 to a date (Howard Hinnant's `civil_from_days`).
+    let (days, rest) = (secs.div_euclid(86_400), secs.rem_euclid(86_400));
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + i64::from(month <= 2);
+    let name = format!(
+        "{}_{day:02}.{month:02}.{year:04}-{:02}.{:02}.{:02}.dat",
+        stack.item.replace(':', "."),
+        rest / 3600,
+        rest / 60 % 60,
+        rest % 60
+    );
+    let root = horizon_world::nbt::NamedTag { name: "".into(), tag: horizon_items::item_nbt::item_to_nbt(stack) };
+    if let Ok(bytes) = horizon_world::nbt::write_named(&root, horizon_world::nbt::Limits::default()) {
+        let _ = std::fs::create_dir_all(&dir);
+        let _ = std::fs::write(dir.join(name), bytes);
+    }
+}
+
+/// `BackpackManager.getBackpack`: a backup by its file name, whoever's it is.
+fn read_backup(game: &Game<'_>, id: &str) -> Option<ItemStack> {
+    if id.contains(['/', '\\']) || id.contains("..") {
+        return None;
+    }
+    let dir = backups_dir(game)?;
+    for player in std::fs::read_dir(&dir).ok()?.flatten() {
+        // The file's name, with or without its `.dat`.
+        let path = player.path().join(id);
+        let bytes = std::fs::read(&path).or_else(|_| std::fs::read(player.path().join(format!("{id}.dat"))));
+        if let Ok(bytes) = bytes {
+            let (root, _) = horizon_world::nbt::read_named(&bytes, horizon_world::nbt::Limits::default()).ok()?;
+            return horizon_items::item_nbt::item_from_nbt(&root.tag);
+        }
+    }
+    None
+}
+
+/// Whether `uuid`'s worn backpack is open: by them, or by an operator (`/tb access`).
+fn worn_menu_open(uuid: u128) -> bool {
+    with(|s| s.open.iter().any(|(v, o)| (*v == uuid && o.0 == Source::Worn) || o.0 == Source::Other(uuid)))
+}
+
+thread_local! {
+    /// The game time of the last tick's first level pass.
+    static LAST_TICK: std::cell::Cell<Option<i64>> = const { std::cell::Cell::new(None) };
+}
+
+/// Each player's waiting actions, at most 64: a flood of button presses (or
+/// actions for a level that doesn't tick) can't grow the queue for ever.
+fn cap_actions() {
+    with(|s| {
+        let mut count: HashMap<u128, usize> = HashMap::new();
+        s.actions.retain(|(u, _, _)| {
+            let n = count.entry(*u).or_insert(0);
+            *n += 1;
+            *n <= 64
+        });
+    });
+}
+
+/// Menus of placed backpacks closed while their level wasn't ticking: written
+/// into them when it does.
+fn write_closed_elsewhere(game: &mut Game<'_>) {
+    let here = game.dim.id().to_owned();
+    let due: Vec<([i32; 3], Vec<Option<ItemStack>>)> = with(|s| {
+        let (due, rest): (Vec<_>, Vec<_>) = std::mem::take(&mut s.closed_elsewhere).into_iter().partition(|(_, d, _)| *d == here);
+        s.closed_elsewhere = rest;
+        due.into_iter().map(|(p, _, i)| (p, i)).collect()
+    });
+    for (pos, items) in due {
+        if !tb::is_backpack(&game.native_block(pos)) {
+            continue;
+        }
+        let tier = game.native_mod_block_entity(pos).map(|m| tb::tier(block_tier(&m.nbt)));
+        if let Some(tier) = tier {
+            set_block_tanks(game, &here, pos, shows_tanks(&items, tier));
+        }
+        game.native_with_mod_block_entity(pos, |m| {
+            if m.id != tb::BLOCK_ENTITY {
+                return;
+            }
+            for (i, item) in items.into_iter().enumerate() {
+                if let Some(slot) = m.items.get_mut(i) {
+                    *slot = item;
+                }
+            }
+        });
+    }
+}
+
+/// The acting player has a backpack open from the selected slot.
+pub(super) fn held_locked(game: &mut Game<'_>) -> bool {
+    let uuid = game.native_acting_id();
+    with(|s| s.open.get(&uuid).is_some_and(|o| o.0 == Source::Hand(game.selected)))
+}
+
+/// `player` has a backpack open from their inventory.
+pub(super) fn hand_menu_open(player: u128) -> bool {
+    with(|s| s.open.get(&player).is_some_and(|o| matches!(o.0, Source::Hand(_))))
+}
+
+/// `RightClickHandler`'s quick unequip, with `rightClickUnequip` (off by
+/// default): sneaking, the main hand empty, a right click on a block (not a
+/// backpack) places the worn backpack against its face, facing the player.
+pub(super) fn quick_unequip(game: &mut Game<'_>, pos: [i32; 3], face: [i32; 3], main: bool, cancel: &mut bool) {
+    if *cancel || !cfg().right_click_unequip || !main || !game.native_sneaking() {
+        return;
+    }
+    let uuid = game.native_acting_id();
+    let Some(g) = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)) else {
+        return;
+    };
+    if g.inventory.get(g.selected).is_some_and(Option::is_some) || tb::is_backpack(&game.native_block(pos)) {
+        return;
+    }
+    let yaw = g.yaw;
+    let Some(stack) = worn(game, uuid) else {
+        return;
+    };
+    if worn_menu_open(uuid) {
+        return;
+    }
+    let spot = [pos[0] + face[0], pos[1] + face[1], pos[2] + face[2]];
+    if !replaceable(&game.native_block(spot)) {
+        return;
+    }
+    let dimension = game.dim.id().to_owned();
+    let Some(state) = game.native_default_state(&stack.item) else {
+        return;
+    };
+    if !game.native_set_block(&dimension, spot, state, 3) {
+        return;
+    }
+    // Its front toward the player (`getHorizontalDirection().getOpposite()`).
+    let facing = match facing_of_yaw(yaw) {
+        "north" => "south",
+        "south" => "north",
+        "east" => "west",
+        _ => "east",
+    };
+    if let Some(turned) = with_property(game, spot, "facing", facing) {
+        game.native_set_block(&dimension, spot, turned, 3);
+    }
+    place_block(game, &stack, spot);
+    set_worn(game, uuid, None);
+    tell_worn(game, uuid);
+    *cancel = true;
+}
+
+// ---- mobs with backpacks (`MobEntityMixin`, `HumoanoidMobRenderer`, `DeathHandler`) ----
+
+/// `MobEntityMixin.initialize`: a zombie, skeleton or enderman (the nether's:
+/// a wither skeleton or piglin) that spawns, grown and with nothing on its
+/// chest, wears a random backpack now and then (`spawnEntitiesWithBackpack`,
+/// `chance`): a random bag; half of them with the tanks upgrade; most dyed.
+pub(super) fn mob_spawned(game: &mut Game<'_>, dimension: &str, kind: &str, pos: [f64; 3]) {
+    use horizon_core::random::RandomSource as _;
+    let c = cfg();
+    if !c.spawn_entities_with_backpack || game.dim.id() != dimension {
+        return;
+    }
+    let nether = c.nether_entity_types.iter().any(|k| k == kind);
+    if !nether && !c.overworld_entity_types.iter().any(|k| k == kind) {
+        return;
+    }
+    let Some(i) = game.mobs.iter().rposition(|m| {
+        !m.removed && *m.kind.id == *kind && m.position.x == pos[0] && m.position.y == pos[1] && m.position.z == pos[2]
+    }) else {
+        return;
+    };
+    let mob = &game.mobs[i];
+    if mob.is_baby() || mob.extra.armor[1].is_some() || mob.extra.chest.is_some() {
+        return;
+    }
+    let seed = i64::from(mob.id) ^ game.world.game_time.wrapping_mul(0x5DEE_CE66D);
+    let mut random = horizon_core::random::LegacyRandom::new(seed);
+    if f64::from(random.next_float()) >= c.spawn_chance {
+        return;
+    }
+    let list = if nether { &c.nether_backpacks } else { &c.overworld_backpacks };
+    if list.is_empty() {
+        return;
+    }
+    let pick = random.next_int_between_inclusive(0, list.len() as i32 - 1).unwrap_or(0) as usize;
+    let mut backpack = ItemStack::new(&list[pick], 1);
+    if !tb::is_backpack(&backpack.item) {
+        return;
+    }
+    set_item_bag(&mut backpack, random.next_int_between_inclusive(0, 15).unwrap_or(14));
+    if random.next_float() > 0.5 {
+        let tier = tb::tier(0);
+        let mut items = vec![None; tier.slots()];
+        items[tier.storage] = Some(ItemStack::new(TANKS_UPGRADE, 1));
+        set_contents(&mut backpack, items);
+    }
+    if random.next_float() > 0.25 {
+        set_item_dye(&mut backpack, Some(random.next_int() & 0xFF_FFFF));
+    }
+    refresh_look(&mut backpack);
+    let mob = &mut game.mobs[i];
+    mob.extra.chest = Some(std::sync::Arc::from(&*backpack.item));
+    mob.extra.armor[1] = Some(backpack);
+}
+
+/// `DeathHandler`: a mob wearing a backpack that a player killed drops it
+/// (unless its equipment's own drop already did).
+fn mob_backpack_drop(game: &Game<'_>, context: &NativeLootDrops<'_>, drops: &mut Vec<ItemStack>) {
+    let (Some((id, _)), Some(_)) = (context.entity, context.player) else {
+        return;
+    };
+    if drops.iter().any(|d| tb::is_backpack(&d.item)) {
+        return;
+    }
+    let worn = game.mobs.iter().find(|m| m.id == id).and_then(|m| m.extra.armor[1].clone()).filter(|s| tb::is_backpack(&s.item));
+    if let Some(stack) = worn {
+        drops.push(stack);
+    }
+}
+
+/// `HumoanoidMobRenderer`: a mob's backpack on its back, as a player's.
+fn mob_backpack_layer(
+    game: &Game<'_>,
+    mob: &super::native_mob_draw::NativeMobRender<'_>,
+    draw: &mut super::native_block_entity_draw::BlockEntityDraw,
+) {
+    let Some(m) = game.mobs.iter().find(|m| m.id == mob.id) else {
+        return;
+    };
+    let Some(stack) = m.extra.armor[1].clone().filter(|s| tb::is_backpack(&s.item)) else {
+        return;
+    };
+    let tier = tb::tier(item_tier(game, &stack));
+    let tanks = shows_tanks(&contents(&stack, tier.slots()), tier);
+    let bag = bag_name(item_bag(&stack));
+    // The body's top a little higher on a taller mob (an enderman).
+    let lift = (f64::from(m.height()) - 1.95).max(0.0) as f32;
+    draw.push();
+    draw.translate([-0.5, 0.82 + lift, -0.125 - 11.8 / 16.0]);
+    let tanks = if tanks { "true" } else { "false" };
+    let dye = item_dye(&stack);
+    if &*stack.item == STANDARD {
+        let dyed = if dye.is_some() { "true" } else { "false" };
+        game.native_draw_block(draw, &stack.item, &[("bag", bag), ("dyed", dyed), ("facing", "south"), ("tanks", tanks)]);
+        if let Some(colour) = dye {
+            draw_dyed_body(game, draw, colour, model_turn("south"));
+        }
+    } else {
+        game.native_draw_block(draw, &stack.item, &[("bag", bag), ("facing", "south"), ("tanks", tanks)]);
+    }
+    draw.pop();
+}
+
+/// Playing jukebox upgrades among `stacks` stop (`JukeboxUpgrade.onUpgradeRemoved`).
+fn stop_jukeboxes<'a>(game: &mut Game<'_>, stacks: impl Iterator<Item = &'a mut ItemStack>) {
+    let mut sounds = Vec::new();
+    for stack in stacks {
+        if tb::Tab::of(Some(&stack.item)) == tb::Tab::Jukebox
+            && let Some(sound) = playing(stack)
+        {
+            set_playing(stack, None);
+            sounds.push(sound);
+        }
+    }
+    if let Some(host) = game.lan.as_mut() {
+        for sound in sounds {
+            horizon_client::lan::containers::travelersbackpack_menu::stop_sound(&mut host.hub, &sound);
+        }
+    }
+}
+
+/// A jukebox upgrade still marked playing in a player's inventory or on their
+/// cursor was taken out of its backpack: its song stops.
+fn loose_jukeboxes(game: &mut Game<'_>) {
+    let mut sounds = Vec::new();
+    if let Some(host) = game.lan.as_mut() {
+        for g in host.hub.guests.iter_mut() {
+            for stack in g.inventory.iter_mut().chain(std::iter::once(&mut g.carried)).chain(std::iter::once(&mut g.offhand)).flatten() {
+                if tb::Tab::of(Some(&stack.item)) == tb::Tab::Jukebox
+                    && let Some(sound) = playing(stack)
+                {
+                    set_playing(stack, None);
+                    sounds.push(sound);
+                }
+            }
+        }
+        for sound in sounds {
+            horizon_client::lan::containers::travelersbackpack_menu::stop_sound(&mut host.hub, &sound);
+        }
+    }
 }

@@ -73,11 +73,6 @@ impl Tier {
     pub const fn rows(self) -> usize {
         self.storage.div_ceil(if self.extended() { 11 } else { 9 })
     }
-    /// `setBackpackTankCapacity`: a bucket (1000 mB) a row in each tank, two
-    /// more rows on the wider screen.
-    pub const fn tank_capacity(self) -> i32 {
-        (self.rows() + if self.extended() { 2 } else { 0 }) as i32 * 1000
-    }
 }
 
 /// The tier and the opening of menu type `menu`.
@@ -279,8 +274,6 @@ mod tests {
         assert_eq!(Tab::Crafting.slots().len(), 10);
         assert!(Tab::Crafting.slots().len() <= TAB_SLOTS && Tab::Void.slots().len() <= TAB_SLOTS);
         assert_eq!(upgrade_slot_ys(&[Tab::Plain, Tab::Tanks, Tab::Plain]), vec![33.0, 58.0, 131.0]);
-        assert_eq!(TIERS[0].tank_capacity(), 3000);
-        assert_eq!(TIERS[4].tank_capacity(), 11000);
         assert_eq!(menu_kind("travelersbackpack:iron_x"), None);
         assert!(is_backpack("travelersbackpack:standard"));
         assert!(is_backpack("travelersbackpack:iron_golem"));
