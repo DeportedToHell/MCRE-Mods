@@ -56,6 +56,8 @@
 
 <p align="center"><picture><source media="(max-width: 700px)" srcset=".github/readme/roadmap-en-phone.svg"><img src=".github/readme/roadmap-en.svg" alt="Roadmap" width="100%"></picture></p>
 
+★ next up. **Planned · not approved yet:** these licences don't allow a port without the author's permission, so we ask the authors first and port only what they allow.
+
 ## How to install
 
 1. Open the **Horizon launcher** and go to **Mods**.
