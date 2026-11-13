@@ -7,10 +7,10 @@
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
 <p align="center">
-<img src="../.github/releases/betterf3/feat1.svg" alt="Colourful two-column F3" width="315">
-<img src="../.github/releases/betterf3/feat2.svg" alt="Edit modules and colours" width="315">
-<img src="../.github/releases/betterf3/feat3.svg" alt="Animation, font, background" width="315">
-<img src="../.github/releases/betterf3/feat4.svg" alt="English and Russian" width="315">
+<img src="../.github/releases/betterf3/feat1.svg" alt="Colourful, readable F3" width="315">
+<img src="../.github/releases/betterf3/feat2.svg" alt="Edit and reorder modules" width="315">
+<img src="../.github/releases/betterf3/feat3.svg" alt="Pick every colour" width="315">
+<img src="../.github/releases/betterf3/feat4.svg" alt="Animation, font, background" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

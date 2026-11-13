@@ -8,8 +8,8 @@
 
 <p align="center">
 <img src="../.github/releases/dynamiclights/feat1.svg" alt="Torch in hand lights up" width="315">
-<img src="../.github/releases/dynamiclights/feat2.svg" alt="Dropped torches keep shining" width="315">
-<img src="../.github/releases/dynamiclights/feat3.svg" alt="Burning mobs and blazes glow" width="315">
+<img src="../.github/releases/dynamiclights/feat2.svg" alt="Dropped lights keep shining" width="315">
+<img src="../.github/releases/dynamiclights/feat3.svg" alt="Burning and glowing mobs" width="315">
 <img src="../.github/releases/dynamiclights/feat4.svg" alt="Choose what glows" width="315">
 </p>
 

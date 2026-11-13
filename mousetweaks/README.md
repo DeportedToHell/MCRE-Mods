@@ -7,9 +7,9 @@
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
 <p align="center">
-<img src="../.github/releases/mousetweaks/feat1.svg" alt="Drag to spread items" width="315">
-<img src="../.github/releases/mousetweaks/feat2.svg" alt="Wheel moves items" width="315">
-<img src="../.github/releases/mousetweaks/feat3.svg" alt="Mouse Tweaks options" width="315">
+<img src="../.github/releases/mousetweaks/feat1.svg" alt="Right-drag spreads items" width="315">
+<img src="../.github/releases/mousetweaks/feat2.svg" alt="Wheel moves items one by one" width="315">
+<img src="../.github/releases/mousetweaks/feat3.svg" alt="Every tweak can be turned off" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

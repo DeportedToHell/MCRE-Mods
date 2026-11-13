@@ -8,9 +8,9 @@
 
 <p align="center">
 <img src="../.github/releases/invmove/feat1.svg" alt="Walk with inventory open" width="315">
-<img src="../.github/releases/invmove/feat2.svg" alt="No dark screen tint" width="315">
-<img src="../.github/releases/invmove/feat3.svg" alt="Rules for every screen" width="315">
-<img src="../.github/releases/invmove/feat4.svg" alt="Typing never moves you" width="315">
+<img src="../.github/releases/invmove/feat2.svg" alt="Works in chests too" width="315">
+<img src="../.github/releases/invmove/feat3.svg" alt="Ride with the horse menu open" width="315">
+<img src="../.github/releases/invmove/feat4.svg" alt="Rules for every screen" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

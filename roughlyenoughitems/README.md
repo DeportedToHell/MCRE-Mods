@@ -9,7 +9,7 @@
 <p align="center">
 <img src="../.github/releases/roughlyenoughitems/feat1.svg" alt="Every item at hand" width="315">
 <img src="../.github/releases/roughlyenoughitems/feat2.svg" alt="Recipes and usages" width="315">
-<img src="../.github/releases/roughlyenoughitems/feat3.svg" alt="Powerful search" width="315">
+<img src="../.github/releases/roughlyenoughitems/feat3.svg" alt="Search with filters" width="315">
 <img src="../.github/releases/roughlyenoughitems/feat4.svg" alt="Recipe fills the grid" width="315">
 </p>
 

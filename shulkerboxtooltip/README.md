@@ -7,10 +7,10 @@
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
 <p align="center">
-<img src="../.github/releases/shulkerboxtooltip/feat1.svg" alt="Shift: quick preview" width="315">
-<img src="../.github/releases/shulkerboxtooltip/feat2.svg" alt="Alt+Shift: full contents" width="315">
-<img src="../.github/releases/shulkerboxtooltip/feat3.svg" alt="Coloured by dye" width="315">
-<img src="../.github/releases/shulkerboxtooltip/feat4.svg" alt="Chests and barrels too" width="315">
+<img src="../.github/releases/shulkerboxtooltip/feat1.svg" alt="Peek inside with Shift" width="315">
+<img src="../.github/releases/shulkerboxtooltip/feat2.svg" alt="Tinted like the box" width="315">
+<img src="../.github/releases/shulkerboxtooltip/feat3.svg" alt="Chests and barrels too" width="315">
+<img src="../.github/releases/shulkerboxtooltip/feat4.svg" alt="Ender chest too" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

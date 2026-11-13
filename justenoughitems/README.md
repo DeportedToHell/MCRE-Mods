@@ -8,8 +8,8 @@
 
 <p align="center">
 <img src="../.github/releases/justenoughitems/feat1.svg" alt="Every item beside your inventory" width="315">
-<img src="../.github/releases/justenoughitems/feat2.svg" alt="Recipes on R" width="315">
-<img src="../.github/releases/justenoughitems/feat3.svg" alt="Uses on U" width="315">
+<img src="../.github/releases/justenoughitems/feat2.svg" alt="Recipe of any item (R)" width="315">
+<img src="../.github/releases/justenoughitems/feat3.svg" alt="Where an item is used (U)" width="315">
 <img src="../.github/releases/justenoughitems/feat4.svg" alt=""+" fills the crafting grid" width="315">
 </p>
 

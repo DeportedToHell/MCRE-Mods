@@ -7,9 +7,9 @@
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
 <p align="center">
-<img src="../.github/releases/pickupnotifier/feat1.svg" alt="Pick-up popup" width="315">
-<img src="../.github/releases/pickupnotifier/feat2.svg" alt="Item icons and counts" width="315">
-<img src="../.github/releases/pickupnotifier/feat3.svg" alt="Configurable corner" width="315">
+<img src="../.github/releases/pickupnotifier/feat1.svg" alt="See everything you pick up" width="315">
+<img src="../.github/releases/pickupnotifier/feat2.svg" alt="Any corner of the screen" width="315">
+<img src="../.github/releases/pickupnotifier/feat3.svg" alt="Lots of settings" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

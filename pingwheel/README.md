@@ -7,9 +7,9 @@
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
 <p align="center">
-<img src="../.github/releases/pingwheel/feat1.svg" alt="Pings with who pinged" width="315">
-<img src="../.github/releases/pingwheel/feat2.svg" alt="Ping any block" width="315">
-<img src="../.github/releases/pingwheel/feat3.svg" alt="Item pings follow drops" width="315">
+<img src="../.github/releases/pingwheel/feat1.svg" alt="See who pinged" width="315">
+<img src="../.github/releases/pingwheel/feat2.svg" alt="Ping far-away places" width="315">
+<img src="../.github/releases/pingwheel/feat3.svg" alt="Item pings show the item" width="315">
 <img src="../.github/releases/pingwheel/feat4.svg" alt="Ping Wheel settings" width="315">
 </p>
 

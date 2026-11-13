@@ -9,8 +9,8 @@
 <p align="center">
 <img src="../.github/releases/modmenu/feat1.svg" alt="Mods button on the title screen" width="315">
 <img src="../.github/releases/modmenu/feat2.svg" alt="Every mod with details" width="315">
-<img src="../.github/releases/modmenu/feat3.svg" alt="All 21 Mod Menu options" width="315">
-<img src="../.github/releases/modmenu/feat4.svg" alt="Mods in the pause menu" width="315">
+<img src="../.github/releases/modmenu/feat3.svg" alt="Search and sort mods" width="315">
+<img src="../.github/releases/modmenu/feat4.svg" alt="Choose how it looks" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

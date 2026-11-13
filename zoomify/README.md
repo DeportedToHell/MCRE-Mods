@@ -7,9 +7,9 @@
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
 <p align="center">
-<img src="../.github/releases/zoomify/feat1.svg" alt="Smooth zoom on C" width="315">
-<img src="../.github/releases/zoomify/feat2.svg" alt="Spyglass integration" width="315">
-<img src="../.github/releases/zoomify/feat3.svg" alt="Full settings screen" width="315">
+<img src="../.github/releases/zoomify/feat1.svg" alt="Zoom far away with C" width="315">
+<img src="../.github/releases/zoomify/feat2.svg" alt="Even closer in a spyglass" width="315">
+<img src="../.github/releases/zoomify/feat3.svg" alt="Every zoom setting" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

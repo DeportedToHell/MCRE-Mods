@@ -8,9 +8,9 @@
 
 <p align="center">
 <img src="../.github/releases/firstpersonmodel/feat1.svg" alt="See your own body" width="315">
-<img src="../.github/releases/firstpersonmodel/feat2.svg" alt="In boats with a map" width="315">
-<img src="../.github/releases/firstpersonmodel/feat3.svg" alt="The original settings" width="315">
-<img src="../.github/releases/firstpersonmodel/feat4.svg" alt="F6 turns it on and off" width="315">
+<img src="../.github/releases/firstpersonmodel/feat2.svg" alt="Armour and items show" width="315">
+<img src="../.github/releases/firstpersonmodel/feat3.svg" alt="In boats with a map" width="315">
+<img src="../.github/releases/firstpersonmodel/feat4.svg" alt="The original settings" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

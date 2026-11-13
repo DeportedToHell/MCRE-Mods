@@ -7,8 +7,8 @@
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
 <p align="center">
-<img src="../.github/releases/particlerain/feat1.svg" alt="Slanted rain drops" width="315">
-<img src="../.github/releases/particlerain/feat2.svg" alt="Spinning snowflakes" width="315">
+<img src="../.github/releases/particlerain/feat1.svg" alt="Rain falls as real drops" width="315">
+<img src="../.github/releases/particlerain/feat2.svg" alt="Snowflakes swirl down" width="315">
 <img src="../.github/releases/particlerain/feat3.svg" alt="Ripples on water" width="315">
 <img src="../.github/releases/particlerain/feat4.svg" alt="Swamp fog" width="315">
 </p>

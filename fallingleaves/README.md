@@ -9,8 +9,7 @@
 <p align="center">
 <img src="../.github/releases/fallingleaves/feat1.svg" alt="Leaves fall and spin" width="315">
 <img src="../.github/releases/fallingleaves/feat2.svg" alt="Cherry petals drift down" width="315">
-<img src="../.github/releases/fallingleaves/feat3.svg" alt="Wind, water and snow" width="315">
-<img src="../.github/releases/fallingleaves/feat4.svg" alt="Full settings screen" width="315">
+<img src="../.github/releases/fallingleaves/feat3.svg" alt="Full settings screen" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

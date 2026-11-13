@@ -8,9 +8,9 @@
 
 <p align="center">
 <img src="../.github/releases/emotecraft/feat1.svg" alt="Emote wheel on B" width="315">
-<img src="../.github/releases/emotecraft/feat2.svg" alt="Backflips, dances and more" width="315">
+<img src="../.github/releases/emotecraft/feat2.svg" alt="Dances, flips and more" width="315">
 <img src="../.github/releases/emotecraft/feat3.svg" alt="Browse all emotes" width="315">
-<img src="../.github/releases/emotecraft/feat4.svg" alt="Works on Java servers" width="315">
+<img src="../.github/releases/emotecraft/feat4.svg" alt="Set up your wheel" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

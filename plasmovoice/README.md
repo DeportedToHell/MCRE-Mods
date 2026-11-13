@@ -10,7 +10,7 @@
 <img src="../.github/releases/plasmovoice/feat1.svg" alt="See who is talking" width="315">
 <img src="../.github/releases/plasmovoice/feat2.svg" alt="Microphones in Tab" width="315">
 <img src="../.github/releases/plasmovoice/feat3.svg" alt="Per-player volume" width="315">
-<img src="../.github/releases/plasmovoice/feat4.svg" alt="Voice distance" width="315">
+<img src="../.github/releases/plasmovoice/feat4.svg" alt="Push to talk" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

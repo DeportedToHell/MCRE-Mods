@@ -8,8 +8,9 @@
 
 <p align="center">
 <img src="../.github/releases/clientsort/feat1.svg" alt="Sort, Restock, Transfer buttons" width="315">
-<img src="../.github/releases/clientsort/feat2.svg" alt="Middle click sorts" width="315">
-<img src="../.github/releases/clientsort/feat3.svg" alt="Pick your sort order" width="315">
+<img src="../.github/releases/clientsort/feat2.svg" alt="One click, all sorted" width="315">
+<img src="../.github/releases/clientsort/feat3.svg" alt="Middle click and hotkeys" width="315">
+<img src="../.github/releases/clientsort/feat4.svg" alt="Pick your sort order" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>

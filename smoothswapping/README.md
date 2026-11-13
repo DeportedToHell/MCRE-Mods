@@ -7,9 +7,9 @@
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
 <p align="center">
-<img src="../.github/releases/smoothswapping/feat1.svg" alt="Items fly between slots" width="315">
-<img src="../.github/releases/smoothswapping/feat2.svg" alt="Draw your own curve" width="315">
-<img src="../.github/releases/smoothswapping/feat3.svg" alt="Adjustable speed" width="315">
+<img src="../.github/releases/smoothswapping/feat1.svg" alt="Items glide between slots" width="315">
+<img src="../.github/releases/smoothswapping/feat2.svg" alt="Swaps fly both ways" width="315">
+<img src="../.github/releases/smoothswapping/feat3.svg" alt="Draw your own curve" width="315">
 </p>
 
 <p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
