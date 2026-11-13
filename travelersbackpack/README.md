@@ -3,6 +3,13 @@
   <img src="../.github/assets/stickers/travelersbackpack.png" height="64" alt="">
 </h1>
 
+**Version 0.9.9** — nearly all original features implemented. Remaining work is listed below.
+
+**!!! Two files are needed: the content mod `travelersbackpack.hmod` and the native mod `travelersbackpack_native.hnmod`. One alone does not work.**
+
+I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
+
+
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
 
 > It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
@@ -14,13 +21,6 @@
 Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 
 Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the original mod.
-
-
-## **Version 0.9.9** — nearly all original features implemented. Remaining work is listed below.
-
-**!!! Two files are needed: the content mod `travelersbackpack.hmod` and the native mod `travelersbackpack_native.hnmod`. One alone does not work.**
-
-I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
 
 ## ✨Features
