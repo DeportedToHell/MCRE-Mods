@@ -32,11 +32,14 @@ Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the
 
 **Other features.** Dynamic lighting, tool radial menu, advancements, wandering trader trade, creative tab and keybinds. The original's config files (`config/travelersbackpack-{common,server,client}.toml`), Mod Menu info, the `/tb` commands (`access`, `remove`, `clear`, `restore`, `unpack`) with backups made on death, and `/tb_client`. English and Russian translations.
 
-### What's new in 0.9.9
+
+## 🧩Changelog:
+
+### 0.9.9
 
 - Filter sizes from the config (`filterSlotCount` 1–20, `slotsInRow` 1–5) for the void, pickup, magnet, feeding and refill upgrades: their tabs grow to fit, as the original's.
 
-### What's new in 0.9.8
+### 0.9.8
 
 - Tier sizes from the config (`inventorySlotCount`, `upgradeSlotCount`, `toolSlotCount`), kept in each backpack as the original does: a new backpack takes its tier's, a tier upgrade at the smithing table the next tier's.
 - A jukebox upgrade in a carried or worn backpack plays a song that follows the player.
@@ -44,14 +47,14 @@ Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the
 - Fluid in the tanks of a backpack item rises smoothly.
 - Smithing table tier upgrades are one recipe a design, as the original's: recipe viewers (JEI, REI and others) show each design staying itself.
 
-### What's new in 0.9.7
+### 0.9.7
 
 - The creeper design saves its wearer from a blow that kills after armor and effects, as the original (before, from any blow bigger than their health).
 - A placed backpack's refill upgrade refills the players within 3 blocks; an item on the cursor counts as carried.
 - Sleeping bags laid out from a worn backpack are remembered in the world and taken up after a restart, never dropped.
 - Hoppers put no backpack into a shulker box.
 
-### What's new in 0.9.6
+### 0.9.6
 
 - Fixed item duplication with placed backpacks in multiplayer: only one player can have a placed backpack open, and taking, breaking, shearing or unpacking it closes that menu first.
 - Fixed duplication by dropping or swapping a backpack while its menu is open, and by dying with the menu open.
