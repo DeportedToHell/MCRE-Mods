@@ -33,6 +33,18 @@ Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the
 **Other features.** Dynamic lighting, tool radial menu, advancements, wandering trader trade, creative tab and keybinds. The original's config files (`config/travelersbackpack-{common,server,client}.toml`), Mod Menu info, the `/tb` commands (`access`, `remove`, `clear`, `restore`, `unpack`) with backups made on death, and `/tb_client`. English and Russian translations.
 
 
+## 🚧Remaining work
+
+Not implemented compared to the original:
+
+- **Other mods' integration.** Accessories / Trinkets (a back slot, `backSlotIntegration`), the deeper part of JEI / EMI / REI (moving a recipe into the crafting upgrade, dragging items into filters; their recipe screens do show the smithing upgrades), Crafting Tweaks, Polymorph, Comforts, grave mods (Pneumono Gravestones, Universal Graves), Tough As Nails, Trash Slot, VinURL and Entity Model Features. Dynamic lighting works without LambDynamicLights.
+- **Supporter badge.** The star on the backpacks of the original's supporters needs their list from the internet; the port makes no network requests.
+
+Differences: a Horizon menu holds at most 256 slots, so with the most upgrades and tools the config allows (10 and 8), or filters of more than 10 slots, a tier's storage is cut to what still fits (138 instead of 154 with the defaults).
+
+Still to be checked in game: several design-specific abilities, upgrade keybinds, the hose radial menu and two players sharing backpacks over LAN.
+
+
 ## 🧩Changelog:
 
 ### 0.9.9
@@ -65,16 +77,6 @@ Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the
 - Backpacks, shulker boxes and blacklisted items can't be put into any backpack slot.
 - Added the config files, Mod Menu info, `/tb` commands, chest loot, mobs with backpacks, tools on the back, the worn backpack's icon in the inventory and right-click insertion into the backpack.
 
-## 🚧Remaining work
-
-Not implemented compared to the original:
-
-- **Other mods' integration.** Accessories / Trinkets (a back slot, `backSlotIntegration`), the deeper part of JEI / EMI / REI (moving a recipe into the crafting upgrade, dragging items into filters; their recipe screens do show the smithing upgrades), Crafting Tweaks, Polymorph, Comforts, grave mods (Pneumono Gravestones, Universal Graves), Tough As Nails, Trash Slot, VinURL and Entity Model Features. Dynamic lighting works without LambDynamicLights.
-- **Supporter badge.** The star on the backpacks of the original's supporters needs their list from the internet; the port makes no network requests.
-
-Differences: a Horizon menu holds at most 256 slots, so with the most upgrades and tools the config allows (10 and 8), or filters of more than 10 slots, a tier's storage is cut to what still fits (138 instead of 154 with the defaults).
-
-Still to be checked in game: several design-specific abilities, upgrade keybinds, the hose radial menu and two players sharing backpacks over LAN.
 
 ## 📦Installation
 
@@ -83,6 +85,7 @@ Build the content mod with `cargo horizon-mod build` from `content/` and place t
 Package the native mod using `tools/package.mjs` and place the resulting `.hnmod` in `<game folder>/horizon-native-mods/`. Add `mod.travelersbackpack_native:true` to `horizon-mods.txt`, then select **Native build → Build** in the launcher.
 
 > Native mods are compiled into the game and are not sandboxed. Only build code you trust.
+
 
 ## 🗂️Source layout
 
@@ -102,6 +105,7 @@ tools/
   check.sh                       Stages the mod on pinned Horizon source and checks/builds the game
   package.mjs                    Packages the .hnmod
 ```
+
 
 ## ⚖️License
 
