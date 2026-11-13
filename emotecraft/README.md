@@ -54,7 +54,7 @@ Bedrock `.json`, `.emotecraft` binary, with `.png` icons and `.ogg`/`.opus` song
 
 </details>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/emotecraft"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new?template=bug-emotecraft.yml"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/emotecraft/mixins/emotecraft"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new?template=bug-emotecraft.yml"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence
 

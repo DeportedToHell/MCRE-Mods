@@ -44,7 +44,7 @@ Native mods are compiled into the game and are not sandboxed: build only code yo
 
 </details>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/pickupnotifier"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new?template=bug-pick-up-notifier.yml"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/pickupnotifier/mixins/pickupnotifier"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new?template=bug-pick-up-notifier.yml"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence and credits
 

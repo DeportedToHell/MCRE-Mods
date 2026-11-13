@@ -111,7 +111,7 @@ Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
 </details>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/roughlyenoughitems"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new?template=bug-roughly-enough-items.yml"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/roughlyenoughitems/mixins/roughlyenoughitems"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new?template=bug-roughly-enough-items.yml"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence
 

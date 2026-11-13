@@ -148,7 +148,7 @@ Other permissions: `pv.activation.proximity` (talk, everyone), `pv.allow_freecam
 
 </details>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/plasmovoice"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new?template=bug-plasmo-voice.yml"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/plasmovoice/mixins/plasmovoice"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new?template=bug-plasmo-voice.yml"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence
 
