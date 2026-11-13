@@ -11,10 +11,8 @@ Based on Fabric version 3.20.4, branch 1.21.1, including its configuration scree
 > It is not affiliated with, endorsed by, or officially associated with the original authors.
 >
 > Original mod: https://gitlab.com/kreezxil/BadWitherNoCookie
-
-Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
-
-Special thanks to [Kreezxil](https://gitlab.com/kreezxil) and all contributors for the original mod.
+>
+> Special thanks to [Kreezxil](https://gitlab.com/kreezxil) and all contributors for the original mod.
 
 ## ✨Features
 
