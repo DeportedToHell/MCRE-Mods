@@ -5,7 +5,7 @@
 
 An independent port of [Traveler's Backpack](https://github.com/Tiviacz1337/Travelers-Backpack) by Tiviacz1337 to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
 
-**Version 0.9.8** — nearly all original features implemented. Remaining work is listed below.
+**Version 0.9.9** — nearly all original features implemented. Remaining work is listed below.
 
 > Two files are needed: the content mod (`travelersbackpack.hmod`) and the native mod (`travelersbackpack_native.hnmod`). One alone does not work.
 
@@ -31,6 +31,10 @@ Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the
 **World.** Backpacks and tier upgrades in structure chests, zombies, skeletons and other mobs that sometimes spawn wearing a backpack, and tools shown on the wearer's back.
 
 **Other features.** Dynamic lighting, tool radial menu, advancements, wandering trader trade, creative tab and keybinds. The original's config files (`config/travelersbackpack-{common,server,client}.toml`), Mod Menu info, the `/tb` commands (`access`, `remove`, `clear`, `restore`, `unpack`) with backups made on death, and `/tb_client`. English and Russian translations.
+
+### What's new in 0.9.9
+
+- Filter sizes from the config (`filterSlotCount` 1–20, `slotsInRow` 1–5) for the void, pickup, magnet, feeding and refill upgrades: their tabs grow to fit, as the original's.
 
 ### What's new in 0.9.8
 
@@ -64,9 +68,8 @@ Not implemented compared to the original:
 
 - **Other mods' integration.** Accessories / Trinkets (a back slot, `backSlotIntegration`), the deeper part of JEI / EMI / REI (moving a recipe into the crafting upgrade, dragging items into filters; their recipe screens do show the smithing upgrades), Crafting Tweaks, Polymorph, Comforts, grave mods (Pneumono Gravestones, Universal Graves), Tough As Nails, Trash Slot, VinURL and Entity Model Features. Dynamic lighting works without LambDynamicLights.
 - **Supporter badge.** The star on the backpacks of the original's supporters needs their list from the internet; the port makes no network requests.
-- **Filter sizes in the config.** `filterSlotCount` and `slotsInRow` of the filter upgrades stay at the original's defaults (9 slots, 3 in a row).
 
-Differences: a Horizon menu holds at most 256 slots, so with the most upgrades and tools the config allows (10 and 8) a tier's storage is cut to what still fits (138 instead of 154).
+Differences: a Horizon menu holds at most 256 slots, so with the most upgrades and tools the config allows (10 and 8), or filters of more than 10 slots, a tier's storage is cut to what still fits (138 instead of 154 with the defaults).
 
 Still to be checked in game: several design-specific abilities, upgrade keybinds, the hose radial menu and two players sharing backpacks over LAN.
 

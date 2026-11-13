@@ -373,7 +373,7 @@ fn toggle_worn_upgrade(game: &mut Game<'_>, uuid: u128, i: usize) {
 /// The native mod's id, for its key binding.
 const MOD_ID: &str = "travelersbackpack_native";
 /// The port's version (`horizon-native.json`).
-const VERSION: &str = "0.9.8";
+const VERSION: &str = "0.9.9";
 
 /// The backpack `uuid` wears, if any.
 fn worn(game: &Game<'_>, uuid: u128) -> Option<ItemStack> {
@@ -1114,6 +1114,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
     let first = LAST_TICK.with(|t| t.replace(Some(now)) != Some(now));
     if first {
         // The config's tier sizes for the smithing table and the crafting grid.
+        tb::set_filter_layouts(cfg().filter_layouts);
         horizon_client::lan::containers::travelersbackpack_menu::set_tier_sizes([0, 1, 2, 3, 4].map(|n| {
             let t = configured_tier(n);
             [t.storage, t.upgrades, t.tools]
@@ -1180,7 +1181,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
         let blocks: Vec<Option<ItemStack>> = items.drain(tier.slots().min(items.len())..).collect();
         for (n, stack) in blocks.into_iter().enumerate() {
             if let Some(stack) = stack
-                && tabs.get(n / tb::TAB_SLOTS) == Some(&tb::Tab::Tanks)
+                && tabs.get(n / tb::tab_slots()) == Some(&tb::Tab::Tanks)
             {
                 give_back(game, uuid, stack);
             }
@@ -1365,6 +1366,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
         let extra = items[tier.storage..].to_vec();
         // The screen learns the sizes first; the slots past them hide.
         let mut sized = vec![tier.storage as u8, tier.upgrades as u8, tier.tools as u8];
+        sized.extend(tb::filter_layouts().iter().flat_map(|&(count, in_row)| [count as u8, in_row as u8]));
         sized.append(&mut layout);
         let layout = sized;
         let hidden: Vec<usize> = (tier.menu_slots()..tb::MENU_SLOTS).collect();
@@ -2084,8 +2086,8 @@ pub(super) fn menu_clicked(game: &mut Game<'_>, uuid: u128, window: i32, slot: i
     } else if slot < tier.slots() {
         click_plain(game, uuid, &mut items, &mut carried, slot, button, mode, |game, s| fits_tool_slot(game, s));
     } else {
-        let i = (slot - tier.slots()) / tb::TAB_SLOTS;
-        let k = (slot - tier.slots()) % tb::TAB_SLOTS;
+        let i = (slot - tier.slots()) / tb::tab_slots();
+        let k = (slot - tier.slots()) % tb::tab_slots();
         click_tab(game, uuid, &mut items, &mut carried, tier, tabs_before[i], i, k, button, mode);
     }
     work_tabs(game, &mut items, tier);
@@ -2267,7 +2269,7 @@ fn click_tab(
     if k >= tab.slots().len() {
         return;
     }
-    let base = tier.slots() + i * tb::TAB_SLOTS;
+    let base = tier.slots() + i * tb::tab_slots();
     let slot = base + k;
     match tab {
         Tab::Plain => {}
@@ -2415,7 +2417,7 @@ fn jukebox(game: &mut Game<'_>, uuid: u128, source: Source, dimension: &str, win
     if items.len() < tier.menu_slots() || i >= tier.upgrades {
         return;
     }
-    let disc = items[tier.slots() + i * tb::TAB_SLOTS].clone();
+    let disc = items[tier.slots() + i * tb::tab_slots()].clone();
     let Some(upgrade) = items[tier.storage + i].as_mut().filter(|u| tb::Tab::of(Some(&u.item)) == tb::Tab::Jukebox) else {
         return;
     };
@@ -2559,7 +2561,7 @@ fn set_custom_data(stack: &mut ItemStack, data: Compound) {
 
 /// The items upgrade `stack`'s tab keeps.
 fn tab_items(stack: &ItemStack) -> Vec<Option<ItemStack>> {
-    horizon_items::item_nbt::decode_items(custom_data(stack).get(&horizon_world::nbt::JavaString::from(TAB_ITEMS_KEY)), tb::TAB_SLOTS)
+    horizon_items::item_nbt::decode_items(custom_data(stack).get(&horizon_world::nbt::JavaString::from(TAB_ITEMS_KEY)), tb::tab_slots())
 }
 
 fn set_tab_items(stack: &mut ItemStack, slots: &[Option<ItemStack>]) {
@@ -2579,8 +2581,8 @@ fn keep_tab_items(items: &mut [Option<ItemStack>], tier: tb::Tier) {
         if !tab.keeps_items() {
             continue;
         }
-        let base = tier.slots() + i * tb::TAB_SLOTS;
-        let mut kept: Vec<Option<ItemStack>> = items[base..base + tb::TAB_SLOTS].to_vec();
+        let base = tier.slots() + i * tb::tab_slots();
+        let mut kept: Vec<Option<ItemStack>> = items[base..base + tb::tab_slots()].to_vec();
         if tab == tb::Tab::Crafting {
             kept[9] = None;
         }
@@ -2593,8 +2595,8 @@ fn keep_tab_items(items: &mut [Option<ItemStack>], tier: tb::Tier) {
 /// Upgrade slot `i`'s tab block emptied (its upgrade is taken out): what a
 /// tank's slots hold goes back to the player; the rest is in the upgrade.
 fn empty_tab_block(game: &mut Game<'_>, uuid: u128, items: &mut [Option<ItemStack>], tier: tb::Tier, i: usize, tab: tb::Tab) {
-    let base = tier.slots() + i * tb::TAB_SLOTS;
-    for k in base..base + tb::TAB_SLOTS {
+    let base = tier.slots() + i * tb::tab_slots();
+    for k in base..base + tb::tab_slots() {
         if let Some(stack) = items[k].take()
             && tab == tb::Tab::Tanks
         {
@@ -2613,7 +2615,7 @@ fn load_tab_items(game: &Game<'_>, items: &mut Vec<Option<ItemStack>>, tier: tb:
         let Some(kept) = items[tier.storage + i].as_ref().map(tab_items) else {
             continue;
         };
-        let base = tier.slots() + i * tb::TAB_SLOTS;
+        let base = tier.slots() + i * tb::tab_slots();
         for (k, stack) in kept.into_iter().enumerate().take(tab.slots().len()) {
             items[base + k] = stack;
         }
@@ -2636,7 +2638,7 @@ fn work_crafting(game: &Game<'_>, items: &mut [Option<ItemStack>], tier: tb::Tie
         if tab != tb::Tab::Crafting {
             continue;
         }
-        let base = tier.slots() + i * tb::TAB_SLOTS;
+        let base = tier.slots() + i * tb::tab_slots();
         let grid: Vec<Option<ItemStack>> = items[base..base + 9].to_vec();
         items[base + 9] = game.recipes().craft(&grid, 3);
     }
@@ -3023,7 +3025,7 @@ fn close_now(game: &mut Game<'_>, uuid: u128) {
         let back: Vec<ItemStack> = items[tier.slots()..]
             .iter()
             .enumerate()
-            .filter(|(n, _)| tabs.get(n / tb::TAB_SLOTS) == Some(&tb::Tab::Tanks))
+            .filter(|(n, _)| tabs.get(n / tb::tab_slots()) == Some(&tb::Tab::Tanks))
             .filter_map(|(_, s)| s.clone())
             .collect();
         for stack in back {
@@ -3098,7 +3100,7 @@ fn smelt_open_menus(game: &mut Game<'_>) {
                 continue;
             }
             cooking = true;
-            let base = tier.slots() + i * tb::TAB_SLOTS;
+            let base = tier.slots() + i * tb::tab_slots();
             let Some(mut upgrade) = items[tier.storage + i].clone() else {
                 continue;
             };
@@ -3149,7 +3151,7 @@ fn filter_of(items: &[Option<ItemStack>], tier: tb::Tier, tab: tb::Tab) -> Vec<I
         .filter(|&(_, t)| t == tab)
         .filter_map(|(i, _)| items[tier.storage + i].as_ref())
         .filter(|u| upgrade_enabled(u))
-        .flat_map(|u| tab_items(u).into_iter().take(9).flatten())
+        .flat_map(|u| tab_items(u).into_iter().take(tb::filter_layout(tab).map_or(9, |l| l.0)).flatten())
         .collect()
 }
 
@@ -3456,7 +3458,7 @@ fn work_tanks(items: &mut [Option<ItemStack>], tier: tb::Tier) {
     let Some(upgrade) = items[k].clone() else {
         return;
     };
-    let base = tier.slots() + i * tb::TAB_SLOTS;
+    let base = tier.slots() + i * tb::tab_slots();
     if items.len() < base + 4 {
         return;
     }
@@ -3991,7 +3993,11 @@ pub(super) fn screen_extra(menu: &str, extra: Option<&[u8]>) {
         [s, u, t, ..] => Some([usize::from(*s), usize::from(*u), usize::from(*t)]),
         _ => None,
     };
-    let extra = extra.get(3..).unwrap_or_default();
+    // The server's filter sizes, which the tabs are laid out by.
+    if let Some(filters) = extra.get(3..13) {
+        tb::set_filter_layouts(std::array::from_fn(|k| (usize::from(filters[2 * k]), usize::from(filters[2 * k + 1]))));
+    }
+    let extra = extra.get(13..).unwrap_or_default();
     let upgrades = match sizes {
         Some([_, u, _]) => u,
         None => tb::menu_kind(menu).map_or(0, |(tier, _)| tier.upgrades),
@@ -4106,8 +4112,7 @@ impl Layout {
             .zip(&self.tabs)
             .enumerate()
             .map(|(i, (y, &tab))| {
-                let [w, h] = tab.size();
-                let w = if self.tag(i) { 87.0 } else { w };
+                let [w, h] = if self.tag(i) { [87.0, 103.0] } else { tab.size() };
                 (tab, [x, y - 4.0, w, h])
             })
             .collect()
@@ -4245,7 +4250,7 @@ pub(super) fn screen(menu: &str, screen: &mut Option<NativeScreen>) {
     for (i, (tab, [x, y, _, _])) in rects.iter().enumerate() {
         // The tag selector's one slot, for the item whose tags are added.
         let own = if layout.tag(i) { vec![[64.0, 23.0]] } else { tab.slots() };
-        for k in 0..tb::TAB_SLOTS {
+        for k in 0..tb::tab_slots() {
             slots.push(own.get(k).filter(|_| !settings).map(|[sx, sy]| [x + sx, y + sy]));
         }
     }
@@ -4993,7 +4998,7 @@ pub(super) fn screen_draw(
                     blit(batch, ICONS, x + 42.0, y + 22.0, [186.0, if adding { 36.0 } else { 0.0 }, 18.0, 18.0]);
                 }
                 t if t.filter_states().is_some() => {
-                    blit(batch, TABS, x, y, [137.0, 0.0, w, h]);
+                    blit_filter_tab(&blit, batch, x, y, w, h);
                     for [sx, sy] in tab.slots() {
                         blit(batch, TABS, x + sx - 1.0, y + sy - 1.0, [233.0, 0.0, 18.0, 18.0]);
                     }
@@ -5008,10 +5013,7 @@ pub(super) fn screen_draw(
                     }
                 }
                 tb::Tab::Refill => {
-                    // A filter's tab: its texture's top and bottom halves, stretched.
-                    let (top, bottom) = ((h / 2.0).floor(), h - (h / 2.0).floor());
-                    blit(batch, TABS, x, y, [137.0, 0.0, w, top]);
-                    blit(batch, TABS, x, y + top, [137.0, 103.0 - bottom, w, bottom]);
+                    blit_filter_tab(&blit, batch, x, y, w, h);
                     for [sx, sy] in tab.slots() {
                         blit(batch, TABS, x + sx - 1.0, y + sy - 1.0, [233.0, 0.0, 18.0, 18.0]);
                     }
@@ -6163,7 +6165,7 @@ fn filter_upgrade(items: &[Option<ItemStack>], tier: tb::Tier, tab: tb::Tab) -> 
     (0..tier.upgrades).find_map(|i| {
         let u = items.get(tier.storage + i)?.as_ref()?;
         (tb::Tab::of(Some(&u.item)) == tab && upgrade_enabled(u))
-            .then(|| (tab_items(u).into_iter().take(9).flatten().collect(), filter_settings(u)))
+            .then(|| (tab_items(u).into_iter().take(tb::filter_layout(tab).map_or(9, |l| l.0)).flatten().collect(), filter_settings(u)))
     })
 }
 
@@ -8421,7 +8423,7 @@ fn filter_tag_clicked(game: &mut Game<'_>, uuid: u128, i: usize, k: usize) {
         return;
     };
     // While the menu is open the selector's item is in its slot of the menu.
-    let item = items.get(tier.slots() + i * tb::TAB_SLOTS).cloned().flatten();
+    let item = items.get(tier.slots() + i * tb::tab_slots()).cloned().flatten();
     let (adding, mut chosen, addable) = tag_lists(game, &upgrade, item.as_ref());
     if adding {
         let Some(tag) = addable.get(k) else {
@@ -8477,7 +8479,7 @@ fn send_tag_lists(game: &mut Game<'_>) {
             let Some(u) = items.get(tier.storage + i).and_then(Option::as_ref).filter(|u| tag_mode(u)) else {
                 continue;
             };
-            let item = items.get(tier.slots() + i * tb::TAB_SLOTS).and_then(Option::as_ref);
+            let item = items.get(tier.slots() + i * tb::tab_slots()).and_then(Option::as_ref);
             let (adding, chosen, addable) = tag_lists(game, u, item);
             message.push_str(&format!("{i}\t{}\t{}\t{}\n", u8::from(adding), chosen.join(","), addable.join(",")));
         }
@@ -10088,4 +10090,28 @@ fn play_near(game: &mut Game<'_>, uuid: u128, sound: &str, category: &str, at: O
         played |= game.native_play_sound_to(player, sound, category, at, volume, pitch);
     }
     played
+}
+
+/// `UpgradeWidgetBase.renderBg` of a filter's tab: the 66 by 103 texture cut
+/// in halves (quarters when wider) and put together at the tab's size.
+fn blit_filter_tab(
+    blit: &impl Fn(&mut horizon_client::hud::HudBatch, &str, f32, f32, [f32; 4]),
+    batch: &mut horizon_client::hud::HudBatch,
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
+) {
+    let (u, v, tw, th) = (137.0, 0.0, 66.0, 103.0);
+    let (split_y, rem_y) = ((h / 2.0).floor(), h - (h / 2.0).floor());
+    if w > tw {
+        let (split_x, rem_x) = ((w / 2.0).floor(), w - (w / 2.0).floor());
+        blit(batch, TABS, x, y, [u, v, split_x, split_y]);
+        blit(batch, TABS, x + split_x, y, [u + tw - rem_x, v, rem_x, split_y]);
+        blit(batch, TABS, x, y + split_y, [u, v + th - rem_y, split_x, rem_y]);
+        blit(batch, TABS, x + split_x, y + split_y, [u + tw - rem_x, v + th - rem_y, rem_x, rem_y]);
+    } else {
+        blit(batch, TABS, x, y, [u, v, w, split_y]);
+        blit(batch, TABS, x, y + split_y, [u, v + th - rem_y, w, rem_y]);
+    }
 }

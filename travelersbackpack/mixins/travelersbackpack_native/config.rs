@@ -12,6 +12,9 @@ pub(crate) struct Config {
     /// Each tier's storage, upgrade and tool slots (`inventorySlotCount`,
     /// `upgradeSlotCount`, `toolSlotCount`): a new backpack's.
     pub tier_sizes: [[usize; 3]; 5],
+    /// The filter upgrades' `filterSlotCount` and `slotsInRow`: void,
+    /// pickup, magnet, feeding, refill.
+    pub filter_layouts: [(usize, usize); 5],
     pub right_click_equip: bool,
     pub right_click_unequip: bool,
     pub allow_only_equipped_backpack: bool,
@@ -208,9 +211,17 @@ const SERVER: &str = r#"
 
 		[server.backpackUpgrades.pickupUpgradeSettings]
 			enablePickupUpgrade = true
+			#Range 1 ~ 20
+			filterSlotCount = 9
+			#Range 1 ~ 5
+			slotsInRow = 3
 
 		[server.backpackUpgrades.magnetUpgradeSettings]
 			enableMagnetUpgrade = true
+			#Range 1 ~ 20
+			filterSlotCount = 9
+			#Range 1 ~ 5
+			slotsInRow = 3
 			#Range 1 ~ 20
 			pullRange = 5
 			#Range 1 ~ 1000
@@ -218,16 +229,28 @@ const SERVER: &str = r#"
 
 		[server.backpackUpgrades.feedingUpgradeSettings]
 			enableFeedingUpgrade = true
+			#Range 1 ~ 20
+			filterSlotCount = 9
+			#Range 1 ~ 5
+			slotsInRow = 3
 			#Range 1 ~ 1000
 			tickRate = 100
 
 		[server.backpackUpgrades.refillUpgradeSettings]
 			enableRefillUpgrade = true
+			#Range 1 ~ 20
+			filterSlotCount = 9
+			#Range 1 ~ 5
+			slotsInRow = 3
 			#Range 1 ~ 1000
 			tickRate = 5
 
 		[server.backpackUpgrades.voidUpgradeSettings]
 			enableVoidUpgrade = true
+			#Range 1 ~ 20
+			filterSlotCount = 9
+			#Range 1 ~ 5
+			slotsInRow = 3
 
 	[server.world]
 		#Enables chance to spawn Zombie, Skeleton, Wither Skeleton, Piglin or Enderman with random backpack equipped
@@ -401,6 +424,10 @@ fn load(dir: Option<&Path>) -> Config {
     Config {
         tank_capacity: [tank("leather"), tank("iron"), tank("gold"), tank("diamond"), tank("netherite")],
         tier_sizes: [size("leather"), size("iron"), size("gold"), size("diamond"), size("netherite")],
+        filter_layouts: ["void", "pickup", "magnet", "feeding", "refill"].map(|n| {
+            let key = |k: &str| u(&format!("{n}UpgradeSettings.{k}"));
+            (s.int(&key("filterSlotCount"), 1, 20) as usize, s.int(&key("slotsInRow"), 1, 5) as usize)
+        }),
         right_click_equip: s.flag(&b("rightClickEquip")),
         right_click_unequip: s.flag(&b("rightClickUnequip")),
         allow_only_equipped_backpack: s.flag(&b("allowOnlyEquippedBackpack")),

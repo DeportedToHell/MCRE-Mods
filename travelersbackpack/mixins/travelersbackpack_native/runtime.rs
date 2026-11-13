@@ -27,7 +27,7 @@ impl Tier {
     /// tools the config allows, the storage is cut to what still fits.
     pub fn sized(self, storage: usize, upgrades: usize, tools: usize) -> Tier {
         let (upgrades, tools) = (upgrades.min(MAX_UPGRADES), tools.min(MAX_TOOLS));
-        let room = MENU_SLOTS - tools - upgrades * (1 + TAB_SLOTS);
+        let room = MENU_SLOTS - tools - upgrades * (1 + tab_slots());
         Tier { storage: storage.clamp(1, MAX_STORAGE.min(room)), upgrades, tools, ..self }
     }
     /// Its ordinal (`ModDataComponents.TIER`).
@@ -80,7 +80,41 @@ impl Opened {
 /// The slots each upgrade slot's tab may show (`getUpgradeSlots`): after the
 /// backpack's own (storage, upgrades, tools), one block of these per upgrade
 /// slot, in order; a tab uses the first of its block.
-pub const TAB_SLOTS: usize = 10;
+/// The filter upgrades' sizes (`filterSlotCount` 1–20, `slotsInRow` 1–5), the
+/// server's config: void, pickup, magnet, feeding, refill. 0 is the default
+/// (9 in rows of 3). A client learns them with each backpack menu.
+static FILTERS: [std::sync::atomic::AtomicUsize; 10] = [const { std::sync::atomic::AtomicUsize::new(0) }; 10];
+
+const FILTER_TABS: [Tab; 5] = [Tab::Void, Tab::Pickup, Tab::Magnet, Tab::Feeding, Tab::Refill];
+
+pub fn set_filter_layouts(layouts: [(usize, usize); 5]) {
+    for (k, (count, in_row)) in layouts.into_iter().enumerate() {
+        FILTERS[2 * k].store(count.clamp(1, 20), std::sync::atomic::Ordering::Relaxed);
+        FILTERS[2 * k + 1].store(in_row.clamp(1, 5), std::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+/// Every filter upgrade's (count, in a row), in `FILTER_TABS` order.
+pub fn filter_layouts() -> [(usize, usize); 5] {
+    std::array::from_fn(|k| {
+        let get = |i: usize, default: usize| match FILTERS[i].load(std::sync::atomic::Ordering::Relaxed) {
+            0 => default,
+            n => n,
+        };
+        (get(2 * k, 9), get(2 * k + 1, 3))
+    })
+}
+
+/// A filter upgrade's slots and slots in a row (`IFilterSlots`).
+pub fn filter_layout(tab: Tab) -> Option<(usize, usize)> {
+    FILTER_TABS.iter().position(|&t| t == tab).map(|k| filter_layouts()[k])
+}
+
+/// Each upgrade slot's tab slots after the backpack's in its menu: the
+/// crafting grid's 10, or the biggest filter.
+pub fn tab_slots() -> usize {
+    filter_layouts().iter().map(|&(count, _)| count).max().unwrap_or(9).max(10)
+}
 
 impl Tier {
     /// The menu type of this tier opened from `opened` (`travelersbackpack:iron_worn`).
@@ -88,8 +122,8 @@ impl Tier {
         format!("{NS}:{}{}", self.name, opened.suffix())
     }
     /// Its menu's slots: the backpack's, then each upgrade slot's tab block.
-    pub const fn menu_slots(self) -> usize {
-        self.slots() + self.upgrades * TAB_SLOTS
+    pub fn menu_slots(self) -> usize {
+        self.slots() + self.upgrades * tab_slots()
     }
     /// `wrapper.isExtended()`: past 81 slots the rows are eleven wide.
     pub const fn extended(self) -> bool {
@@ -188,9 +222,14 @@ impl Tab {
             Tab::Tanks => [51.0, 72.0],
             Tab::Crafting => [66.0, 112.0],
             Tab::Furnace | Tab::Smoker | Tab::BlastFurnace => [66.0, 82.0],
-            // `FilterUpgradeBase`: 66 by 49, a row of 18 for each three filter slots.
-            Tab::Void | Tab::Pickup | Tab::Magnet | Tab::Feeding => [66.0, 103.0],
-            Tab::Refill => [66.0, 82.0],
+            // `UpgradeBase.getTabSize` of an `IFilterSlots`: 66 by 49 (by 28
+            // without buttons), 18 wider for each slot in a row past three and
+            // a row of 18 for each row of slots.
+            Tab::Void | Tab::Pickup | Tab::Magnet | Tab::Feeding | Tab::Refill => {
+                let (count, in_row) = filter_layout(self).unwrap_or((9, 3));
+                let top = if self == Tab::Refill { 28.0 } else { 49.0 };
+                [66.0 + 18.0 * in_row.saturating_sub(3) as f32, top + 18.0 * count.div_ceil(in_row) as f32]
+            }
             Tab::Jukebox => [66.0, 46.0],
         }
     }
@@ -204,11 +243,13 @@ impl Tab {
             Tab::Tanks => vec![[7.0, 23.0], [7.0, 49.0], [28.0, 23.0], [28.0, 49.0]],
             Tab::Crafting => grid().chain([[25.0, 89.0]]).collect(),
             Tab::Furnace | Tab::Smoker | Tab::BlastFurnace => vec![[7.0, 23.0], [7.0, 59.0], [43.0, 41.0]],
-            // Under the filter buttons (`getUpgradeSlotsPosition`).
-            Tab::Void | Tab::Pickup | Tab::Magnet | Tab::Feeding => {
-                (0..9).map(|k| [7.0 + 18.0 * (k % 3) as f32, 44.0 + 18.0 * (k / 3) as f32]).collect()
+            // Under the filter buttons (`getUpgradeSlotsPosition`); the refill
+            // upgrade has none.
+            Tab::Void | Tab::Pickup | Tab::Magnet | Tab::Feeding | Tab::Refill => {
+                let (count, in_row) = filter_layout(self).unwrap_or((9, 3));
+                let top = if self == Tab::Refill { 23.0 } else { 44.0 };
+                (0..count).map(|k| [7.0 + 18.0 * (k % in_row) as f32, top + 18.0 * (k / in_row) as f32]).collect()
             }
-            Tab::Refill => grid().collect(),
             Tab::Jukebox => vec![[7.0, 23.0]],
         }
     }
@@ -298,7 +339,7 @@ mod tests {
         assert_eq!(Tab::of(Some("travelersbackpack:crafting_upgrade")), Tab::Crafting);
         assert_eq!(Tab::from_code(Tab::Smoker.code()), Tab::Smoker);
         assert_eq!(Tab::Crafting.slots().len(), 10);
-        assert!(Tab::Crafting.slots().len() <= TAB_SLOTS && Tab::Void.slots().len() <= TAB_SLOTS);
+        assert!(Tab::Crafting.slots().len() <= tab_slots() && Tab::Void.slots().len() <= tab_slots());
         assert_eq!(upgrade_slot_ys(&[Tab::Plain, Tab::Tanks, Tab::Plain]), vec![33.0, 58.0, 131.0]);
         assert_eq!(menu_kind("travelersbackpack:iron_x"), None);
         assert!(is_backpack("travelersbackpack:standard"));
