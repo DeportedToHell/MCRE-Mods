@@ -1,10 +1,29 @@
-# Smooth Swapping for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/smoothswapping/hero-phone.svg"><img src="../.github/releases/smoothswapping/hero.svg" alt="Smooth Swapping 1.1.2" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/smoothswapping-1.1.2/smoothswapping-1.1.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/smoothswapping/download-phone.svg"><img src="../.github/releases/smoothswapping/download.svg" alt="Download smoothswapping-1.1.2.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods/smoothswapping"><picture><source media="(max-width: 700px)" srcset="../.github/releases/smoothswapping/catalog-phone.svg"><img src="../.github/releases/smoothswapping/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/smoothswapping-1.1.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/smoothswapping/github-phone.svg"><img src="../.github/releases/smoothswapping/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/smoothswapping/feat1.svg" alt="Items fly between slots" width="315">
+<img src="../.github/releases/smoothswapping/feat2.svg" alt="Draw your own curve" width="315">
+<img src="../.github/releases/smoothswapping/feat3.svg" alt="Adjustable speed" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [Smooth Swapping](https://github.com/Schauweg/Smooth-Swapping) by Schauweg and Riflusso (its
 current maintainer) to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft:
 Java Edition 26.3, as a native mod (`.hnmod`). Published with the permission of Schauweg and Riflusso.
 
-## Features
+### Features
 
 - Items moved in an inventory **fly from slot to slot** instead of jumping: shift-clicks, hotbar keys,
   sorting, crafting results, and stacks taken into the cursor (several at once on a double click).
@@ -22,7 +41,12 @@ Java Edition 26.3, as a native mod (`.hnmod`). Published with the permission of 
 
 Drawing only: it works on servers too.
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **Smooth Swapping**, Install, then Native build > Build.
 
@@ -31,7 +55,7 @@ By hand: put `smoothswapping-<version>.hnmod` in `<game folder>/horizon-native-m
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -53,6 +77,10 @@ Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
 Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/smoothswapping"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence and credits
 

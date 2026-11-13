@@ -1,11 +1,31 @@
-# BetterF3 for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/hero-phone.svg"><img src="../.github/releases/betterf3/hero.svg" alt="BetterF3 1.0.2" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/betterf3-1.0.2/betterf3-1.0.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/download-phone.svg"><img src="../.github/releases/betterf3/download.svg" alt="Download betterf3-1.0.2.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods/betterf3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/catalog-phone.svg"><img src="../.github/releases/betterf3/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/betterf3-1.0.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/github-phone.svg"><img src="../.github/releases/betterf3/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/betterf3/feat1.svg" alt="Colourful two-column F3" width="315">
+<img src="../.github/releases/betterf3/feat2.svg" alt="Edit modules and colours" width="315">
+<img src="../.github/releases/betterf3/feat3.svg" alt="Animation, font, background" width="315">
+<img src="../.github/releases/betterf3/feat4.svg" alt="English and Russian" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [BetterF3](https://github.com/TreyRuffy/BetterF3) by cominixo and TreyRuffy to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3, as a
 native mod (`.hnmod`). It replaces the debug screen (F3) with BetterF3's customizable, colour-coded,
 human-readable one, as the Java mod does.
 
-## Features
+### Features
 
 - **Modules** in two columns, each in its own colours: Minecraft, FPS, Graphics, Server, Coordinates,
   Chunks, Location, Entities, Sounds, Help and Misc on the left; System, Misc and Targeted (block, fluid,
@@ -36,7 +56,7 @@ human-readable one, as the Java mod does.
   F3+M in a world. Settings are kept in BetterF3's own format (`betterf3.json`, as Java's
   `config/betterf3.json`) in `horizon-mods/.horizon-mod-data/betterf3/`.
 
-### Differences from the Java mod
+#### Differences from the Java mod
 
 Horizon is not the Java game, so a few lines show Horizon's own numbers or nothing:
 
@@ -51,7 +71,12 @@ Horizon is not the Java game, so a few lines show Horizon's own numbers or nothi
 - Numbers use a dot as the decimal separator whatever the system's language (Java follows the system
   locale).
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **BetterF3**, Install, then Native build > Build.
 
@@ -60,7 +85,7 @@ By hand: put `betterf3-<version>.hnmod` in `<game folder>/horizon-native-mods/`,
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -82,6 +107,10 @@ tools/package.mjs              makes the .hnmod
 
 Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/betterf3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence
 

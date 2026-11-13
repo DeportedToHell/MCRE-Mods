@@ -1,11 +1,31 @@
-# InvMove for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/invmove/hero-phone.svg"><img src="../.github/releases/invmove/hero.svg" alt="InvMove 1.0.0" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/invmove-1.0.0/invmove-1.0.0.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/invmove/download-phone.svg"><img src="../.github/releases/invmove/download.svg" alt="Download invmove-1.0.0.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods"><picture><source media="(max-width: 700px)" srcset="../.github/releases/invmove/catalog-phone.svg"><img src="../.github/releases/invmove/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/invmove-1.0.0"><picture><source media="(max-width: 700px)" srcset="../.github/releases/invmove/github-phone.svg"><img src="../.github/releases/invmove/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/invmove/feat1.svg" alt="Walk with inventory open" width="315">
+<img src="../.github/releases/invmove/feat2.svg" alt="No dark screen tint" width="315">
+<img src="../.github/releases/invmove/feat3.svg" alt="Rules for every screen" width="315">
+<img src="../.github/releases/invmove/feat4.svg" alt="Typing never moves you" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [InvMove](https://github.com/PieKing1215/InvMove) by PieKing1215 to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3, as a native
 mod (`.hnmod`). Walk, jump, sprint and sneak while an inventory or another screen is open, with rules per screen,
 and the screen's dark background tint hidden.
 
-## Features
+### Features
 
 - **Move in inventories**: the movement keys (forward, back, left, right, jump, sneak, sprint) keep working while
   the inventory, a chest, a furnace, the creative inventory, a villager's trades or another container is open, as
@@ -41,7 +61,7 @@ and the screen's dark background tint hidden.
   are carried over as the original does).
 - English (InvMove's own texts) and Russian (this port's translation), as the game's language.
 
-## Differences from the original
+### Differences from the original
 
 Horizon has no Java classes, so the screens are named after the original's classes (`net.minecraft...PauseScreen`)
 where InvMove would see one, Horizon's own as `horizon:<Name>`, and a mod's menu or screen by its id; the vanilla
@@ -64,7 +84,12 @@ module's rules are the same.
 - "Debug Display" stays off and can't be changed, as in the original's 26.x versions ("not supported on 26.x yet").
 - The toggle key is a keyboard key, as the original reads it (`InputConstants.isKeyDown`).
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **InvMove**, Install, then Native build > Build.
 
@@ -74,7 +99,7 @@ By hand: put `invmove-<version>.hnmod` in `<game folder>/horizon-native-mods/`, 
 Native mods are compiled into the game and are not sandboxed: build only code you trust. Like the original, this mod
 only changes your own client; servers with an anticheat may not like moving while a screen is open.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -96,6 +121,10 @@ The `.hnmod` file is a zip of `horizon-native.json` and `mixins/`.
 
 Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/invmove"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence and credits
 

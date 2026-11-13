@@ -1,11 +1,31 @@
-# Just Enough Items for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/justenoughitems/hero-phone.svg"><img src="../.github/releases/justenoughitems/hero.svg" alt="Just Enough Items 1.1.3" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/justenoughitems-1.1.3/justenoughitems-1.1.3.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/justenoughitems/download-phone.svg"><img src="../.github/releases/justenoughitems/download.svg" alt="Download justenoughitems-1.1.3.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods/justenoughitems"><picture><source media="(max-width: 700px)" srcset="../.github/releases/justenoughitems/catalog-phone.svg"><img src="../.github/releases/justenoughitems/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/justenoughitems-1.1.3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/justenoughitems/github-phone.svg"><img src="../.github/releases/justenoughitems/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/justenoughitems/feat1.svg" alt="Every item beside your inventory" width="315">
+<img src="../.github/releases/justenoughitems/feat2.svg" alt="Recipes on R" width="315">
+<img src="../.github/releases/justenoughitems/feat3.svg" alt="Uses on U" width="315">
+<img src="../.github/releases/justenoughitems/feat4.svg" alt=""+" fills the crafting grid" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [Just Enough Items (JEI)](https://github.com/mezz/JustEnoughItems) by mezz to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3,
 as a native mod (`.hnmod`). It draws JEI's own interface, with JEI's sprites, over the game's container
 screens.
 
-## Features
+### Features
 
 - **Ingredient list** right of every container screen and the creative inventory: every item, the
   creative inventory's subtypes (enchanted books, potions, tipped arrows...) included, in pages; the mouse
@@ -44,7 +64,12 @@ screens.
 Turn other recipe viewers (Horizon's "Recipes", "JEI for Horizon") off while this one is on: they use the
 same place on screen.
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **Just Enough Items**, Install, then Native build > Build.
 
@@ -53,7 +78,7 @@ By hand: put `justenoughitems-<version>.hnmod` in `<game folder>/horizon-native-
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
-## Recipe categories from other mods
+### Recipe categories from other mods
 
 Another native mod can add a recipe category (JEI's `IRecipeCategory` with its recipes), shown after
 JEI's own. Register it from the mod's module, at any time (JEI makes its tables again the next frame):
@@ -78,7 +103,7 @@ plugin's recipes by their outputs and inputs, as JEI's own. A mod that should al
 JEI (or with an older one) can keep the call behind a check of the staged `game.rs` for
 `fn register_category(category: PluginCategory)`.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -103,6 +128,10 @@ Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
 Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/justenoughitems"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence and credits
 

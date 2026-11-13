@@ -1,10 +1,30 @@
-# First-person Model for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/hero-phone.svg"><img src="../.github/releases/firstpersonmodel/hero.svg" alt="First-person Model 1.0.2" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/firstpersonmodel-1.0.2/firstpersonmodel-1.0.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/download-phone.svg"><img src="../.github/releases/firstpersonmodel/download.svg" alt="Download firstpersonmodel-1.0.2.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods/firstpersonmodel"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/catalog-phone.svg"><img src="../.github/releases/firstpersonmodel/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/firstpersonmodel-1.0.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/github-phone.svg"><img src="../.github/releases/firstpersonmodel/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/firstpersonmodel/feat1.svg" alt="See your own body" width="315">
+<img src="../.github/releases/firstpersonmodel/feat2.svg" alt="In boats with a map" width="315">
+<img src="../.github/releases/firstpersonmodel/feat3.svg" alt="The original settings" width="315">
+<img src="../.github/releases/firstpersonmodel/feat4.svg" alt="F6 turns it on and off" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [First-person Model](https://github.com/tr7zw/FirstPersonModel) (FirstPerson) by tr7zw to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3,
 as a native mod (`.hnmod`). You see your own third-person body in first person, as with the original.
 
-## Features
+### Features
 
 - **Your body in first person**: the player model you see in third person, drawn behind the camera
   (0.25 blocks back along the body's yaw) with the head and hat hidden. Your armour, cape, elytra,
@@ -31,16 +51,7 @@ as a native mod (`.hnmod`). You see your own third-person body in first person, 
   Options > Mods > FirstPerson. English and Russian, as the original's texts.
 - Settings are kept in `config/firstperson.json`, the original's file, in its format.
 
-## Install
-
-From the launcher: Mods, find **First-person Model**, Install, then Native build > Build.
-
-By hand: put `firstpersonmodel-<version>.hnmod` in `<game folder>/horizon-native-mods/`, add the line
-`mod.firstpersonmodel:true` to `horizon-mods.txt`, then Native build > Build in the launcher.
-
-Native mods are compiled into the game and are not sandboxed: build only code you trust.
-
-## Differences from the original
+### Differences from the original
 
 - The original renders the camera entity a second time, moved. Horizon draws the player on the CPU, so
   this port draws Horizon's own player model again from a camera moved the other way. The result is the
@@ -51,7 +62,21 @@ Native mods are compiled into the game and are not sandboxed: build only code yo
   the same model while you were in first person.
 - No API for other mods (PlayerAnimator, Freecam). Not Enough Animations is not part of this port.
 
-## Source layout
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
+
+From the launcher: Mods, find **First-person Model**, Install, then Native build > Build.
+
+By hand: put `firstpersonmodel-<version>.hnmod` in `<game folder>/horizon-native-mods/`, add the line
+`mod.firstpersonmodel:true` to `horizon-mods.txt`, then Native build > Build in the launcher.
+
+Native mods are compiled into the game and are not sandboxed: build only code you trust.
+
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -70,6 +95,10 @@ tools/check.sh                 stages the mod on the pinned Horizon source and c
 tools/package.mjs              makes the .hnmod
 tools/sprites.mjs              makes sprites.rs from a TRender checkout
 ```
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/firstpersonmodel"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence
 

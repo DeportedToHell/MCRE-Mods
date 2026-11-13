@@ -1,9 +1,29 @@
-# Better Dynamic Lights for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/hero-phone.svg"><img src="../.github/releases/dynamiclights/hero.svg" alt="Better Dynamic Lights 1.0.3" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/dynamiclights-1.0.3/dynamiclights-1.0.3.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/download-phone.svg"><img src="../.github/releases/dynamiclights/download.svg" alt="Download dynamiclights-1.0.3.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods/dynamiclights"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/catalog-phone.svg"><img src="../.github/releases/dynamiclights/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/dynamiclights-1.0.3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/github-phone.svg"><img src="../.github/releases/dynamiclights/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/dynamiclights/feat1.svg" alt="Torch in hand lights up" width="315">
+<img src="../.github/releases/dynamiclights/feat2.svg" alt="Dropped torches keep shining" width="315">
+<img src="../.github/releases/dynamiclights/feat3.svg" alt="Burning mobs and blazes glow" width="315">
+<img src="../.github/releases/dynamiclights/feat4.svg" alt="Choose what glows" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 An original native mod (`.hnmod`) for [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of
 Minecraft: Java Edition 26.3: torches, lanterns and other glowing things light up the world as they move.
 
-## Better than the built-in lights
+### Better than the built-in lights
 
 Horizon already has dynamic lights of its own (Options > Horizon Extras > Dynamic lights, off by default): items in
 your hands, dropped items and burning mobs light up, with one on/off switch. Better Dynamic Lights uses the same light
@@ -23,7 +43,7 @@ renderer and takes the place of that switch while it is on, with much more:
 | Its own settings screen, Mod Menu, English and Russian | — | yes |
 | On by default | off | on |
 
-## Features
+### Features
 
 - **Held items**: a glowing item in your main hand or off hand lights the blocks and mobs around you. So do
   glowing items held by other players, mobs (a zombie with a torch) and armor stands.
@@ -39,7 +59,7 @@ renderer and takes the place of that switch while it is on, with much more:
 An item glows as brightly as its block does when placed (torch 14, lantern and glowstone 15, soul torch 10…),
 glow berries as cave vines with berries (14).
 
-### Settings
+#### Settings
 
 Options > Mods > Better Dynamic Lights > **Configure...** (or Mod Menu's Configure button) opens the settings screen,
 an options screen in the game's own look, in English or Russian with the game's language:
@@ -61,7 +81,12 @@ shaders light the world with them (client side only; the light engine, chunks an
 the mod is on, it takes the place of Options > Horizon Extras > Dynamic lights; turned off in Options > Mods,
 Horizon's extra works as before.
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **Better Dynamic Lights**, Install, then Native build > Build.
 
@@ -70,7 +95,7 @@ By hand: put `dynamiclights-<version>.hnmod` in `<game folder>/horizon-native-mo
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -92,6 +117,10 @@ Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
 Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/betterdynamiclights"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence
 

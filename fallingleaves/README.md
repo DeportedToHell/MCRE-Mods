@@ -1,11 +1,31 @@
-# Falling Leaves for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/fallingleaves/hero-phone.svg"><img src="../.github/releases/fallingleaves/hero.svg" alt="Falling Leaves 1.0.1" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/fallingleaves-1.0.1/fallingleaves-1.0.1.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/fallingleaves/download-phone.svg"><img src="../.github/releases/fallingleaves/download.svg" alt="Download fallingleaves-1.0.1.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods"><picture><source media="(max-width: 700px)" srcset="../.github/releases/fallingleaves/catalog-phone.svg"><img src="../.github/releases/fallingleaves/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/fallingleaves-1.0.1"><picture><source media="(max-width: 700px)" srcset="../.github/releases/fallingleaves/github-phone.svg"><img src="../.github/releases/fallingleaves/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/fallingleaves/feat1.svg" alt="Leaves fall and spin" width="315">
+<img src="../.github/releases/fallingleaves/feat2.svg" alt="Cherry petals drift down" width="315">
+<img src="../.github/releases/fallingleaves/feat3.svg" alt="Wind, water and snow" width="315">
+<img src="../.github/releases/fallingleaves/feat4.svg" alt="Full settings screen" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [Falling Leaves](https://github.com/RandomMcSomethin/fallingleaves) by RandomMcSomethin (Fourmisain,
 BrekiTomasson, RandomMcSomethin) to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of
 Minecraft: Java Edition 26.3, as a native mod (`.hnmod`). Leaves fall from the trees, spin, drift with the wind,
 float on water and settle on the ground.
 
-## Features
+### Features
 
 - **Falling leaves** below leaf blocks, with Falling Leaves' own textures, tinted with the colour of the tree's
   leaves (the leaf texture's average colour times the biome's foliage colour), spinning as they fall, faster or
@@ -35,7 +55,12 @@ is no `/particle fallingleaves:...` type to register); the fall and winter multi
 (`particles/block/<namespace>/<block>.json`) are not read; in the Leaf Block Settings each block's tooltip names
 its namespace's game or mod as Horizon knows it.
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **Falling Leaves**, Install, then Native build > Build.
 
@@ -44,7 +69,7 @@ By hand: put `fallingleaves-<version>.hnmod` in `<game folder>/horizon-native-mo
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -68,6 +93,10 @@ The `.hnmod` file is a zip of `horizon-native.json` and `mixins/`.
 
 Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/fallingleaves"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence and credits
 

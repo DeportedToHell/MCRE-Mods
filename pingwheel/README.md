@@ -1,11 +1,31 @@
-# Ping Wheel for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pingwheel/hero-phone.svg"><img src="../.github/releases/pingwheel/hero.svg" alt="Ping Wheel 1.0.1" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/pingwheel-1.0.1/pingwheel-1.0.1.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pingwheel/download-phone.svg"><img src="../.github/releases/pingwheel/download.svg" alt="Download pingwheel-1.0.1.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pingwheel/catalog-phone.svg"><img src="../.github/releases/pingwheel/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/pingwheel-1.0.1"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pingwheel/github-phone.svg"><img src="../.github/releases/pingwheel/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/pingwheel/feat1.svg" alt="Pings with who pinged" width="315">
+<img src="../.github/releases/pingwheel/feat2.svg" alt="Ping any block" width="315">
+<img src="../.github/releases/pingwheel/feat3.svg" alt="Item pings follow drops" width="315">
+<img src="../.github/releases/pingwheel/feat4.svg" alt="Ping Wheel settings" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [Ping Wheel](https://github.com/LukenSkyne/Minecraft-Ping-Wheel) by Luken (contributor RXJpaw) to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3, as a native
 mod (`.hnmod`). Mark locations for your friends, like the pings of modern co-op games. Ported from branch 26.3
 (v1.12.2).
 
-## Features
+### Features
 
 - **Ping Location** key (Mouse 5 "Forward" by default; Options > Controls or Options > Mods > Ping Wheel): pings
   the block or entity under the crosshair, up to 1024 blocks away. While crouching the ray stops at every block's
@@ -48,7 +68,12 @@ Differences from the original, where Horizon has no counterpart:
 - The settings screen opened in a world doesn't pause single player (Horizon's mod screens don't).
 - The server's "make sure your version matches" messages name Ping Wheel 1.12.2, the version this port speaks.
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **Ping Wheel**, Install, then Native build > Build.
 
@@ -57,7 +82,7 @@ By hand: put `pingwheel-<version>.hnmod` in `<game folder>/horizon-native-mods/`
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json          bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -85,6 +110,10 @@ The `.hnmod` file is a zip of `horizon-native.json` and `mixins/`.
 
 Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`. It uses the mod-image atlas rows 976..1008 (the arrow).
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/pingwheel"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence and credits
 

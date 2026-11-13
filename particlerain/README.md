@@ -1,11 +1,31 @@
-# Particle Rain for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/particlerain/hero-phone.svg"><img src="../.github/releases/particlerain/hero.svg" alt="Particle Rain 1.0.1" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/particlerain-1.0.1/particlerain-1.0.1.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/particlerain/download-phone.svg"><img src="../.github/releases/particlerain/download.svg" alt="Download particlerain-1.0.1.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods"><picture><source media="(max-width: 700px)" srcset="../.github/releases/particlerain/catalog-phone.svg"><img src="../.github/releases/particlerain/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/particlerain-1.0.1"><picture><source media="(max-width: 700px)" srcset="../.github/releases/particlerain/github-phone.svg"><img src="../.github/releases/particlerain/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/particlerain/feat1.svg" alt="Slanted rain drops" width="315">
+<img src="../.github/releases/particlerain/feat2.svg" alt="Spinning snowflakes" width="315">
+<img src="../.github/releases/particlerain/feat3.svg" alt="Ripples on water" width="315">
+<img src="../.github/releases/particlerain/feat4.svg" alt="Swamp fog" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [Particle Rain](https://github.com/PigCart/particle-rain) by PigCart to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3, as a native
 mod (`.hnmod`). The game's flat rain and snow curtains give way to particles: raindrops, snowflakes, desert dust,
 fog and more, blown by the wind. Ported by DeportedToHell.
 
-## Features
+### Features
 
 As Particle Rain 4.0.3 (branch `main`, a9f1de9) on Minecraft 26.3:
 
@@ -35,14 +55,14 @@ As Particle Rain 4.0.3 (branch `main`, a9f1de9) on Minecraft 26.3:
 - English and Russian (the original's translations; the lines its Russian file lacks are translated by the port).
   Mod Menu shows Particle Rain's icon and details.
 
-### Port addition
+#### Port addition
 
 - **Changing Wind Direction** (Wind Options, on by default): the original's wind always blows north-west and only
   its strength gusts; with this option the wind turns slowly with the game time (every direction over a few tens
   of minutes, the same for every player of a world). Strength, gusts, height and storms are the original's. Off
   is exactly the original. It is kept in `config.json` as `horizonChangingWindDirection`.
 
-### Differences from the original
+#### Differences from the original
 
 - Fabric's `c:` convention tags don't exist in Horizon: the port defines those the built-in particles name.
 - "Sync registries" is kept and shown but changes nothing (Horizon has no registry sync).
@@ -55,7 +75,12 @@ As Particle Rain 4.0.3 (branch `main`, a9f1de9) on Minecraft 26.3:
   saved to `particles.json` (the whole list, as the original writes a changed one). The original compares only
   the entries and loses the switch on the next load.
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **Particle Rain**, Install, then Native build > Build.
 
@@ -64,7 +89,7 @@ By hand: put `particlerain-<version>.hnmod` in `<game folder>/horizon-native-mod
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -90,6 +115,10 @@ The `.hnmod` file is a zip of `horizon-native.json` and `mixins/`.
 
 Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/particlerain"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence and credits
 

@@ -1,11 +1,31 @@
-# Roughly Enough Items for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/hero-phone.svg"><img src="../.github/releases/roughlyenoughitems/hero.svg" alt="Roughly Enough Items 1.1.2" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/roughlyenoughitems-1.1.2/roughlyenoughitems-1.1.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/download-phone.svg"><img src="../.github/releases/roughlyenoughitems/download.svg" alt="Download roughlyenoughitems-1.1.2.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods/roughlyenoughitems"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/catalog-phone.svg"><img src="../.github/releases/roughlyenoughitems/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/roughlyenoughitems-1.1.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/github-phone.svg"><img src="../.github/releases/roughlyenoughitems/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/roughlyenoughitems/feat1.svg" alt="Every item at hand" width="315">
+<img src="../.github/releases/roughlyenoughitems/feat2.svg" alt="Recipes and usages" width="315">
+<img src="../.github/releases/roughlyenoughitems/feat3.svg" alt="Powerful search" width="315">
+<img src="../.github/releases/roughlyenoughitems/feat4.svg" alt="Recipe fills the grid" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [Roughly Enough Items (REI)](https://github.com/shedaniel/RoughlyEnoughItems) by shedaniel to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3,
 as a native mod (`.hnmod`). It draws REI's own interface, with REI's textures and layout, over the
 game's container screens.
 
-## Features
+### Features
 
 - **Entry list** right of every container screen and the creative inventory, in pages: the arrows,
   the mouse wheel, or a click on "1/N" to go back to the first page. Enchanted books, potions, splash
@@ -52,7 +72,12 @@ game's container screens.
 Both this mod and [Just Enough Items for Horizon](../justenoughitems) draw beside the inventory: REI steps
 aside while JEI is on, so turn one of them off.
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **Roughly Enough Items**, Install, then Native build > Build.
 
@@ -61,7 +86,7 @@ By hand: put `roughlyenoughitems-<version>.hnmod` in `<game folder>/horizon-nati
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -83,6 +108,10 @@ Cargo.toml                     runs runtime.rs's tests
 ```
 
 Tests: `cargo test` (Rust 1.99.1, edition 2024).
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/roughlyenoughitems"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence
 

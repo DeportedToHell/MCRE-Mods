@@ -1,10 +1,29 @@
-# Zoomify for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/hero-phone.svg"><img src="../.github/releases/zoomify/hero.svg" alt="Zoomify 1.1.1" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/zoomify-1.1.1/zoomify-1.1.1.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/download-phone.svg"><img src="../.github/releases/zoomify/download.svg" alt="Download zoomify-1.1.1.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods/zoomify"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/catalog-phone.svg"><img src="../.github/releases/zoomify/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/zoomify-1.1.1"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/github-phone.svg"><img src="../.github/releases/zoomify/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/zoomify/feat1.svg" alt="Smooth zoom on C" width="315">
+<img src="../.github/releases/zoomify/feat2.svg" alt="Spyglass integration" width="315">
+<img src="../.github/releases/zoomify/feat3.svg" alt="Full settings screen" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [Zoomify](https://github.com/isXander/Zoomify) by isXander to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3,
 as a native mod (`.hnmod`).
 
-## Features
+### Features
 
 - **Zoom** (C, hold or toggle) with Zoomify's transitions, times and initial zoom; **scroll zoom** with the
   wheel while zooming (or the Scroll Zoom In / Out keys); the **secondary zoom** (F6), slow and cinematic,
@@ -19,7 +38,12 @@ as a native mod (`.hnmod`).
   Zoomify's and YACL's own English and Russian texts.
 - The old settings buttons stay on the page under Configure... .
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **Zoomify**, Install, then Native build > Build.
 
@@ -28,7 +52,7 @@ By hand: put `zoomify-<version>.hnmod` in `<game folder>/horizon-native-mods/`, 
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -50,6 +74,10 @@ Tests: `rustc --edition 2024 --test mixins/zoomify/runtime.rs` (Rust 1.99.1).
 
 Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/zoomify"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence and credits
 

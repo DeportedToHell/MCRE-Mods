@@ -1,11 +1,31 @@
-# Shulker Box Tooltip for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/shulkerboxtooltip/hero-phone.svg"><img src="../.github/releases/shulkerboxtooltip/hero.svg" alt="Shulker Box Tooltip 1.0.1" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/shulkerboxtooltip-1.0.1/shulkerboxtooltip-1.0.1.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/shulkerboxtooltip/download-phone.svg"><img src="../.github/releases/shulkerboxtooltip/download.svg" alt="Download shulkerboxtooltip-1.0.1.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods/shulkerboxtooltip"><picture><source media="(max-width: 700px)" srcset="../.github/releases/shulkerboxtooltip/catalog-phone.svg"><img src="../.github/releases/shulkerboxtooltip/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/shulkerboxtooltip-1.0.1"><picture><source media="(max-width: 700px)" srcset="../.github/releases/shulkerboxtooltip/github-phone.svg"><img src="../.github/releases/shulkerboxtooltip/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/shulkerboxtooltip/feat1.svg" alt="Shift: quick preview" width="315">
+<img src="../.github/releases/shulkerboxtooltip/feat2.svg" alt="Alt+Shift: full contents" width="315">
+<img src="../.github/releases/shulkerboxtooltip/feat3.svg" alt="Coloured by dye" width="315">
+<img src="../.github/releases/shulkerboxtooltip/feat4.svg" alt="Chests and barrels too" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [ShulkerBoxTooltip](https://github.com/MisterPeModder/ShulkerBoxTooltip) by MisterPeModder to
 [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3, as a native
 mod (`.hnmod`). "What's in my shulker box?": the contents of a container item right in its tooltip, drawn with
 ShulkerBoxTooltip's own window texture, layout and colours.
 
-## Features
+### Features
 
 - **Key hints** in a container item's tooltip: *Shift: view contents*, *Alt+Shift: view full contents*, and
   *Ctrl: lock tooltip* in container screens. The vanilla "N x item" lines give way to *Contains N stack(s)* or
@@ -47,7 +67,12 @@ container screens but not in the creative inventory; the per-item overrides a se
 an item's `custom_data` (`shulkerboxtooltip: {...}`) are not read; the ender chest's synchronization talks
 Horizon's mod messages, so on a Java server running ShulkerBoxTooltip the cache is used instead.
 
-## Install
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Install
 
 From the launcher: Mods, find **Shulker Box Tooltip**, Install, then Native build > Build.
 
@@ -56,7 +81,7 @@ By hand: put `shulkerboxtooltip-<version>.hnmod` in `<game folder>/horizon-nativ
 
 Native mods are compiled into the game and are not sandboxed: build only code you trust.
 
-## Source layout
+### Source layout
 
 ```
 horizon-native.json            bundle manifest (id, version, pinned Horizon and horizon-mixins revisions)
@@ -81,6 +106,10 @@ Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
 Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/shulkerboxtooltip"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence
 

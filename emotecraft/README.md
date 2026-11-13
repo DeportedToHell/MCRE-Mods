@@ -1,4 +1,24 @@
-# Emotecraft for Horizon
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/hero-phone.svg"><img src="../.github/releases/emotecraft/hero.svg" alt="Emotecraft 1.0.1" width="640"></picture></p>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/emotecraft-1.0.1/emotecraft-1.0.1.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/download-phone.svg"><img src="../.github/releases/emotecraft/download.svg" alt="Download emotecraft-1.0.1.hnmod" width="500"></picture></a><br>
+<a href="https://playhorizon.dev/mods"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/catalog-phone.svg"><img src="../.github/releases/emotecraft/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/emotecraft-1.0.1"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/github-phone.svg"><img src="../.github/releases/emotecraft/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+
+<p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
+
+<p align="center">
+<img src="../.github/releases/emotecraft/feat1.svg" alt="Emote wheel on B" width="315">
+<img src="../.github/releases/emotecraft/feat2.svg" alt="Backflips, dances and more" width="315">
+<img src="../.github/releases/emotecraft/feat3.svg" alt="Browse all emotes" width="315">
+<img src="../.github/releases/emotecraft/feat4.svg" alt="Works on Java servers" width="315">
+</p>
+
+<p align="center"><img src="../.github/releases/common/title-install.svg" alt="How to install" width="640"></p>
+
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/steps-phone.svg"><img src="../.github/releases/common/steps.svg" alt="Install from the file: download, put it in horizon-native-mods, Native build > Build" width="640"></picture></p>
+
+<details>
+<summary><b>All features in detail · Все возможности подробно</b></summary>
 
 A port of [Emotecraft](https://github.com/KosmX/emotes) 3.5.0 by KosmX and dima_dencep
 to Horizon (Minecraft Java Edition 26.3 in Rust), as the native mod `emotecraft`.
@@ -17,7 +37,12 @@ them when the service is unavailable), Geyser.
 Custom emotes go in `emotes/` in the game folder (Emotecraft `.json`, Blockbench /
 Bedrock `.json`, `.emotecraft` binary, with `.png` icons and `.ogg`/`.opus` songs).
 
-## Layout
+</details>
+
+<details>
+<summary><b>Install by hand and source code · Установка вручную и исходный код</b></summary>
+
+### Layout
 
 - `horizon-native.json` — the catalog manifest.
 - `mixins/emotecraft/` — the bundle: `horizon-mixin.toml`, the game-side modules
@@ -26,6 +51,10 @@ Bedrock `.json`, `.emotecraft` binary, with `.png` icons and `.ogg`/`.opus` song
   crate (animation player, formats, protocol, server logic, Opus).
 - `tools/lang.mjs` regenerates `engine/src/lang.rs` from Emotecraft's lang files;
   `tools/package.mjs` builds `mods/emotecraft-<version>.hnmod`.
+
+</details>
+
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/tree/main/emotecraft"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/code-phone.svg"><img src="../.github/releases/common/code.svg" alt="Source code" width="245"></picture></a> <a href="https://github.com/DeportedToHell/MCRE-Mods/issues/new/choose"><picture><source media="(max-width: 700px)" srcset="../.github/releases/common/bug-phone.svg"><img src="../.github/releases/common/bug.svg" alt="Report a bug" width="245"></picture></a></p>
 
 ## Licence
 
