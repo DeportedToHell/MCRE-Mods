@@ -7,7 +7,7 @@ An independent port of [Traveler's Backpack](https://github.com/Tiviacz1337/Trav
 
 **Version 0.9.9** — nearly all original features implemented. Remaining work is listed below.
 
-> Two files are needed: the content mod (`travelersbackpack.hmod`) and the native mod (`travelersbackpack_native.hnmod`). One alone does not work.
+<img src="../.github/assets/stickers/warning.png" height="64" alt=""> Two files are needed: the content mod (`travelersbackpack.hmod`) and the native mod (`travelersbackpack_native.hnmod`). One alone does not work.
 
 Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 
