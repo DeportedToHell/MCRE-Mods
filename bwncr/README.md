@@ -7,12 +7,14 @@ An independent port of [Bad Wither No Cookie - Reloaded](https://gitlab.com/kree
 
 Based on Fabric version 3.20.4, branch 1.21.1, including its configuration screen.
 
-Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 
-> This is an independent port of the original project.
+## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
+
 > It is not affiliated with, endorsed by, or officially associated with the original authors.
 >
 > Original mod: https://gitlab.com/kreezxil/BadWitherNoCookie
+
+Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 
 Special thanks to [Kreezxil](https://gitlab.com/kreezxil) and all contributors for the original mod.
 
