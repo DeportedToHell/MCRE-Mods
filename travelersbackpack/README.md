@@ -1,6 +1,8 @@
 <h1 align="left">
   <img src="../.github/assets/stickers/travelersbackpack.gif" height="64" alt="">
   <img src="../.github/assets/stickers/travelersbackpack.png" height="64" alt="">
+
+  A port of [Traveler's Backpack](https://github.com/Tiviacz1337/Travelers-Backpack) by Tiviacz1337 to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
 </h1>
 
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
@@ -14,8 +16,6 @@
 Ported by [DispatchedToHeaven](https://github.com/DispatchedToHeaven).
 
 Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the original mod.
-
-A port of [Traveler's Backpack](https://github.com/Tiviacz1337/Travelers-Backpack) by Tiviacz1337 to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
 
 
 ## **Version 0.9.9** — nearly all original features implemented. Remaining work is listed below.
