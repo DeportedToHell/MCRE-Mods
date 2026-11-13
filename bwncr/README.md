@@ -24,14 +24,6 @@ Based on Fabric version 3.20.4, branch 1.21.1, including its configuration scree
 
 **Client-side only.** Changes what you hear, regardless of the server you're playing on.
 
-## 📦Installation
-
-Find **Bad Wither No Cookie Reloaded** in the launcher's Mods section, select Install, then run **Native build → Build**.
-
-For manual installation, place `bwncr-<version>.hnmod` in `<game folder>/horizon-native-mods/`, add `mod.bwncr:true` to `horizon-mods.txt`, then run **Native build → Build** in the launcher.
-
-> Native mods are compiled into the game and are not sandboxed. Only build code you trust.
-
 ## 🗂️Source layout
 
 ```text
