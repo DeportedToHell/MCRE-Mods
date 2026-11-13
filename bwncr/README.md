@@ -3,8 +3,6 @@
   <img src="../.github/assets/stickers/bwncrn.png" height="50" alt="">
 </h1>
 
-An independent port of [Bad Wither No Cookie - Reloaded](https://gitlab.com/kreezxil/BadWitherNoCookie) by Kreezxil and contributors to [Horizon](https://github.com/horizon-rust/horizon), the Rust rewrite of Minecraft: Java Edition 26.3.
-
 Based on Fabric version 3.20.4, branch 1.21.1, including its configuration screen.
 
 
