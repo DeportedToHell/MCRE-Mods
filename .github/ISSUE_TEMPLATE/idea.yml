@@ -1,0 +1,34 @@
+name: 💡 Idea / Предложить идею
+description: A Java mod to port, or something to add to one of our mods. / Мод для порта или новая функция в нашем моде.
+title: "[Idea] "
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <p align="center"><img src="https://raw.githubusercontent.com/DeportedToHell/MCRE-Mods/main/.github/issues/idea.svg" alt="Got an idea? / Есть идея?" width="100%"></p>
+
+        <p align="center">English or Russian. · Можно по-русски.</p>
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 🧭 What is it? / Что это?
+      options:
+        - Port a Java mod / Портировать мод с Java
+        - New feature in one of our mods / Новая функция в нашем моде
+        - Something else / Другое
+    validations:
+      required: true
+  - type: input
+    id: mod
+    attributes:
+      label: 🧩 Which mod? / Какой мод?
+      description: Its name, and a link (Modrinth, CurseForge or GitHub) for a Java mod. / Название и ссылка (Modrinth, CurseForge или GitHub) для мода с Java.
+      placeholder: "https://modrinth.com/mod/..."
+  - type: textarea
+    id: idea
+    attributes:
+      label: ✨ Your idea / Ваша идея
+      description: What it should do and why it would be cool. Pictures help. / Что должно происходить и чем это круто. Картинки помогают.
+    validations:
+      required: true

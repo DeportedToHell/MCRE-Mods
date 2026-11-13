@@ -1,1 +1,8 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
+contact_links:
+  - name: 📦 Download mods / Скачать моды
+    url: https://github.com/DeportedToHell/MCRE-Mods/releases
+    about: Every mod's latest file, ready to install. / Последние версии всех модов, готовые к установке.
+  - name: 🛒 Horizon catalog / Каталог Horizon
+    url: https://playhorizon.dev/mods
+    about: Install our mods right from the launcher. / Ставьте наши моды прямо из лаунчера.
