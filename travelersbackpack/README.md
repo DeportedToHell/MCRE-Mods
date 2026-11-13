@@ -35,15 +35,14 @@ Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the
 
 ## 🚧Remaining work
 
+1.0.0 - Other mods integration.
+
 Not implemented compared to the original:
 
 - **Other mods' integration.** Accessories / Trinkets (a back slot, `backSlotIntegration`), the deeper part of JEI / EMI / REI (moving a recipe into the crafting upgrade, dragging items into filters; their recipe screens do show the smithing upgrades), Crafting Tweaks, Polymorph, Comforts, grave mods (Pneumono Gravestones, Universal Graves), Tough As Nails, Trash Slot, VinURL and Entity Model Features. Dynamic lighting works without LambDynamicLights.
 - **Supporter badge.** The star on the backpacks of the original's supporters needs their list from the internet; the port makes no network requests.
 
 Differences: a Horizon menu holds at most 256 slots, so with the most upgrades and tools the config allows (10 and 8), or filters of more than 10 slots, a tier's storage is cut to what still fits (138 instead of 154 with the defaults).
-
-Still to be checked in game: several design-specific abilities, upgrade keybinds, the hose radial menu and two players sharing backpacks over LAN.
-
 
 ## 🧩Changelog:
 
