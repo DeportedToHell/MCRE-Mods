@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "#travelersbackpack:backpack_upgrades",
+  "base": "travelersbackpack:ocelot",
+  "result": {
+    "id": "travelersbackpack:ocelot"
+  },
+  "template": "#c:leathers"
+}

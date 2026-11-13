@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "#travelersbackpack:backpack_upgrades",
+  "base": "travelersbackpack:iron_golem",
+  "result": {
+    "id": "travelersbackpack:iron_golem"
+  },
+  "template": "#c:leathers"
+}

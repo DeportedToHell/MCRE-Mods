@@ -373,7 +373,7 @@ fn toggle_worn_upgrade(game: &mut Game<'_>, uuid: u128, i: usize) {
 /// The native mod's id, for its key binding.
 const MOD_ID: &str = "travelersbackpack_native";
 /// The port's version (`horizon-native.json`).
-const VERSION: &str = "0.9.7";
+const VERSION: &str = "0.9.8";
 
 /// The backpack `uuid` wears, if any.
 fn worn(game: &Game<'_>, uuid: u128) -> Option<ItemStack> {
@@ -2430,18 +2430,33 @@ fn jukebox(game: &mut Game<'_>, uuid: u128, source: Source, dimension: &str, win
             let Some(sound) = disc.as_ref().and_then(disc_sound) else {
                 return;
             };
-            let at = match source {
-                Source::Block(pos) if game.dim.id() == dimension => pos.map(|c| f64::from(c) + 0.5),
-                _ => position,
-            };
-            // `SoundSource.RECORDS`, as loud as a jukebox, for each player here.
+            // `SoundSource.RECORDS`, as loud as a jukebox, for each player here:
+            // a placed backpack's at it; one carried or worn follows its player
+            // (`JukeboxWidget.MovingSound`).
             let here: Vec<u128> = game
                 .lan
                 .as_ref()
                 .map(|h| h.hub.guests.iter().filter(|g| g.placed && g.dimension == dimension).map(|g| g.uuid).collect())
                 .unwrap_or_default();
-            for player in here {
-                game.native_play_sound_to(player, &sound, "record", Some(at), 4.0, 1.0);
+            let carrier = match source {
+                Source::Other(owner) => owner,
+                _ => uuid,
+            };
+            let entity = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == carrier)).map(|g| g.entity_id);
+            match (source, entity) {
+                (Source::Block(pos), _) => {
+                    let at = if game.dim.id() == dimension { pos.map(|c| f64::from(c) + 0.5) } else { position };
+                    for player in here {
+                        game.native_play_sound_to(player, &sound, "record", Some(at), 4.0, 1.0);
+                    }
+                }
+                (_, Some(entity)) => {
+                    let message = format!("{entity}\t{sound}");
+                    for player in here {
+                        let _ = game.native_net_send_to_player(player, JUKEBOX_CHANNEL, message.as_bytes());
+                    }
+                }
+                (_, None) => {}
             }
             set_playing(upgrade, Some(&sound));
         }
@@ -4466,6 +4481,14 @@ thread_local! {
 
 /// The server told who wears what (`ClientboundSyncAttachmentPacket`).
 pub(super) fn net_from_server(channel: &str, data: &[u8]) {
+    if channel == JUKEBOX_CHANNEL {
+        if let Some((entity, sound)) = std::str::from_utf8(data).ok().and_then(|t| t.split_once('\t'))
+            && let Ok(entity) = entity.parse::<i32>()
+        {
+            SONGS.with(|s| s.borrow_mut().push((entity, sound.to_owned())));
+        }
+        return;
+    }
     if channel == FLUID_WARNING_CHANNEL {
         let lines = std::str::from_utf8(data).unwrap_or_default().lines().map(str::to_owned).collect();
         FLUID_WARNING.with(|w| *w.borrow_mut() = Some((std::time::Instant::now(), lines)));
@@ -6448,7 +6471,7 @@ fn hose_use(game: &mut Game<'_>, claimed: &mut bool) {
                 changed = true;
                 let sound = if fluid == "minecraft:lava" { "minecraft:item.bucket.fill_lava" } else { "minecraft:item.bucket.fill" };
                 let at = pos.map(|c| f64::from(c) + 0.5);
-                game.native_play_sound_to(uuid, sound, "block", Some(at), 1.0, 1.0);
+                play_near(game, uuid, sound, "block", Some(at), 1.0, 1.0);
             }
             break;
         }
@@ -6487,7 +6510,7 @@ fn hose_use(game: &mut Game<'_>, claimed: &mut bool) {
                     // Water boils away in the Nether (`WATER_EVAPORATES`).
                     (None, Some(at)) if fluid == "minecraft:water" && dimension == "minecraft:the_nether" => {
                         let at3 = at.map(|c| f64::from(c) + 0.5);
-                        game.native_play_sound_to(uuid, "minecraft:block.fire.extinguish", "block", Some(at3), 0.5, 2.6);
+                        play_near(game, uuid, "minecraft:block.fire.extinguish", "block", Some(at3), 0.5, 2.6);
                         Some(at)
                     }
                     (None, Some(at)) => game
@@ -6503,7 +6526,7 @@ fn hose_use(game: &mut Game<'_>, claimed: &mut bool) {
                     }
                     changed = true;
                     let sound = if fluid == "minecraft:lava" { "minecraft:item.bucket.empty_lava" } else { "minecraft:item.bucket.empty" };
-                    game.native_play_sound_to(uuid, sound, "block", Some(at.map(|c| f64::from(c) + 0.5)), 1.0, 1.0);
+                    play_near(game, uuid, sound, "block", Some(at.map(|c| f64::from(c) + 0.5)), 1.0, 1.0);
                 }
                 break;
             }
@@ -7118,7 +7141,7 @@ fn shear(game: &mut Game<'_>, uuid: u128, dimension: &str, pos: [i32; 3]) {
     refresh_look(&mut stack);
     let at = pos.map(|c| f64::from(c) + 0.5);
     game.spawn_item(stack, at, super::dispenser::new_item_motion(), 10);
-    game.native_play_sound_to(uuid, "minecraft:entity.sheep.shear", "player", Some(at), 1.0, 1.0);
+    play_near(game, uuid, "minecraft:entity.sheep.shear", "player", Some(at), 1.0, 1.0);
     if !creative {
         let broke = game
             .lan
@@ -7132,7 +7155,7 @@ fn shear(game: &mut Game<'_>, uuid: u128, dimension: &str, pos: [i32; 3]) {
             })
             .is_some();
         if broke {
-            game.native_play_sound_to(uuid, "minecraft:entity.item.break", "player", Some(at), 0.8, 1.0);
+            play_near(game, uuid, "minecraft:entity.item.break", "player", Some(at), 0.8, 1.0);
         }
     }
     advance(game, uuid, "revert_custom_backpack");
@@ -7152,7 +7175,7 @@ fn throw_potion(game: &mut Game<'_>, uuid: u128, potion: ItemStack) {
         "minecraft:entity.lingering_potion.throw"
     };
     let pitch = 0.4 / (game.world.random.next_float() * 0.4 + 0.8);
-    game.native_play_sound_to(uuid, sound, "neutral", Some(eye), 0.5, pitch);
+    play_near(game, uuid, sound, "neutral", Some(eye), 0.5, pitch);
     let (yaw, look) = (game.yaw.to_radians(), game.pitch.to_radians());
     let dir = [-yaw.sin() * look.cos(), -(game.pitch - 20.0).to_radians().sin(), yaw.cos() * look.cos()].map(f64::from);
     let l = dir.iter().map(|c| c * c).sum::<f64>().sqrt().max(1e-9);
@@ -7387,7 +7410,7 @@ fn ability_tick(game: &mut Game<'_>, uuid: u128, at: [f64; 3], design: &str, set
                     particles: true,
                 };
                 game.native_add_effect(uuid, &e);
-                game.native_play_sound_to(uuid, "minecraft:entity.generic.eat", "ambient", Some(at), 0.6, 1.0);
+                play_near(game, uuid, "minecraft:entity.generic.eat", "ambient", Some(at), 0.6, 1.0);
                 settings.cooldown = cooldown_ticks(design).unwrap_or(0);
             }
             true
@@ -7397,7 +7420,7 @@ fn ability_tick(game: &mut Game<'_>, uuid: u128, at: [f64; 3], design: &str, set
             if ready {
                 settings.cooldown = cooldown_ticks(design).unwrap_or(0);
                 if !just_put_on {
-                    game.native_play_sound_to(uuid, "minecraft:entity.chicken.egg", "ambient", Some(at), 1.0, 1.0);
+                    play_near(game, uuid, "minecraft:entity.chicken.egg", "ambient", Some(at), 1.0, 1.0);
                     game.spawn_item(ItemStack::new("minecraft:egg", 1), [at[0], at[1] + 0.5, at[2]], super::dispenser::new_item_motion(), 10);
                 }
             }
@@ -7414,7 +7437,7 @@ fn ability_tick(game: &mut Game<'_>, uuid: u128, at: [f64; 3], design: &str, set
                     let id = if id.contains(':') { id } else { format!("minecraft:{id}") };
                     game.native_remove_effect(uuid, &id);
                 }
-                game.native_play_sound_to(uuid, "minecraft:item.honeycomb.wax_on", "player", Some(at), 1.0, 1.0);
+                play_near(game, uuid, "minecraft:item.honeycomb.wax_on", "player", Some(at), 1.0, 1.0);
                 settings.cooldown = cooldown_ticks(design).unwrap_or(0);
             }
             true
@@ -7560,7 +7583,7 @@ pub(super) fn projectile_impact(game: &mut Game<'_>, kind: &str, entity: Option<
     };
     if wears(uuid, "blaze") {
         *canceled = true;
-        game.native_play_sound_to(uuid, "minecraft:item.shield.block", "player", Some(at), 1.0, 1.0);
+        play_near(game, uuid, "minecraft:item.shield.block", "player", Some(at), 1.0, 1.0);
     }
 }
 
@@ -7601,7 +7624,7 @@ fn creeper_save(game: &mut Game<'_>, uuid: u128) {
         BLASTED.with(|b| *b.borrow_mut() = Some(uuid));
         game.native_explode(&dimension, at, 3.0, false, super::native_explosions::NativeBlast::Keep);
         BLASTED.with(|b| *b.borrow_mut() = None);
-        game.native_play_sound_to(uuid, "minecraft:entity.creeper.primed", "ambient", Some(at), 1.2, 0.5);
+        play_near(game, uuid, "minecraft:entity.creeper.primed", "ambient", Some(at), 1.2, 0.5);
     }
     settings.cooldown = cooldown_ticks("creeper").unwrap_or(0);
     set_item_settings(&mut stack, &settings);
@@ -7635,7 +7658,7 @@ pub(super) fn hurt_enemy(game: &mut Game<'_>, entity: u32, kind: &str) {
     }
     if design == "bee" {
         let at = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map(|g| g.position);
-        game.native_play_sound_to(uuid, "minecraft:entity.bee.sting", "player", at, 1.0, 1.0);
+        play_near(game, uuid, "minecraft:entity.bee.sting", "player", at, 1.0, 1.0);
     }
 }
 
@@ -8027,7 +8050,7 @@ fn fill_tank(game: &mut Game<'_>, uuid: u128, side: usize) {
         horizon_client::lan::containers::travelersbackpack_menu::set_items(&mut host.hub, conn, items, carried);
     }
     let at = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map(|g| g.position);
-    game.native_play_sound_to(uuid, sound, "block", at, 1.0, 1.0);
+    play_near(game, uuid, sound, "block", at, 1.0, 1.0);
     resend_data(game, uuid);
 }
 
@@ -8915,7 +8938,7 @@ fn swap_tool(game: &mut Game<'_>, uuid: u128, slot: i32, button: u8) {
     advance(game, uuid, "swap_tools");
     tell_worn(game, uuid);
     let at = [position[0], position[1] + 0.5, position[2]];
-    game.native_play_sound_to(uuid, "minecraft:item.armor.equip_leather", "block", Some(at), 1.0, 1.0);
+    play_near(game, uuid, "minecraft:item.armor.equip_leather", "block", Some(at), 1.0, 1.0);
     send_tools(game, uuid);
 }
 
@@ -9005,6 +9028,8 @@ fn draw_radial(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, scree
         let x = centre[0] + (angle.cos() * RADIAL_RING * t).floor() - RADIAL_ICON / 2.0;
         let y = centre[1] + (angle.sin() * RADIAL_RING * t).floor() - RADIAL_ICON / 2.0;
         let stack = tools[slot].as_ref();
+        // Each icon grows in with the ring (the overlay's pose scaled by it).
+        let start = batch.vertices.len();
         if hovered_seg == Some(seg) && (stack.is_some() || can_add || hovered_empty) {
             game.native_fill(batch, [x - 2.0, y - 2.0, RADIAL_ICON + 4.0, RADIAL_ICON + 4.0], 0x80FF_FFFF);
         }
@@ -9016,6 +9041,7 @@ fn draw_radial(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, scree
                 game.native_text(batch, sign, [x + (RADIAL_ICON - w) / 2.0 + 0.5, y + 5.0], 0x00FF_FFFF, false);
             }
         }
+        batch.scale_since(start, x + RADIAL_ICON / 2.0, y + RADIAL_ICON / 2.0, t, t);
     }
     let mouse = screen.mouse;
     let mut centred_item = true;
@@ -9050,7 +9076,9 @@ fn draw_radial(game: &Game<'_>, batch: &mut horizon_client::hud::HudBatch, scree
     }
     // `renderBackpackIconInCenter`.
     if centred_item && cfg().tools_render_backpack_icon_in_center && let Some(b) = backpack.as_ref() {
+        let start = batch.vertices.len();
         game.draw_item(batch, b, centre[0] - 8.0, centre[1] - 8.0);
+        batch.scale_since(start, centre[0], centre[1], t, t);
     }
 }
 
@@ -9310,7 +9338,7 @@ fn stacked_sounds(game: &mut Game<'_>) {
         let at = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map(|g| g.position);
         if let Some(at) = at {
             let pitch = 0.8 + (game.world.game_time % 5) as f32 * 0.1;
-            game.native_play_sound_to(uuid, "minecraft:item.bundle.insert", "player", Some(at), 0.8, pitch);
+            play_near(game, uuid, "minecraft:item.bundle.insert", "player", Some(at), 0.8, pitch);
         }
     }
 }
@@ -10021,4 +10049,43 @@ fn loose_jukeboxes(game: &mut Game<'_>) {
             horizon_client::lan::containers::travelersbackpack_menu::stop_sound(&mut host.hub, &sound);
         }
     }
+}
+
+/// A jukebox upgrade played in a carried or worn backpack: its player and song.
+const JUKEBOX_CHANNEL: &str = "travelersbackpack:jukebox";
+
+thread_local! {
+    /// Songs heard from the server, to start at this client's next tick.
+    static SONGS: RefCell<Vec<(i32, String)>> = const { RefCell::new(Vec::new()) };
+}
+
+/// `JukeboxWidget.playSound`: the song follows the player carrying it
+/// (`MovingSound`, an entity-bound sound of the records).
+pub(super) fn play_songs(game: &mut Game<'_>) {
+    for (entity, sound) in SONGS.with(|s| std::mem::take(&mut *s.borrow_mut())) {
+        let id = entity as u32;
+        let Some(state) = game.sound_entity_state(id) else {
+            continue;
+        };
+        let bound = horizon_client::sound_engine::SoundEntity::new(id, state.position, state.silent);
+        game.audio.play_bound(&sound, horizon_client::sound_engine::RECORDS, 4.0, 1.0, bound, None);
+    }
+}
+
+/// `Level.playSound(null, …)`: every player in `uuid`'s level hears it,
+/// fainter the farther they are, not only `uuid`.
+fn play_near(game: &mut Game<'_>, uuid: u128, sound: &str, category: &str, at: Option<[f64; 3]>, volume: f32, pitch: f32) -> bool {
+    let players: Vec<u128> = game
+        .lan
+        .as_ref()
+        .and_then(|h| {
+            let dimension = &h.hub.guests.iter().find(|g| g.uuid == uuid)?.dimension;
+            Some(h.hub.guests.iter().filter(|g| g.placed && g.dimension == *dimension).map(|g| g.uuid).collect())
+        })
+        .unwrap_or_else(|| vec![uuid]);
+    let mut played = false;
+    for player in players {
+        played |= game.native_play_sound_to(player, sound, category, at, volume, pitch);
+    }
+    played
 }

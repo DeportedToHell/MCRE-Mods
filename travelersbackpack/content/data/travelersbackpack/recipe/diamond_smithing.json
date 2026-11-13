@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "#travelersbackpack:backpack_upgrades",
+  "base": "travelersbackpack:diamond",
+  "result": {
+    "id": "travelersbackpack:diamond"
+  },
+  "template": "#c:leathers"
+}

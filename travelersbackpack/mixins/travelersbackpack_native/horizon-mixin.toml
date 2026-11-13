@@ -1,6 +1,6 @@
 [mod]
 id = "travelersbackpack_native"
-version = "0.9.7"
+version = "0.9.8"
 priority = 100
 
 # Built for this Nightly: besides the hook points it opens a menu of the

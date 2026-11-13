@@ -140,8 +140,8 @@ const out = (...p) => join(root, ...p);
 // puts each tank's sprite in the custom model data's strings (1: left,
 // 2: right), its fill in its floats and its colour in its colors. A fluid is
 // a box of its still sprite inside the tank, as high as the tank is full, in
-// 16 steps.
-const FLUID_STEPS = 16;
+// steps of a tenth of a pixel (the original draws it at any height).
+const FLUID_STEPS = 62;
 const FLUID_SPRITES = { water: "minecraft:block/water_still", lava: "minecraft:block/lava_still",
   milk: "minecraft:block/white_concrete" };
 const FLUID_TANKS = [["left", 1.8], ["right", 12.7]];
@@ -416,15 +416,14 @@ write(out("data", NS, "horizon/creative_tab", "travelers_backpack.json"), {
 // Every design, for the smithing table's base slot.
 write(out("data", NS, "tags/item/backpacks.json"), { replace: false, values: designs.map((d) => `${NS}:${d.name}`) });
 // `BackpackUpgradeRecipe` (a smithing table: leather, a backpack, a tier
-// upgrade): the slots accept these; the native mod makes the result, the
-// backpack one tier up with what it holds.
-write(out("data", NS, "recipe", "tier_upgrade.json"), {
-  type: "minecraft:smithing_transform",
-  template: "#c:leathers",
-  base: `#${NS}:backpacks`,
-  addition: UPGRADES.slice(1).map(([name]) => `${NS}:${name}`),
-  result: { id: `${NS}:standard` },
-});
+// upgrade), one a design as the original's `<design>_smithing`: the slots
+// accept these and recipe viewers (JEI, REI) show each design staying itself;
+// the native mod makes the result, the backpack one tier up with what it holds.
+for (const f of readdirSync(join(generated, "recipe")).filter((f) => f.endsWith("_smithing.json"))) {
+  const r = json(join(generated, "recipe", f));
+  if (r.type !== `${NS}:backpack_upgrade`) continue;
+  write(out("data", NS, "recipe", f), { ...r, type: "minecraft:smithing_transform" });
+}
 
 // ---- the sleeping bags (`SleepingBagBlock`, a `BedBlock`; `SleepingBagItem`, a `BedItem`) ----------
 

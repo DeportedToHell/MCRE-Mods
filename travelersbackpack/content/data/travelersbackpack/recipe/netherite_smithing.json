@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "#travelersbackpack:backpack_upgrades",
+  "base": "travelersbackpack:netherite",
+  "result": {
+    "id": "travelersbackpack:netherite"
+  },
+  "template": "#c:leathers"
+}
