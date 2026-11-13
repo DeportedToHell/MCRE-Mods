@@ -1,0 +1,48 @@
+name: 🐞 BetterF3
+description: Something in BetterF3 doesn't work. / Что-то в BetterF3 не работает.
+title: "[BetterF3] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <p align="center"><img src="https://raw.githubusercontent.com/DeportedToHell/MCRE-Mods/main/.github/issues/bug.svg" alt="Found a bug? / Нашли ошибку?" width="100%"></p>
+
+        <p align="center"><b>BetterF3</b> · Thanks for reporting! English or Russian. · Спасибо, что сообщаете! Можно по-русски.</p>
+  - type: dropdown
+    id: mod-version
+    attributes:
+      label: 🔢 BetterF3 version / Версия BetterF3
+      description: Mod Menu or Options > Mods shows it. Newest first. / Видна в Mod Menu или в Настройки > Моды. Новые сверху.
+      options:
+        - "1.0.2"
+        - "1.0.1"
+        - "Don't know / Не знаю"
+    validations:
+      required: true
+  - type: input
+    id: horizon-version
+    attributes:
+      label: 🚀 Horizon version / Версия Horizon
+      description: The launcher shows it. / Видна в лаунчере.
+      placeholder: "Nightly 2026-11-08"
+  - type: textarea
+    id: what
+    attributes:
+      label: 💥 What happened? / Что случилось?
+      description: What you expected and what you saw instead. Screenshots help a lot. / Что ожидали и что получилось. Скриншоты очень помогают.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 🔁 How to repeat it / Как повторить
+      placeholder: |
+        1. ...
+        2. ...
+  - type: textarea
+    id: others
+    attributes:
+      label: 📋 Other mods and the log / Другие моды и лог
+      description: Which other mods you have on, and the game log if it crashed. / Какие ещё моды включены и лог игры, если она вылетела.
+      render: text

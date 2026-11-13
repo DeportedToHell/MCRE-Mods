@@ -1,6 +1,6 @@
-name: 🐞 Bug report / Сообщить об ошибке
-description: Something in one of our mods doesn't work. / Что-то в одном из наших модов не работает.
-title: "[Bug] "
+name: 🐞 Zoomify
+description: Something in Zoomify doesn't work. / Что-то в Zoomify не работает.
+title: "[Zoomify] "
 labels: ["bug"]
 body:
   - type: markdown
@@ -8,52 +8,14 @@ body:
       value: |
         <p align="center"><img src="https://raw.githubusercontent.com/DeportedToHell/MCRE-Mods/main/.github/issues/bug.svg" alt="Found a bug? / Нашли ошибку?" width="100%"></p>
 
-        <p align="center">Thanks for reporting! English or Russian. · Спасибо, что сообщаете! Можно по-русски.</p>
-  - type: dropdown
-    id: mod
-    attributes:
-      label: 🧩 Mod / Мод
-      options:
-        - "Bad Wither No Cookie - Reloaded"
-        - "Better Dynamic Lights"
-        - "BetterF3"
-        - "ClientSort"
-        - "Clumps"
-        - "Emotecraft"
-        - "Falling Leaves"
-        - "First-person Model"
-        - "InvMove"
-        - "Just Enough Items"
-        - "Mod Menu"
-        - "Mouse Tweaks"
-        - "Particle Rain"
-        - "Pick Up Notifier"
-        - "Ping Wheel"
-        - "Plasmo Voice"
-        - "Roughly Enough Items"
-        - "Shulker Box Tooltip"
-        - "Smooth Swapping"
-        - "Traveler's Backpack"
-        - "Zoomify"
-    validations:
-      required: true
+        <p align="center"><b>Zoomify</b> · Thanks for reporting! English or Russian. · Спасибо, что сообщаете! Можно по-русски.</p>
   - type: dropdown
     id: mod-version
     attributes:
-      label: 🔢 Mod version / Версия мода
+      label: 🔢 Zoomify version / Версия Zoomify
       description: Mod Menu or Options > Mods shows it. Newest first. / Видна в Mod Menu или в Настройки > Моды. Новые сверху.
       options:
-        - "1.2.1"
-        - "1.2.0"
-        - "1.1.3"
-        - "1.1.2"
         - "1.1.1"
-        - "1.1.0"
-        - "1.0.3"
-        - "1.0.2"
-        - "1.0.1"
-        - "1.0.0"
-        - "0.9.9"
         - "Don't know / Не знаю"
     validations:
       required: true
