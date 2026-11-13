@@ -1,7 +1,6 @@
 <h1 align="left">
   <img src="../.github/assets/stickers/travelersbackpack.gif" height="64" alt="">
   <img src="../.github/assets/stickers/travelersbackpack.png" height="64" alt="">
-  A port of [Traveler's Backpack](https://github.com/Tiviacz1337/Travelers-Backpack) by Tiviacz1337 to [Horizon](https://github.com/horizon-rust/horizon)
 </h1>
 
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
