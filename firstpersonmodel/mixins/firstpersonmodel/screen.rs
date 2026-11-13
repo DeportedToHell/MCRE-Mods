@@ -201,7 +201,7 @@ pub(super) fn char_typed(game: &Game<'_>, screen: &NativeScreenView<'_>, c: char
 
 // ---- the icon and Mod Menu's metadata ---------------------------------------------------
 
-/// The original's icon (its `fabric.mod.json`'s `icon.png`).
+/// This port's own icon (not the original's).
 const ICON: &[u8] = horizon_client::native_data!("firstpersonmodel", "icon.png");
 
 /// What Mod Menu shows of the mod, from the original's `fabric.mod.json`

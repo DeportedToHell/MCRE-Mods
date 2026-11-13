@@ -64,7 +64,7 @@ mixins/firstpersonmodel/
   screen.rs                    the config screen over the Options screen (Mod Menu), the icon and Mod Menu's metadata
   sprites.rs                   TRender's textures (made by tools/sprites.mjs)
   *.rs (the rest)              one small helper per injection
-  data/icon.png                the original's icon, for Mod Menu
+  data/icon.png                this port's own icon, for Mod Menu
   LICENSE, NOTICE
 tools/check.sh                 stages the mod on the pinned Horizon source and cargo-checks (or builds) the game
 tools/package.mjs              makes the .hnmod
@@ -73,5 +73,6 @@ tools/sprites.mjs              makes sprites.rs from a TRender checkout
 
 ## Licence
 
-MIT, as First-person Model and TRender: see `LICENSE` and `NOTICE`. Not affiliated with tr7zw, Mojang or
-Microsoft.
+MIT, as First-person Model and TRender: see `LICENSE` and `NOTICE`. First-person Model is tr7zw's mod and
+this port's code follows it. The icon is this port's own (since 1.0.2), not First-person Model's. Not
+affiliated with tr7zw, Mojang or Microsoft.
