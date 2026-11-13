@@ -12,11 +12,11 @@ I'll release an updated mod to the launcher as soon as Horizon rolls out an upda
 
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
 
-It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
-
-[Original mod](https://github.com/Tiviacz1337/Travelers-Backpack)
-
-Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the original mod.
+> It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
+>
+> Original mod: https://github.com/Tiviacz1337/Travelers-Backpack
+>
+> Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the original mod.
 
 
 ## ✨Features
