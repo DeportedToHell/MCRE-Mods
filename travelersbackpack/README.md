@@ -43,7 +43,7 @@ Not implemented compared to the original:
 
 Differences: a Horizon menu holds at most 256 slots, so with the most upgrades and tools the config allows (10 and 8), or filters of more than 10 slots, a tier's storage is cut to what still fits (138 instead of 154 with the defaults).
 
-## 🧩Changelog:
+## Changelog:
 
 ### 0.9.9
 
