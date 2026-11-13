@@ -15,7 +15,11 @@ Based on Accessories 1.4.3-beta (Minecraft 1.21.11).
 
 ## ✨Features (0.1.0, in progress)
 
-> 0.1.0 builds against Horizon Nightly fdc87ae; it has not been tested in the game yet.
+> Tested in the game (Horizon Nightly fdc87ae, single player): the screen from the button and from H (H closes it),
+> banners into the hat and cape slots by dragging and by a right click, one item a slot, shift-clicked armour into its
+> slot and onto the player, the cosmetic switch, the render toggle hiding the hat's banner, drops on death and keeping
+> them with keepInventory, the banner worn on the head in third person, the row in Options > Mods. Not tested yet:
+> other players over LAN, data packs adding slots, scrolling a grid of more than 7 rows.
 
 **Accessory slots from data.** Slot types, slot groups and entity bindings are read from
 `data/<namespace>/accessories/{slot,group,entity}/*.json`, the same files and formats as the original: the 12 built-in
@@ -39,7 +43,8 @@ applies: keepInventory keeps them, the curse of vanishing destroys, the rest dro
 
 **On the player.** Accessories (or their cosmetics) are drawn on every player's model where the original's default
 renderer puts them (on the head, face, back, neck, belt, arms, wrists, hands, ankles and feet); the charm slot has no
-default place, as in the original. Every player sees the others' accessories.
+default place, as in the original. A banner in the hat slot is worn on the head as a vanilla banner on the head is;
+banners and gliders elsewhere are not drawn, as in the original. Every player sees the others' accessories.
 
 **Saved with the player** (their `accessories:inventory_holder` data) and given back when a slot shrinks or goes away.
 

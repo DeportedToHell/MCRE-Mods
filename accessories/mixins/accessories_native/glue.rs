@@ -933,13 +933,15 @@ fn open_menu(game: &mut Game<'_>, uuid: u128) {
     else {
         return;
     };
-    let items: Vec<Option<ItemStack>> = entries.iter().map(|e| entry_stack(&holder, &armor, &offhand, e)).collect();
+    let mut items: Vec<Option<ItemStack>> = entries.iter().map(|e| entry_stack(&holder, &armor, &offhand, e)).collect();
     let layout = layout_text(game, &holder, &entries, &options, &carried);
     let title = horizon_client::lan::data::component_nbt(&Text::literal("Accessories").component());
     let Some(host) = game.lan.as_mut() else {
         return;
     };
-    if let Some(window) = menu::open(&mut host.hub, conn, MENU, title, items.clone(), layout.as_bytes(), rules) {
+    let shown = items.clone();
+    items.resize(menu::MENU_SLOTS, None);
+    if let Some(window) = menu::open(&mut host.hub, conn, MENU, title, shown, layout.as_bytes(), rules) {
         with(|s| {
             s.open.insert(uuid, Open { window, entries, last: items, mask: Vec::new() });
         });
@@ -1269,6 +1271,13 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
             menu::forget(conn);
         }
         closed_menu(game, uuid, &open, &items);
+        // The armour and off hand may have changed under the menu: the
+        // inventory menu (window 0) is told again, as it is on closing.
+        if let Some(host) = game.lan.as_mut()
+            && let Some(i) = host.hub.guests.iter().position(|g| g.uuid == uuid)
+        {
+            host.hub.send_inventory(i);
+        }
     }
     // Deaths in this level.
     let dimension = game.dim.id().to_owned();
@@ -1278,6 +1287,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
         here.into_iter().map(|(u, _, at)| (u, at)).collect()
     });
     for (uuid, at) in died {
+        let at = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map_or(at, |g| g.position);
         drop_on_death(game, uuid, at);
     }
     if !first {
@@ -1370,9 +1380,10 @@ pub(super) fn logged_in(player: u128) {
 /// A player died (their state swapped in, the hub out of the game's hands):
 /// their accessories drop at the tick of the level they died in.
 pub(super) fn player_died(game: &Game<'_>, player: u128) {
-    let at = game.player.as_ref().map_or([0.0; 3], |p| [p.position.x, p.position.y, p.position.z]);
+    // Where they fell is read at the tick, from their record in the hub
+    // (still where they died: respawning takes a click).
     let dimension = game.dim.id().to_owned();
-    with(|s| s.died.push((player, dimension, at)));
+    with(|s| s.died.push((player, dimension, [0.0; 3])));
 }
 
 /// An item used in the air: an accessory goes on at the tick
@@ -1598,7 +1609,7 @@ pub(super) fn screen_extra(menu: &str, extra: Option<&[u8]>) {
                             _ => Shown::None,
                         }
                     }
-                    Some(kind @ ("cosmetic" | "accessory")) if parts.len() >= 9 => Shown::Slot {
+                    Some(kind @ ("cosmetic" | "accessory")) if parts.len() >= 8 => Shown::Slot {
                         cosmetic: kind == "cosmetic",
                         slot: parts[2].to_owned(),
                         index: parts[3].parse().unwrap_or(0),
@@ -2054,7 +2065,7 @@ pub(super) fn key(game: &mut Game<'_>, key: &str, pressed: bool) {
     if !pressed || key != game.native_mod_key(MOD_ID, "open_accessories_screen", "key.keyboard.h") {
         return;
     }
-    let ours = super::native_hooks::accessories_screen::menu(game).is_some_and(|m| m == MENU);
+    let ours = game.native_screen_shown() && super::native_hooks::accessories_screen::menu(game).is_some_and(|m| m == MENU);
     if ours {
         game.close_container();
         game.screen = super::Screen::Playing;
@@ -2073,7 +2084,7 @@ pub(super) fn client_tick(game: &mut Game<'_>) {
         let _ = game.native_net_send_to_server(OPEN_CHANNEL, &[]);
     }
     let asks = ASKS.with(|q| std::mem::take(&mut *q.borrow_mut()));
-    if super::native_hooks::accessories_screen::menu(game).is_none_or(|m| m != MENU) {
+    if !game.native_screen_shown() || super::native_hooks::accessories_screen::menu(game).is_none_or(|m| m != MENU) {
         return;
     }
     let mut relayout = false;
@@ -2208,6 +2219,29 @@ pub(super) fn mob_layer(
         return;
     };
     for (slot, index, stack) in worn {
+        // Banners and gliders have no renderer of their own
+        // (`AccessoriesRendererRegistry` binds them to none): a banner in the
+        // hat slot is worn on the head as `CustomHeadLayer` draws it.
+        let banner = stack.item.starts_with("minecraft:") && stack.item.ends_with("_banner");
+        if banner || game.items().get(&stack.item).is_some_and(|i| i.glider) {
+            if banner && slot == "hat" {
+                draw.push();
+                draw.translate([0.0, 1.501, 0.0]);
+                draw.rotate_about([1.0, 0.0, 0.0], 180.0, [0.0; 3]);
+                let head = part(mob, "head");
+                draw.translate([head.pivot[0] / 16.0, head.pivot[1] / 16.0, head.pivot[2] / 16.0]);
+                draw.rotate_about([0.0, 1.0, 0.0], head.rot[1].to_degrees(), [0.0; 3]);
+                draw.rotate_about([1.0, 0.0, 0.0], head.rot[0].to_degrees(), [0.0; 3]);
+                // `translate(0, -0.25, 0)`, `YP 180`, `scale(0.625, -0.625, -0.625)`.
+                draw.translate([0.0, -0.25, 0.0]);
+                draw.rotate_about([0.0, 1.0, 0.0], 180.0, [0.0; 3]);
+                draw.rotate_about([1.0, 0.0, 0.0], 180.0, [0.0; 3]);
+                draw.scale([0.625; 3]);
+                game.native_draw_item(draw, &stack, DisplayContext::Head, None, 0);
+                draw.pop();
+            }
+            continue;
+        }
         let side = |even: &'static str, odd: &'static str| if index % 2 == 0 { even } else { odd };
         let item = |draw: &mut super::native_block_entity_draw::BlockEntityDraw| {
             game.native_draw_item(draw, &stack, DisplayContext::None, None, 0);

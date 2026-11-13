@@ -15,6 +15,9 @@ use super::*;
 /// The armour slots in the menu's order (`EquipmentSlot`), head first.
 pub const ARMOR: [&str; 4] = ["head", "chest", "legs", "feet"];
 
+/// The content mod's menu type's slots (`data/accessories/horizon/menu/accessories_menu.json`).
+pub const MENU_SLOTS: usize = 256;
+
 /// What a menu slot holds: an accessory or cosmetic (its slot type's), a
 /// worn armour piece (`guest.armor`, head first) or the off hand.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -54,6 +57,12 @@ pub fn open(
 ) -> Option<i32> {
     let kind = hub.sync.builtin.get("minecraft:menu").and_then(|m| m.id(menu_kind))?;
     let i = hub.guests.iter().position(|g| g.conn == conn)?;
+    // As many slots as the menu type has (the client counts the inventory's
+    // after them); the ones past the player's accessories are hidden.
+    let used = items.len().min(MENU_SLOTS);
+    let mut items = items;
+    items.resize(MENU_SLOTS, None);
+    let hidden: Vec<usize> = (used..MENU_SLOTS).collect();
     hub.close_container_at(i);
     let size = items.len();
     let g = &mut hub.guests[i];
@@ -75,7 +84,7 @@ pub fn open(
         sent: Vec::new(),
         drag: None,
         sent_data: Vec::new(),
-        hidden: Vec::new(),
+        hidden,
         mod_type: None,
     });
     hub.send_menu_content(i, items);
