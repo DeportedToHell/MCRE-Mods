@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "order": 20,
+  "slots": [
+    "shoes",
+    "anklet"
+  ],
+  "icon": "accessories:container/slot/group/feet"
+}

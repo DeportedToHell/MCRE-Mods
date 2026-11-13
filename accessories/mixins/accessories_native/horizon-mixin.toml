@@ -1,0 +1,351 @@
+[mod]
+id = "accessories_native"
+version = "0.1.0"
+priority = 100
+
+# Built for this Nightly: besides the hook points it opens a menu of the
+# content mod's own type whose slots are the player's accessories, not a
+# block's (a module of the hub's container code, `lan/containers.rs`), gives
+# that menu the mod's screen on the client (`open_native_screen`), and keeps
+# each of its slots to what it may hold (`View::may_place` and its fellows).
+[compatibility]
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "accessories_glue"
+source = "glue.rs"
+
+# The server's half of the accessories menu, beside the hub's own menus.
+[[module]]
+id = "menu"
+file = "crates/horizon-client/src/lan/containers.rs"
+name = "accessories_menu"
+source = "menu.rs"
+visibility = "pub"
+
+# The open screen laid out again; the menu type of the mod screen shown.
+[[module]]
+id = "screen_relayout"
+file = "crates/horizon-client/src/game/native_hooks.rs"
+name = "accessories_screen"
+source = "screen_relayout.rs"
+
+# ---- the server ----
+
+# Each level's tick, with the hub in hand: menus open, closed ones are written back.
+[[injection]]
+id = "server_tick"
+hook = "level_tick_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_server_tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+# The slot types, groups and entity bindings (`SlotTypeLoader` and its fellows).
+[[injection]]
+id = "reload_listeners"
+hook = "add_server_reload_listeners"
+hook_version = 1
+kind = "HEAD"
+helper = "h_reload_listeners.rs"
+bindings = [
+  { name = "listeners", ty = "&mut Vec<crate::game::native_reload_listeners::NativeReloadListener>", value = "&mut *listeners" },
+]
+
+[[injection]]
+id = "reload_apply"
+hook = "server_reload_listener_apply"
+hook_version = 1
+kind = "HEAD"
+helper = "h_reload_apply.rs"
+bindings = [
+  { name = "listener", ty = "&crate::game::native_reload_listeners::NativeReloadListener", value = "listener" },
+  { name = "files", ty = "&[(String, serde_json::Value)]", value = "files" },
+]
+
+[[injection]]
+id = "net_from_client"
+hook = "net_from_client"
+hook_version = 1
+kind = "HEAD"
+helper = "h_net_from_client.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "channel", ty = "&str", value = "channel" },
+  { name = "data", ty = "&[u8]", value = "data" },
+]
+
+[[injection]]
+id = "logged_in"
+hook = "player_logged_in"
+hook_version = 1
+kind = "HEAD"
+helper = "h_logged_in.rs"
+bindings = [
+  { name = "player", ty = "u128", value = "player" },
+]
+
+[[injection]]
+id = "respawned"
+hook = "player_respawned"
+hook_version = 1
+kind = "HEAD"
+helper = "h_respawned.rs"
+bindings = [
+  { name = "player", ty = "u128", value = "player" },
+  { name = "name", ty = "&str", value = "name" },
+]
+
+[[injection]]
+id = "player_died"
+hook = "player_died"
+hook_version = 1
+kind = "HEAD"
+helper = "h_player_died.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "player", ty = "u128", value = "player" },
+]
+
+# An accessory used in the air goes on (`attemptEquipFromUse`).
+[[injection]]
+id = "use_item"
+hook = "use_item"
+hook_version = 1
+kind = "HEAD"
+helper = "h_use_item.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "stack", ty = "&horizon_client::items::ItemStack", value = "stack" },
+  { name = "claimed", ty = "&mut bool", value = "&mut *claimed" },
+]
+
+[[injection]]
+id = "menu_input_closed"
+target = "horizon_client::game::native_hooks::Game<'_>::native_menu_input_closed"
+kind = "HEAD"
+helper = "h_menu_closed.rs"
+bindings = [
+  { name = "uuid", ty = "u128", value = "uuid" },
+  { name = "window", ty = "i32", value = "window" },
+  { name = "slots", ty = "&mut Vec<Option<horizon_client::items::ItemStack>>", value = "&mut *slots" },
+]
+
+# Each accessory slot takes what its slot type allows (`AccessoriesBasedSlot`).
+[[injection]]
+id = "may_place"
+target = "horizon_client::lan::menu::View<'_>::may_place"
+kind = "HEAD"
+cancellable = true
+helper = "h_may_place.rs"
+bindings = [
+  { name = "view", ty = "&View<'_>", value = "&*self" },
+  { name = "i", ty = "usize", value = "i" },
+  { name = "stack", ty = "&ItemStack", value = "stack" },
+  { name = "rules", ty = "&dyn Rules", value = "rules" },
+]
+
+[[injection]]
+id = "slot_max"
+target = "horizon_client::lan::menu::View<'_>::slot_max"
+kind = "HEAD"
+cancellable = true
+helper = "h_slot_max.rs"
+bindings = [
+  { name = "view", ty = "&View<'_>", value = "&*self" },
+  { name = "i", ty = "usize", value = "i" },
+  { name = "stack", ty = "&ItemStack", value = "stack" },
+  { name = "rules", ty = "&dyn Rules", value = "rules" },
+]
+
+[[injection]]
+id = "may_pickup"
+target = "horizon_client::lan::menu::View<'_>::may_pickup"
+kind = "HEAD"
+cancellable = true
+helper = "h_may_pickup.rs"
+bindings = [
+  { name = "view", ty = "&View<'_>", value = "&*self" },
+  { name = "i", ty = "usize", value = "i" },
+  { name = "rules", ty = "&dyn Rules", value = "rules" },
+]
+
+[[injection]]
+id = "quick_move"
+target = "horizon_client::lan::menu::quick_move"
+kind = "HEAD"
+cancellable = true
+helper = "h_quick_move.rs"
+bindings = [
+  { name = "view", ty = "&mut View<'_>", value = "&mut *view" },
+  { name = "i", ty = "usize", value = "i" },
+  { name = "rules", ty = "&dyn Rules", value = "rules" },
+]
+
+# ---- the client ----
+
+[[injection]]
+id = "screen"
+hook = "screen"
+hook_version = 1
+kind = "HEAD"
+helper = "h_screen.rs"
+bindings = [
+  { name = "block", ty = "&str", value = "block" },
+  { name = "screen", ty = "&mut Option<horizon_client::mod_api::NativeScreen>", value = "&mut *screen" },
+]
+
+# The accessories menu has no block: the client gives it the mod's screen here.
+[[injection]]
+id = "screen_open"
+target = "horizon_client::game::native_hooks::Game<'_>::open_native_screen"
+kind = "HEAD"
+cancellable = true
+helper = "h_screen_open.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "horizon_client::block_entities::Pos", value = "key" },
+  { name = "target", ty = "Option<horizon_client::block_entities::Pos>", value = "target" },
+  { name = "window", ty = "i32", value = "window" },
+  { name = "menu", ty = "&str", value = "menu" },
+  { name = "extra", ty = "&Option<horizon_protocol::menu_extra::Message>", value = "&extra" },
+]
+
+[[injection]]
+id = "screen_draw"
+hook = "screen_draw"
+hook_version = 1
+kind = "HEAD"
+helper = "h_screen_draw.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "block", ty = "&str", value = "block" },
+  { name = "data", ty = "&[i32]", value = "data" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "origin", ty = "[f32; 2]", value = "origin" },
+]
+
+[[injection]]
+id = "screen_tooltip"
+hook = "screen_tooltip"
+hook_version = 1
+kind = "HEAD"
+helper = "h_screen_tooltip.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "block", ty = "&str", value = "block" },
+  { name = "data", ty = "&[i32]", value = "data" },
+  { name = "at", ty = "[f32; 2]", value = "at" },
+  { name = "lines", ty = "&mut Vec<String>", value = "&mut *lines" },
+]
+
+[[injection]]
+id = "screen_render_post"
+hook = "screen_render_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_screen_render_post.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+]
+
+[[injection]]
+id = "screen_pressed"
+hook = "screen_mouse_button_pressed_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_screen_pressed.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "button", ty = "i32", value = "button" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "screen_scrolled"
+hook = "screen_mouse_scrolled_pre"
+hook_version = 1
+kind = "HEAD"
+helper = "h_screen_scrolled.rs"
+bindings = [
+  { name = "screen", ty = "&horizon_client::mod_api::NativeScreenView<'_>", value = "screen" },
+  { name = "scroll", ty = "[f64; 2]", value = "scroll" },
+  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "key"
+hook = "key"
+hook_version = 1
+kind = "HEAD"
+helper = "h_key.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "key", ty = "&str", value = "key" },
+  { name = "pressed", ty = "bool", value = "pressed" },
+]
+
+[[injection]]
+id = "client_tick"
+hook = "tick"
+hook_version = 1
+kind = "HEAD"
+helper = "h_client_tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "net_from_server"
+hook = "net_from_server"
+hook_version = 1
+kind = "HEAD"
+helper = "h_net_from_server.rs"
+bindings = [
+  { name = "channel", ty = "&str", value = "channel" },
+  { name = "data", ty = "&[u8]", value = "data" },
+]
+
+[[injection]]
+id = "render_listened"
+hook = "player_render_listened"
+hook_version = 1
+kind = "HEAD"
+helper = "h_render_listened.rs"
+bindings = [
+  { name = "listened", ty = "&mut bool", value = "&mut *listened" },
+]
+
+[[injection]]
+id = "mob_layer"
+hook = "mob_layer"
+hook_version = 1
+kind = "HEAD"
+helper = "h_mob_layer.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "mob", ty = "&crate::game::native_mob_draw::NativeMobRender<'_>", value = "mob" },
+  { name = "who", ty = "Option<&crate::game::native_mob_draw::NativePlayerRender<'_>>", value = "who" },
+  { name = "draw", ty = "&mut crate::game::native_block_entity_draw::BlockEntityDraw", value = "&mut *draw" },
+]
+
+# The mod's row in Options > Mods, with its key.
+[[injection]]
+id = "mods"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "h_mods.rs"
+bindings = [
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]

@@ -1,0 +1,23 @@
+Accessories for Horizon
+A port of Accessories to Horizon (Minecraft: Java Edition 26.3 rewritten in
+Rust): a content mod (content/, accessories.hmod) and a native mod
+(mixins/accessories_native, accessories_native.hnmod).
+
+Accessories
+By blodhgarm, chyzman and Dr.Zeal (Wisp Forest), with glisco,
+BasiqueEvangelist, mpustovoi, EvanHsieh0415, notlin4, RuyaSavascisi and
+TheLegendofSaram
+https://github.com/wisp-forest/accessories (branch 1.21.11, 1.4.3-beta)
+Licensed under the MIT License (LICENSE, "Copyright (c) 2024 Wisp Forest").
+
+The content mod's textures, nine-patch definitions, slot, group and entity
+data, tags and language files are the original's own
+(common/src/main/resources), copied by tools/content.mjs; owo-lib's rich
+text values in the language files are turned into plain strings. The icon in
+mixins/accessories_native/data/icon.png is the original's
+(fabric/src/main/resources/assets/accessories/icon.png).
+
+This port, by DispatchedToHeaven and DeportedToHell, rewrites the mod's slot
+loading, containers, menu, screen, default renderer and death handling in Rust
+for Horizon's native mod API. It is not affiliated with Wisp Forest, Mojang or
+Microsoft.
