@@ -60,8 +60,13 @@ fn travelersbackpack_craft(
             if !custom.is_empty() {
                 data.set_other("minecraft:custom_data", Some(Tag::Compound(custom)));
             }
-            if tanks {
-                data.container.push((27, ItemStack::new("travelersbackpack:tanks_upgrade", 1)));
+            // A new backpack has its tier's sizes from the config (`initializeSize`).
+            let [storage, upgrades, tools] = crate::lan::containers::travelersbackpack_menu::tier_sizes(0);
+            for (id, n) in [("travelersbackpack:storage_slots", storage), ("travelersbackpack:upgrade_slots", upgrades), ("travelersbackpack:tool_slots", tools)] {
+                data.set_other(id, Some(Tag::Int(n as i32)));
+            }
+            if tanks && upgrades > 0 {
+                data.container.push((u8::try_from(storage).unwrap_or(27), ItemStack::new("travelersbackpack:tanks_upgrade", 1)));
             }
             let name = usize::try_from(bag).ok().and_then(|i| COLOURS.get(i)).copied().unwrap_or("none");
             let mut look = Compound::new();

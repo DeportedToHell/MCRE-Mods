@@ -9,6 +9,9 @@ use std::sync::OnceLock;
 pub(crate) struct Config {
     // server.backpackSettings
     pub tank_capacity: [i32; 5],
+    /// Each tier's storage, upgrade and tool slots (`inventorySlotCount`,
+    /// `upgradeSlotCount`, `toolSlotCount`): a new backpack's.
+    pub tier_sizes: [[usize; 3]; 5],
     pub right_click_equip: bool,
     pub right_click_unequip: bool,
     pub allow_only_equipped_backpack: bool,
@@ -114,23 +117,83 @@ const SERVER: &str = r#"
 
 		#Leather Tier Backpack Settings
 		[server.backpackSettings.leatherTierBackpack]
+			#Number of inventory slots for the tier
+			# Default: 27
+			# Range: 1 ~ 154
+			inventorySlotCount = 27
+			#Number of upgrade slots for the tier
+			# Default: 2
+			# Range: 0 ~ 10
+			upgradeSlotCount = 2
+			#Number of tool slots for the tier
+			# Default: 2
+			# Range: 0 ~ 8
+			toolSlotCount = 2
 			#Tank capacity per row of backpack storage, 81000 equals 1 Bucket on Fabric, 1000 on Forge and Horizon
 			tankCapacity = 1000
 
 		#Iron Tier Backpack Settings
 		[server.backpackSettings.ironTierBackpack]
+			#Number of inventory slots for the tier
+			# Default: 45
+			# Range: 1 ~ 154
+			inventorySlotCount = 45
+			#Number of upgrade slots for the tier
+			# Default: 3
+			# Range: 0 ~ 10
+			upgradeSlotCount = 3
+			#Number of tool slots for the tier
+			# Default: 3
+			# Range: 0 ~ 8
+			toolSlotCount = 3
 			tankCapacity = 1000
 
 		#Gold Tier Backpack Settings
 		[server.backpackSettings.goldTierBackpack]
+			#Number of inventory slots for the tier
+			# Default: 63
+			# Range: 1 ~ 154
+			inventorySlotCount = 63
+			#Number of upgrade slots for the tier
+			# Default: 4
+			# Range: 0 ~ 10
+			upgradeSlotCount = 4
+			#Number of tool slots for the tier
+			# Default: 4
+			# Range: 0 ~ 8
+			toolSlotCount = 4
 			tankCapacity = 1000
 
 		#Diamond Tier Backpack Settings
 		[server.backpackSettings.diamondTierBackpack]
+			#Number of inventory slots for the tier
+			# Default: 81
+			# Range: 1 ~ 154
+			inventorySlotCount = 81
+			#Number of upgrade slots for the tier
+			# Default: 5
+			# Range: 0 ~ 10
+			upgradeSlotCount = 5
+			#Number of tool slots for the tier
+			# Default: 5
+			# Range: 0 ~ 8
+			toolSlotCount = 5
 			tankCapacity = 1000
 
 		#Netherite Tier Backpack Settings
 		[server.backpackSettings.netheriteTierBackpack]
+			#Number of inventory slots for the tier
+			# Default: 99
+			# Range: 1 ~ 154
+			inventorySlotCount = 99
+			#Number of upgrade slots for the tier
+			# Default: 6
+			# Range: 0 ~ 10
+			upgradeSlotCount = 6
+			#Number of tool slots for the tier
+			# Default: 6
+			# Range: 0 ~ 8
+			toolSlotCount = 6
 			tankCapacity = 1000
 
 	[server.backpackUpgrades]
@@ -313,6 +376,10 @@ fn load(dir: Option<&Path>) -> Config {
     let b = |name: &str| format!("server.backpackSettings.{name}");
     let u = |name: &str| format!("server.backpackUpgrades.{name}");
     let tank = |tier: &str| s.int(&b(&format!("{tier}TierBackpack.tankCapacity")), 1, 100_000) as i32;
+    let size = |tier: &str| {
+        let n = |k: &str, min: i64, max: i64| s.int(&b(&format!("{tier}TierBackpack.{k}")), min, max) as usize;
+        [n("inventorySlotCount", 1, 154), n("upgradeSlotCount", 0, 10), n("toolSlotCount", 0, 8)]
+    };
     let numbers = |entry: &str| -> Vec<String> { entry.split(',').map(|p| p.trim().to_owned()).collect() };
     let upgrades: [(&'static str, String); 11] = [
         ("tanks_upgrade", u("enableTanksUpgrade")),
@@ -333,6 +400,7 @@ fn load(dir: Option<&Path>) -> Config {
     }
     Config {
         tank_capacity: [tank("leather"), tank("iron"), tank("gold"), tank("diamond"), tank("netherite")],
+        tier_sizes: [size("leather"), size("iron"), size("gold"), size("diamond"), size("netherite")],
         right_click_equip: s.flag(&b("rightClickEquip")),
         right_click_unequip: s.flag(&b("rightClickUnequip")),
         allow_only_equipped_backpack: s.flag(&b("allowOnlyEquippedBackpack")),

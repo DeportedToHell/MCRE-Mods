@@ -342,13 +342,13 @@ for (const [lang, lines] of Object.entries({
   const file = out("assets", NS, "lang", `${lang}.json`);
   write(file, { ...json(file), ...lines });
 }
-// `Tiers`: storage, upgrade and tool slots of each tier's menu, then
-// `TAB_SLOTS` (10) more for each upgrade slot, the slots its tab may show.
-for (const [tier, slots, upgrades] of [["leather", 31, 2], ["iron", 51, 3], ["gold", 71, 4], ["diamond", 91, 5],
-  ["netherite", 111, 6]]) {
+// `Tiers`: each tier's menu has 256 slots, the most Horizon allows: the
+// backpack's storage, upgrade and tool slots (sizes from the config), then
+// `TAB_SLOTS` (10) for each upgrade slot; the rest hide (`MENU_SLOTS`).
+for (const tier of ["leather", "iron", "gold", "diamond", "netherite"]) {
   // Placed, in a hand (the equip button) and worn (the unequip button).
   for (const opened of ["", "_held", "_worn"]) {
-    write(out("data", NS, "horizon/menu", `${tier}${opened}.json`), { slots: slots + 10 * upgrades });
+    write(out("data", NS, "horizon/menu", `${tier}${opened}.json`), { slots: 256 });
   }
 }
 const names = new Set(designs.map((d) => d.name));

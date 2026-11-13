@@ -21,7 +21,33 @@ impl Tier {
     pub const fn slots(self) -> usize {
         self.storage + self.upgrades + self.tools
     }
+    /// This tier with its own sizes (`STORAGE_SLOTS`, `UPGRADE_SLOTS`,
+    /// `TOOL_SLOTS`), in the config's ranges.
+    /// Horizon's menus hold at most 256 slots: with the most upgrades and
+    /// tools the config allows, the storage is cut to what still fits.
+    pub fn sized(self, storage: usize, upgrades: usize, tools: usize) -> Tier {
+        let (upgrades, tools) = (upgrades.min(MAX_UPGRADES), tools.min(MAX_TOOLS));
+        let room = MENU_SLOTS - tools - upgrades * (1 + TAB_SLOTS);
+        Tier { storage: storage.clamp(1, MAX_STORAGE.min(room)), upgrades, tools, ..self }
+    }
+    /// Its ordinal (`ModDataComponents.TIER`).
+    pub fn index(self) -> i32 {
+        TIERS.iter().position(|t| t.name == self.name).unwrap_or(0) as i32
+    }
 }
+
+/// The config's ranges (`inventorySlotCount` 1–154, `upgradeSlotCount`
+/// 0–10, `toolSlotCount` 0–8).
+pub const MAX_STORAGE: usize = 154;
+pub const MAX_UPGRADES: usize = 10;
+pub const MAX_TOOLS: usize = 8;
+/// Every menu type's slots, the most a Horizon menu has: a backpack's and
+/// its tabs', the rest hidden.
+pub const MENU_SLOTS: usize = 256;
+/// A backpack's own sizes (`ModDataComponents`).
+pub const STORAGE_COMPONENT: &str = "travelersbackpack:storage_slots";
+pub const UPGRADES_COMPONENT: &str = "travelersbackpack:upgrade_slots";
+pub const TOOLS_COMPONENT: &str = "travelersbackpack:tool_slots";
 
 pub const TIERS: [Tier; 5] = [
     Tier { name: "leather", storage: 27, upgrades: 2, tools: 2 },
@@ -241,7 +267,7 @@ pub fn is_backpack(id: &str) -> bool {
 pub const TIER_COMPONENT: &str = "travelersbackpack:tier";
 /// A placed backpack's block entity, and the most slots any tier has.
 pub const BLOCK_ENTITY: &str = "travelersbackpack:backpack";
-pub const MAX_SLOTS: usize = 111;
+pub const MAX_SLOTS: usize = MAX_STORAGE + MAX_UPGRADES + MAX_TOOLS;
 
 /// The tier of ordinal `n` (`Tiers.of`), leather for any other.
 pub fn tier(n: i32) -> Tier {
@@ -281,6 +307,9 @@ mod tests {
         assert!(!is_backpack("minecraft:chest"));
         assert_eq!(tier(4), TIERS[4]);
         assert_eq!(tier(9), TIERS[0]);
-        assert_eq!(MAX_SLOTS, TIERS[4].slots());
+        assert!(TIERS.iter().all(|t| t.slots() <= MAX_SLOTS));
+        assert_eq!(TIERS[2].sized(200, 3, 1).storage, MAX_STORAGE);
+        assert!(TIERS.iter().all(|t| t.sized(154, 10, 8).menu_slots() <= MENU_SLOTS));
+        assert!(TIERS.iter().all(|t| t.menu_slots() <= MENU_SLOTS));
     }
 }

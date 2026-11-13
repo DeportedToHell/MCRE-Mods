@@ -118,7 +118,7 @@ struct State {
     closed: Vec<(u128, i32, Vec<Option<ItemStack>>)>,
     /// Placed backpacks being broken: the backpack, and what its item gets
     /// (contents, tier, bag colour).
-    broken: HashMap<[i32; 3], (String, Vec<Option<ItemStack>>, i32, i32, (Settings, Option<i32>))>,
+    broken: HashMap<[i32; 3], (String, Vec<Option<ItemStack>>, tb::Tier, i32, (Settings, Option<i32>))>,
     /// What players asked, with the dimension they were in.
     actions: Vec<(u128, Action, String)>,
     /// An equip or unequip waiting for its menu to close (its contents
@@ -175,6 +175,11 @@ fn contents(stack: &ItemStack, size: usize) -> Vec<Option<ItemStack>> {
 
 /// The backpack item `stack` holding `slots` from now on.
 fn set_contents(stack: &mut ItemStack, slots: Vec<Option<ItemStack>>) {
+    // The sizes its slots were laid out by, kept from now on.
+    if !has_sizes(stack) {
+        let tier = stack_tier(stack);
+        stamp_sizes(stack, tier);
+    }
     let data = stack.data_mut();
     data.container = slots
         .into_iter()
@@ -192,11 +197,7 @@ fn refresh_look(stack: &mut ItemStack) {
     if !tb::is_backpack(&stack.item) {
         return;
     }
-    let tier = match stack.data().and_then(|d| d.other(tb::TIER_COMPONENT)) {
-        Some(Tag::Int(n)) => *n,
-        _ => 0,
-    };
-    let tier = tb::tier(tier);
+    let tier = stack_tier(stack);
     let upgrades = tier.storage..tier.storage + tier.upgrades;
     let tanks = stack.data().is_some_and(|d| {
         d.container.iter().any(|(slot, item)| upgrades.contains(&usize::from(*slot)) && &*item.item == TANKS_UPGRADE)
@@ -247,6 +248,79 @@ fn block_tier(nbt: &Compound) -> i32 {
     }
 }
 
+/// Tier `n` as the config makes a new backpack of it (`Tiers.getStorageSlots` …).
+fn configured_tier(n: i32) -> tb::Tier {
+    let [storage, upgrades, tools] = usize::try_from(n).ok().and_then(|n| cfg().tier_sizes.get(n).copied()).unwrap_or([27, 2, 2]);
+    tb::tier(n).sized(storage, upgrades, tools)
+}
+
+/// `BackpackWrapper.initializeSize`: a backpack keeps the sizes it was made
+/// with; one without them holding nothing takes its tier's from the config,
+/// one holding things (from before the sizes were kept) its tier's first.
+fn sized_tier(n: i32, sizes: [Option<i32>; 3], empty: bool) -> tb::Tier {
+    match sizes {
+        [Some(s), Some(u), Some(t)] => {
+            let size = |v: i32| usize::try_from(v).unwrap_or(0);
+            tb::tier(n).sized(size(s), size(u), size(t))
+        }
+        _ if empty => configured_tier(n),
+        _ => tb::tier(n),
+    }
+}
+
+fn has_sizes(stack: &ItemStack) -> bool {
+    stack.data().is_some_and(|d| d.other(tb::STORAGE_COMPONENT).is_some())
+}
+
+/// A backpack item's tier with its own sizes.
+fn stack_tier(stack: &ItemStack) -> tb::Tier {
+    let int = |id: &str| match stack.data().and_then(|d| d.other(id)) {
+        Some(Tag::Int(n)) => Some(*n),
+        _ => None,
+    };
+    let empty = stack.data().is_none_or(|d| d.container.is_empty());
+    sized_tier(
+        int(tb::TIER_COMPONENT).unwrap_or(0),
+        [int(tb::STORAGE_COMPONENT), int(tb::UPGRADES_COMPONENT), int(tb::TOOLS_COMPONENT)],
+        empty,
+    )
+}
+
+/// The backpack item `stack` of `tier`, with its sizes (`upgradeInventory`).
+fn stamp_sizes(stack: &mut ItemStack, tier: tb::Tier) {
+    let data = stack.data_mut();
+    for (id, n) in [(tb::STORAGE_COMPONENT, tier.storage), (tb::UPGRADES_COMPONENT, tier.upgrades), (tb::TOOLS_COMPONENT, tier.tools)] {
+        data.set_other(&format!("!{id}"), None);
+        data.set_other(id, Some(Tag::Int(n as i32)));
+    }
+    data.wire = Default::default();
+    stack.tidy();
+}
+
+/// The backpack item made of a placed one of `tier`: its tier and sizes.
+fn set_item_tier(game: &mut Game<'_>, stack: &mut ItemStack, tier: tb::Tier) {
+    if tier.index() != 0 {
+        let _ = game.native_set_component(stack, tb::TIER_COMPONENT, Tag::Int(tier.index()));
+    }
+    stamp_sizes(stack, tier);
+    refresh_look(stack);
+}
+
+/// A placed backpack's tier with its own sizes, kept beside its tier.
+fn placed_tier(nbt: &Compound, items: &[Option<ItemStack>]) -> tb::Tier {
+    let int = |k: &str| match nbt.get(&horizon_world::nbt::JavaString::from(k)) {
+        Some(Tag::Int(n)) => Some(*n),
+        _ => None,
+    };
+    sized_tier(block_tier(nbt), [int("storage_slots"), int("upgrade_slots"), int("tool_slots")], items.iter().all(Option::is_none))
+}
+
+fn set_block_sizes(nbt: &mut Compound, tier: tb::Tier) {
+    nbt.insert("storage_slots".into(), Tag::Int(tier.storage as i32));
+    nbt.insert("upgrade_slots".into(), Tag::Int(tier.upgrades as i32));
+    nbt.insert("tool_slots".into(), Tag::Int(tier.tools as i32));
+}
+
 // ---- the worn backpack (`BackpackAttachment`) ---------------------------------------------
 
 /// The player's persistent data key holding the backpack on their back.
@@ -282,7 +356,7 @@ fn toggle_worn_upgrade(game: &mut Game<'_>, uuid: u128, i: usize) {
     let Some(mut stack) = worn(game, uuid) else {
         return;
     };
-    let tier = tb::tier(item_tier(game, &stack));
+    let tier = stack_tier(&stack);
     if i >= tier.upgrades {
         return;
     }
@@ -345,7 +419,7 @@ fn tell_worn(game: &mut Game<'_>, uuid: u128) {
     let design = worn(game, uuid)
         .filter(|s| !item_settings(s).hidden)
         .map(|s| {
-            let tier = tb::tier(item_tier(game, &s));
+            let tier = stack_tier(&s);
             let items = contents(&s, tier.slots());
             let tanks = shows_tanks(&items, tier);
             // And the tanks' fluids, for the model.
@@ -356,13 +430,13 @@ fn tell_worn(game: &mut Game<'_>, uuid: u128) {
         .unwrap_or_default();
     // Its lantern on (`RenderInfo.hasLantern`), shown or not: its light.
     let lantern = worn(game, uuid).is_some_and(|s| {
-        let tier = tb::tier(item_tier(game, &s));
+        let tier = stack_tier(&s);
         upgrades_in(&contents(&s, tier.slots()), tier).iter().any(|u| u == "travelersbackpack:lantern_upgrade")
     });
     let tools = worn(game, uuid)
         .filter(|s| !item_settings(s).hidden)
         .map(|s| {
-            let tier = tb::tier(item_tier(game, &s));
+            let tier = stack_tier(&s);
             let shown: Vec<ItemStack> = contents(&s, tier.slots())[tier.storage + tier.upgrades..].iter().flatten().cloned().collect();
             let snbt = |t: &ItemStack| horizon_world::snbt_text::to_snbt(&horizon_items::item_nbt::item_to_nbt(t));
             match shown.as_slice() {
@@ -459,7 +533,8 @@ fn take_placed(game: &mut Game<'_>, dimension: &str, pos: [i32; 3]) -> Option<It
     let mut taken = None;
     game.native_with_mod_block_entity(pos, |m| {
         let items: Vec<Option<ItemStack>> = m.items.iter_mut().map(Option::take).collect();
-        taken = Some((items, block_tier(&m.nbt), block_bag(&m.nbt), (block_settings(&m.nbt), block_dye(&m.nbt))));
+        let tier = placed_tier(&m.nbt, &items);
+        taken = Some((items, tier, block_bag(&m.nbt), (block_settings(&m.nbt), block_dye(&m.nbt))));
     });
     let (mut items, tier, bag, (settings, dye)) = taken?;
     stop_jukeboxes(game, items.iter_mut().flatten());
@@ -474,10 +549,7 @@ fn take_placed(game: &mut Game<'_>, dimension: &str, pos: [i32; 3]) -> Option<It
     set_item_bag(&mut stack, bag);
     set_item_settings(&mut stack, &settings);
     set_item_dye(&mut stack, dye);
-    if tier != 0 {
-        let _ = game.native_set_component(&mut stack, tb::TIER_COMPONENT, Tag::Int(tier));
-        refresh_look(&mut stack);
-    }
+    set_item_tier(game, &mut stack, tier);
     Some(stack)
 }
 
@@ -578,11 +650,13 @@ fn place_on_death(game: &mut Game<'_>, uuid: u128, dimension: &str, at: [i32; 3]
         Some(spot) => {
             let mut items = contents(&stack, tb::MAX_SLOTS);
             let tier = item_tier(game, &stack);
-            let tanks = shows_tanks(&items, tb::tier(tier));
+            let sized = stack_tier(&stack);
+            let tanks = shows_tanks(&items, sized);
             game.native_with_mod_block_entity(spot, |m| {
                 items.resize(m.items.len().max(tb::MAX_SLOTS), None);
                 m.items = std::mem::take(&mut items);
                 m.nbt.insert("tier".into(), Tag::Int(tier));
+                set_block_sizes(&mut m.nbt, sized);
                 m.nbt.insert(BAG_COLOUR_NBT.into(), Tag::Int(item_bag(&stack)));
                 set_block_dye(&mut m.nbt, item_dye(&stack));
                 set_block_settings(&mut m.nbt, &item_settings(&stack));
@@ -682,7 +756,7 @@ fn act(game: &mut Game<'_>, uuid: u128, action: Action, dimension: &str) {
         | Action::AbilitySlider => settings_button(game, uuid, action),
         Action::BlockTanks(pos) => {
             let tanks = game.native_mod_block_entity(pos).filter(|m| m.id == tb::BLOCK_ENTITY).map(|m| {
-                let tier = tb::tier(block_tier(&m.nbt));
+                let tier = placed_tier(&m.nbt, &m.items);
                 shows_tanks(&m.items, tier)
             });
             if let Some(tanks) = tanks {
@@ -797,6 +871,9 @@ fn act(game: &mut Game<'_>, uuid: u128, action: Action, dimension: &str) {
 /// The tier's component (`ModDataComponents.TIER`).
 pub(super) fn component_types(types: &mut Vec<String>) {
     types.push(tb::TIER_COMPONENT.into());
+    types.push(tb::STORAGE_COMPONENT.into());
+    types.push(tb::UPGRADES_COMPONENT.into());
+    types.push(tb::TOOLS_COMPONENT.into());
 }
 
 /// A placed backpack has a block entity holding the item's slots.
@@ -935,6 +1012,7 @@ pub(super) fn place_block(game: &mut Game<'_>, stack: &ItemStack, pos: [i32; 3])
     }
     let mut items = contents(stack, tb::MAX_SLOTS);
     let tier = item_tier(game, stack);
+    let sized = stack_tier(stack);
     let bag = item_bag(stack);
     let dye = item_dye(stack);
     let settings = item_settings(stack);
@@ -944,6 +1022,7 @@ pub(super) fn place_block(game: &mut Game<'_>, stack: &ItemStack, pos: [i32; 3])
         items.resize(m.items.len().max(tb::MAX_SLOTS), None);
         m.items = std::mem::take(&mut items);
         m.nbt.insert("tier".into(), Tag::Int(tier));
+        set_block_sizes(&mut m.nbt, sized);
         m.nbt.insert(BAG_COLOUR_NBT.into(), Tag::Int(bag));
     });
     let (uuid, dimension) = (game.native_acting_id(), game.dim.id().to_owned());
@@ -969,9 +1048,10 @@ pub(super) fn destroy_block(game: &mut Game<'_>, pos: [i32; 3]) {
     let mut taken = None;
     game.native_with_mod_block_entity(pos, |m| {
         let items: Vec<Option<ItemStack>> = m.items.iter_mut().map(Option::take).collect();
-        taken = Some((items, block_tier(&m.nbt), block_bag(&m.nbt), (block_settings(&m.nbt), block_dye(&m.nbt))));
+        let tier = placed_tier(&m.nbt, &items);
+        taken = Some((items, tier, block_bag(&m.nbt), (block_settings(&m.nbt), block_dye(&m.nbt))));
     });
-    let (mut items, tier, bag, (settings, dye)) = taken.unwrap_or((Vec::new(), 0, RED, (Settings::default(), None)));
+    let (mut items, tier, bag, (settings, dye)) = taken.unwrap_or((Vec::new(), tb::tier(0), RED, (Settings::default(), None)));
     stop_jukeboxes(game, items.iter_mut().flatten());
     if game.creative {
         // `playerWillDestroy`: in creative the backpack still drops, as an item
@@ -981,10 +1061,7 @@ pub(super) fn destroy_block(game: &mut Game<'_>, pos: [i32; 3]) {
         set_item_bag(&mut stack, bag);
         set_item_settings(&mut stack, &settings);
         set_item_dye(&mut stack, dye);
-        if tier != 0 {
-            let _ = game.native_set_component(&mut stack, tb::TIER_COMPONENT, Tag::Int(tier));
-        refresh_look(&mut stack);
-        }
+        set_item_tier(game, &mut stack, tier);
         let at = pos.map(|c| f64::from(c) + 0.5);
         game.spawn_item(stack, at, super::dispenser::new_item_motion(), 10);
         return;
@@ -1016,10 +1093,7 @@ pub(super) fn loot_drops(game: &mut Game<'_>, context: &NativeLootDrops<'_>, dro
     set_item_bag(stack, bag);
     set_item_settings(stack, &settings);
     set_item_dye(stack, dye);
-    if tier != 0 {
-        let _ = game.native_set_component(stack, tb::TIER_COMPONENT, Tag::Int(tier));
-        refresh_look(stack);
-    }
+    set_item_tier(game, stack, tier);
 }
 
 /// A backpack's menu closed: what it holds goes back into the backpack.
@@ -1039,6 +1113,11 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
     let now = game.world.game_time;
     let first = LAST_TICK.with(|t| t.replace(Some(now)) != Some(now));
     if first {
+        // The config's tier sizes for the smithing table and the crafting grid.
+        horizon_client::lan::containers::travelersbackpack_menu::set_tier_sizes([0, 1, 2, 3, 4].map(|n| {
+            let t = configured_tier(n);
+            [t.storage, t.upgrades, t.tools]
+        }));
         stacked_sounds(game);
         loose_jukeboxes(game);
         backpack_slowness(game);
@@ -1088,8 +1167,11 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
         // The storage came back from the menu; the upgrades and tools follow it,
         // and what the fluid slots hold goes back to the player.
         let mut items = items;
-        let tier = tb::TIERS.into_iter().find(|t| t.storage == items.len()).unwrap_or(tb::TIERS[0]);
-        if let Some((_, extra)) = with(|s| s.extras.remove(&uuid)) {
+        // The sizes it opened with (a backpack's own, from the config).
+        let mut tier = tb::TIERS.into_iter().find(|t| t.storage == items.len()).unwrap_or(tb::TIERS[0]);
+        if let Some((opened, extra)) = with(|s| s.extras.remove(&uuid)) {
+            tier = opened;
+            items.resize(tier.storage, None);
             items.extend(extra);
         }
         // The tabs' items stay in their upgrades; a tank's buckets go back.
@@ -1204,7 +1286,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
                 else {
                     continue;
                 };
-                let tier = tb::tier(item_tier(game, stack));
+                let tier = stack_tier(stack);
                 let title = screen_title(stack.data().and_then(|d| d.custom_name.clone()));
                 (contents(stack, tier.slots()), tier, title, Source::Hand(slot), tb::Opened::Held, item_bag(stack))
             }
@@ -1212,7 +1294,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
                 let Some(stack) = worn(game, uuid) else {
                     continue;
                 };
-                let tier = tb::tier(item_tier(game, &stack));
+                let tier = stack_tier(&stack);
                 let title = screen_title(stack.data().and_then(|d| d.custom_name.clone()));
                 (contents(&stack, tier.slots()), tier, title, source, tb::Opened::Worn, item_bag(&stack))
             }
@@ -1224,7 +1306,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
                 let Some(stack) = worn(game, owner) else {
                     continue;
                 };
-                let tier = tb::tier(item_tier(game, &stack));
+                let tier = stack_tier(&stack);
                 let title = screen_title(stack.data().and_then(|d| d.custom_name.clone()));
                 (contents(&stack, tier.slots()), tier, title, source, tb::Opened::Worn, item_bag(&stack))
             }
@@ -1246,7 +1328,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
                 let Some(m) = game.native_mod_block_entity(pos).filter(|_| tb::is_backpack(&block)) else {
                     continue;
                 };
-                let tier = tb::tier(block_tier(&m.nbt));
+                let tier = placed_tier(&m.nbt, &m.items);
                 let mut items = m.items.clone();
                 items.resize(tier.slots(), None);
                 let title = screen_title(None);
@@ -1281,6 +1363,13 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
         }
         let menu = tier.menu_for(opened);
         let extra = items[tier.storage..].to_vec();
+        // The screen learns the sizes first; the slots past them hide.
+        let mut sized = vec![tier.storage as u8, tier.upgrades as u8, tier.tools as u8];
+        sized.append(&mut layout);
+        let layout = sized;
+        let hidden: Vec<usize> = (tier.menu_slots()..tb::MENU_SLOTS).collect();
+        let mut items = items;
+        items.resize(tb::MENU_SLOTS, None);
         // The settings screen: the storage to look at, nothing to take.
         let (items, input) = if in_settings {
             let mut shown = vec![None; items.len()];
@@ -1304,6 +1393,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
             items,
             input,
             &layout,
+            hidden,
         ) {
             if let Some(ui) = ui {
                 with(|s| s.settings.insert(uuid, ui));
@@ -1553,7 +1643,7 @@ fn change_bag(game: &mut Game<'_>, uuid: u128, dimension: &str, pos: [i32; 3]) {
     });
     let tanks = game
         .native_mod_block_entity(pos)
-        .is_some_and(|m| shows_tanks(&m.items, tb::tier(block_tier(&m.nbt))));
+        .is_some_and(|m| shows_tanks(&m.items, placed_tier(&m.nbt, &m.items)));
     set_block_tanks(game, dimension, pos, tanks);
     if let Some(old) = bag_block(old) {
         let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + 1.0, f64::from(pos[2]) + 0.5];
@@ -1587,7 +1677,7 @@ fn detach_bag(game: &mut Game<'_>, uuid: u128, dimension: &str, source: Source, 
             });
             let tanks = game
                 .native_mod_block_entity(pos)
-                .is_some_and(|m| shows_tanks(&m.items, tb::tier(block_tier(&m.nbt))));
+                .is_some_and(|m| shows_tanks(&m.items, placed_tier(&m.nbt, &m.items)));
             set_block_tanks(game, dimension, pos, tanks);
         }
         Source::Worn => {
@@ -1728,7 +1818,7 @@ fn use_sleeping_bag(game: &mut Game<'_>, uuid: u128, dimension: &str, source: So
         Source::Block(pos) => {
             let tanks = game
                 .native_mod_block_entity(pos)
-                .is_some_and(|m| shows_tanks(&m.items, tb::tier(block_tier(&m.nbt))));
+                .is_some_and(|m| shows_tanks(&m.items, placed_tier(&m.nbt, &m.items)));
             if bag_deployed(game, pos) {
                 fold_bag_of(game, dimension, pos);
                 set_block_tanks(game, dimension, pos, tanks);
@@ -3700,7 +3790,7 @@ fn tick_worn(game: &mut Game<'_>) {
         let Some(mut stack) = worn(game, uuid) else {
             continue;
         };
-        let tier = tb::tier(item_tier(game, &stack));
+        let tier = stack_tier(&stack);
         let mut items = contents(&stack, tier.slots());
         let upgrades = upgrades_in(&items, tier);
         if upgrades.is_empty() {
@@ -3765,7 +3855,7 @@ pub(super) fn block_entity_tick(
     if with(|s| s.open.values().any(|o| o.0 == Source::Block(pos))) {
         return;
     }
-    let tier = tb::tier(block_tier(&entity.nbt));
+    let tier = placed_tier(&entity.nbt, &entity.items);
     if entity.items.len() < tier.slots() {
         return;
     }
@@ -3861,6 +3951,8 @@ const TABS: &str = "travelersbackpack:gui/tabs";
 #[derive(Clone, Default)]
 struct ScreenInfo {
     menu: String,
+    /// The backpack's storage, upgrade and tool slots.
+    sizes: Option<[usize; 3]>,
     tabs: Vec<(tb::Tab, bool)>,
     /// Each upgrade slot's filter in tag mode (the tag selector).
     tags: Vec<bool>,
@@ -3878,8 +3970,17 @@ thread_local! {
 
 /// A backpack screen opens: what its menu's extra data says.
 pub(super) fn screen_extra(menu: &str, extra: Option<&[u8]>) {
-    let upgrades = tb::menu_kind(menu).map_or(0, |(tier, _)| tier.upgrades);
     let extra = extra.unwrap_or_default();
+    // The backpack's own sizes first.
+    let sizes = match extra {
+        [s, u, t, ..] => Some([usize::from(*s), usize::from(*u), usize::from(*t)]),
+        _ => None,
+    };
+    let extra = extra.get(3..).unwrap_or_default();
+    let upgrades = match sizes {
+        Some([_, u, _]) => u,
+        None => tb::menu_kind(menu).map_or(0, |(tier, _)| tier.upgrades),
+    };
     let tabs = extra.iter().take(upgrades).map(|&c| (tb::Tab::from_code(c & 0x3F), c & 0x80 != 0)).collect();
     let tags = extra.iter().take(upgrades).map(|&c| c & 0x40 != 0).collect();
     let flag = |k: usize, default: bool| extra.get(upgrades + k).map_or(default, |&b| b != 0);
@@ -3893,7 +3994,7 @@ pub(super) fn screen_extra(menu: &str, extra: Option<&[u8]>) {
             Some((slot.parse().ok()?, item.to_owned()))
         })
         .collect();
-    let info = ScreenInfo { menu: menu.to_owned(), tabs, tags, bag: flag(0, true), tools: flag(1, false), settings: flag(2, false), memory };
+    let info = ScreenInfo { menu: menu.to_owned(), sizes, tabs, tags, bag: flag(0, true), tools: flag(1, false), settings: flag(2, false), memory };
     SCREEN_INFO.with(|t| *t.borrow_mut() = info);
     // A screen opens scrolled to the top.
     SCROLL.with(|s| *s.borrow_mut() = None);
@@ -3927,6 +4028,7 @@ impl Layout {
             let t = t.borrow();
             if t.menu == menu { t.clone() } else { ScreenInfo { menu: menu.to_owned(), bag: true, ..Default::default() } }
         });
+        let tier = info.sizes.map_or(tier, |[s, u, t]| tier.sized(s, u, t));
         let mut all = info.tabs.clone();
         all.resize(tier.upgrades, (tb::Tab::Plain, false));
         let tabs = all.iter().map(|&(t, open)| if open { t } else { tb::Tab::Plain }).collect();
@@ -4132,6 +4234,8 @@ pub(super) fn screen(menu: &str, screen: &mut Option<NativeScreen>) {
             slots.push(own.get(k).filter(|_| !settings).map(|[sx, sy]| [x + sx, y + sy]));
         }
     }
+    // The slots past this backpack's, hidden.
+    slots.resize(tb::MENU_SLOTS, None);
     *screen = Some(NativeScreen {
         width: layout.width(),
         height: layout.height(),
@@ -5123,7 +5227,7 @@ pub(super) fn item_picked_up(game: &Game<'_>, player: u128, stack: &ItemStack, p
     let Some(backpack) = worn(game, player) else {
         return;
     };
-    let tier = tb::tier(item_tier(game, &backpack));
+    let tier = stack_tier(&backpack);
     let mut items = contents(&backpack, tier.slots());
     let upgrades = upgrades_in(&items, tier);
     if !upgrades.iter().any(|u| u == "travelersbackpack:pickup_upgrade") {
@@ -5159,7 +5263,7 @@ pub(super) fn block_entity_update_tag(entity: &horizon_client::containers::ModBl
     if entity.id != tb::BLOCK_ENTITY {
         return;
     }
-    let tier = tb::tier(block_tier(&entity.nbt));
+    let tier = placed_tier(&entity.nbt, &entity.items);
     let mut c = Compound::new();
     if let Some(levels) = tank_tag(&entity.items, tier) {
         c.insert(FLUIDS_TAG.into(), Tag::IntArray(levels));
@@ -5171,7 +5275,7 @@ pub(super) fn block_entity_update_tag(entity: &horizon_client::containers::ModBl
 
 /// A placed backpack's tanks changed: its clients are told (`sendBlockUpdated`).
 fn sync_fluids(game: &mut Game<'_>, pos: [i32; 3], entity: &mut horizon_client::containers::ModBlockEntity) {
-    let tier = tb::tier(block_tier(&entity.nbt));
+    let tier = placed_tier(&entity.nbt, &entity.items);
     let now = tank_tag(&entity.items, tier).map(Tag::IntArray);
     let key = horizon_world::nbt::JavaString::from("FluidsSent");
     if entity.nbt.get(&key) != now.as_ref() {
@@ -5241,7 +5345,7 @@ pub(super) fn block_entity_submit(
     }
     // The world's own copy (one player) has the items; a joined player's,
     // the tag the server sent.
-    let tier = tb::tier(block_tier(&entity.nbt));
+    let tier = placed_tier(&entity.nbt, &entity.items);
     let t = match tank_tag(&entity.items, tier) {
         Some(t) => t,
         None => match entity.nbt.get(&horizon_world::nbt::JavaString::from(FLUIDS_TAG)) {
@@ -6241,7 +6345,7 @@ fn worn_tanks(game: &Game<'_>, uuid: u128) -> Option<(ItemStack, Vec<Option<Item
         return None;
     }
     let stack = worn(game, uuid)?;
-    let tier = tb::tier(item_tier(game, &stack));
+    let tier = stack_tier(&stack);
     let items = contents(&stack, tier.slots());
     let k = tier.storage + tanks_slot(&items, tier)?;
     Some((stack, items, tier, k))
@@ -6657,12 +6761,6 @@ struct Inside {
     fluids: Vec<(String, i32)>,
 }
 
-fn stack_tier(stack: &ItemStack) -> tb::Tier {
-    tb::tier(match stack.data().and_then(|d| d.other(tb::TIER_COMPONENT)) {
-        Some(Tag::Int(n)) => *n,
-        _ => 0,
-    })
-}
 
 fn inside_of(stack: &ItemStack) -> Inside {
     let tier = stack_tier(stack);
@@ -7672,7 +7770,7 @@ fn placed_ability_tick(game: &mut Game<'_>, pos: [i32; 3], entity: &mut horizon_
     if !on {
         return;
     }
-    let tier = tb::tier(block_tier(&entity.nbt));
+    let tier = placed_tier(&entity.nbt, &entity.items);
     let tanks_at = (0..tier.upgrades)
         .find(|&i| entity.items.get(tier.storage + i).and_then(Option::as_ref).is_some_and(|s| &*s.item == TANKS_UPGRADE))
         .map(|i| tier.storage + i);
@@ -8740,7 +8838,7 @@ fn send_tools(game: &mut Game<'_>, uuid: u128) {
     let Some(stack) = worn(game, uuid) else {
         return;
     };
-    let tier = tb::tier(item_tier(game, &stack));
+    let tier = stack_tier(&stack);
     let items = contents(&stack, tier.slots());
     let snbt = |s: &ItemStack| horizon_world::snbt_text::to_snbt(&horizon_items::item_nbt::item_to_nbt(s));
     // The middle's backpack: its look, not its contents.
@@ -8775,7 +8873,7 @@ fn swap_tool(game: &mut Game<'_>, uuid: u128, slot: i32, button: u8) {
     let Some(mut stack) = worn(game, uuid) else {
         return;
     };
-    let tier = tb::tier(item_tier(game, &stack));
+    let tier = stack_tier(&stack);
     let mut items = contents(&stack, tier.slots());
     let range = worn_tool_range(tier);
     let Some(g) = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)) else {
@@ -9169,7 +9267,7 @@ pub(super) fn stack_into_backpack(
     } else {
         return;
     };
-    let tier = tb::tier(item_tier(game, &backpack));
+    let tier = stack_tier(&backpack);
     let mut items = contents(&backpack, tier.slots());
     let left = insert_stacked(game, &mut items[..tier.storage], item.clone());
     let moved = item.count - left.as_ref().map_or(0, |l| l.count);
@@ -9504,11 +9602,7 @@ fn run_command(game: &mut Game<'_>, own: u128, position: [f64; 3], command: &str
             give_or_drop(game, uuid, stack.clone());
             let kept = clear.then(|| {
                 let mut bare = ItemStack::new(&stack.item, 1);
-                let tier = item_tier(game, &stack);
-                if tier != 0 {
-                    let _ = game.native_set_component(&mut bare, tb::TIER_COMPONENT, Tag::Int(tier));
-                    refresh_look(&mut bare);
-                }
+                set_item_tier(game, &mut bare, stack_tier(&stack));
                 bare
             });
             set_worn(game, uuid, kept.as_ref());
@@ -9540,7 +9634,7 @@ fn run_command(game: &mut Game<'_>, own: u128, position: [f64; 3], command: &str
                 return;
             }
             flush_block_menus(game, at);
-            let tier = game.native_mod_block_entity(at).map(|m| tb::tier(block_tier(&m.nbt)));
+            let tier = game.native_mod_block_entity(at).map(|m| placed_tier(&m.nbt, &m.items));
             let mut drops = Vec::new();
             game.native_with_mod_block_entity(at, |m| {
                 let end = tier.map_or(0, tb::Tier::slots).min(m.items.len());
@@ -9568,7 +9662,7 @@ fn run_command(game: &mut Game<'_>, own: u128, position: [f64; 3], command: &str
                 return;
             };
             close_worn_menus(game, uuid);
-            let tier = tb::tier(item_tier(game, &stack));
+            let tier = stack_tier(&stack);
             let items = contents(&stack, tier.slots());
             let drops: Vec<ItemStack> = items.into_iter().flatten().filter(|s| s.count > 0).collect();
             if drops.is_empty() {
@@ -9711,7 +9805,7 @@ fn write_closed_elsewhere(game: &mut Game<'_>) {
         if !tb::is_backpack(&game.native_block(pos)) {
             continue;
         }
-        let tier = game.native_mod_block_entity(pos).map(|m| tb::tier(block_tier(&m.nbt)));
+        let tier = game.native_mod_block_entity(pos).map(|m| placed_tier(&m.nbt, &m.items));
         if let Some(tier) = tier {
             set_block_tanks(game, &here, pos, shows_tanks(&items, tier));
         }
@@ -9828,7 +9922,7 @@ pub(super) fn mob_spawned(game: &mut Game<'_>, dimension: &str, kind: &str, pos:
     }
     set_item_bag(&mut backpack, random.next_int_between_inclusive(0, 15).unwrap_or(14));
     if random.next_float() > 0.5 {
-        let tier = tb::tier(0);
+        let tier = configured_tier(0);
         let mut items = vec![None; tier.slots()];
         items[tier.storage] = Some(ItemStack::new(TANKS_UPGRADE, 1));
         set_contents(&mut backpack, items);
@@ -9869,7 +9963,7 @@ fn mob_backpack_layer(
     let Some(stack) = m.extra.armor[1].clone().filter(|s| tb::is_backpack(&s.item)) else {
         return;
     };
-    let tier = tb::tier(item_tier(game, &stack));
+    let tier = stack_tier(&stack);
     let tanks = shows_tanks(&contents(&stack, tier.slots()), tier);
     let bag = bag_name(item_bag(&stack));
     // The body's top a little higher on a taller mob (an enderman).

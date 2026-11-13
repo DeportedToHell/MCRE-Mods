@@ -13,6 +13,7 @@ use super::*;
 /// Its first `input` slots (the storage) take items by vanilla's rules; a click
 /// on the others (upgrades, tools) is the mod's (`native_menu_clicked`).
 /// `layout` goes ahead as the menu's extra data (`horizon:menu_extra`), for its screen.
+#[allow(clippy::too_many_arguments)]
 pub fn open(
     hub: &mut Hub,
     conn: u32,
@@ -21,6 +22,7 @@ pub fn open(
     items: Vec<Option<ItemStack>>,
     input: usize,
     layout: &[u8],
+    hidden: Vec<usize>,
 ) -> Option<i32> {
     let kind = hub.sync.builtin.get("minecraft:menu").and_then(|m| m.id(menu_kind))?;
     let i = hub.guests.iter().position(|g| g.conn == conn)?;
@@ -45,7 +47,7 @@ pub fn open(
         sent: Vec::new(),
         drag: None,
         sent_data: Vec::new(),
-        hidden: Vec::new(),
+        hidden,
         mod_type: None,
     });
     hub.send_menu_content(i, items);
@@ -81,9 +83,30 @@ pub fn set_items(hub: &mut Hub, conn: u32, items: Vec<Option<ItemStack>>, carrie
         return;
     };
     let g = &mut hub.guests[i];
+    // As many as the menu type has (a smaller backpack's are fewer).
+    let mut items = items;
+    if let Some(size) = g.menu.as_ref().map(|m| m.size) {
+        items.resize(size.max(items.len()), None);
+    }
     g.native_menu = items.clone();
     g.carried = carried;
     hub.send_menu_content(i, items);
+}
+
+static TIER_SIZES: std::sync::RwLock<[[usize; 3]; 5]> =
+    std::sync::RwLock::new([[27, 2, 2], [45, 3, 3], [63, 4, 4], [81, 5, 5], [99, 6, 6]]);
+
+/// Each tier's sizes from the server's config (`Tiers.getStorageSlots` …),
+/// for the smithing table and the crafting grid, which run here.
+pub fn set_tier_sizes(sizes: [[usize; 3]; 5]) {
+    if let Ok(mut s) = TIER_SIZES.write() {
+        *s = sizes;
+    }
+}
+
+/// Tier `n`'s storage, upgrade and tool slots in the config.
+pub fn tier_sizes(n: usize) -> [usize; 3] {
+    TIER_SIZES.read().ok().and_then(|s| s.get(n).copied()).unwrap_or([27, 2, 2])
 }
 
 /// Sends guest `conn`'s menu `window` its data slots (`ContainerSetData`,
