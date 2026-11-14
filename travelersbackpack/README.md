@@ -2,7 +2,7 @@
   <img src="../.github/assets/stickers/travelersbackpack.gif" height="64" alt=""> <img src="../.github/assets/stickers/travelersbackpack.png" height="64" alt="">
 
 
-## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
+## <img src="../.github/assets/headers/grass/port.svg" alt="This is an independent port of the original project.">
 
 > It is not affiliated with, endorsed by, or officially associated with the original author, Tiviacz1337.
 >
@@ -11,7 +11,7 @@
 > Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the original mod.
 
 
-## Current State
+## <img src="../.github/assets/headers/grass/state.svg" alt="Current State">
 
 1.0.0. Fully playable.
 
@@ -24,7 +24,7 @@ BOTH FILES ARE REQUIRED FOR THE MOD TO WORK
 I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
 
-## ✨Features
+## <img src="../.github/assets/headers/grass/features.svg" alt="Features">
 
 **Backpacks.** All 44 designs and five tiers, from leather to netherite. Open one from your hand, place it as a block or wear it on your back. Other players see it, and if you die wearing one, it's placed where you died.
 
@@ -39,7 +39,7 @@ I'll release an updated mod to the launcher as soon as Horizon rolls out an upda
 **Other features.** Dynamic lighting, a radial tool menu, advancements, a wandering trader trade, a creative tab and keybinds. The original's config files, `/tb` commands with backups made on death, Mod Menu info. English and Russian.
 
 
-## 🚧Remaining work
+## <img src="../.github/assets/headers/grass/remaining.svg" alt="Remaining work">
 
 1.1.0 - Universal Graves integration.
 
@@ -51,7 +51,7 @@ Not implemented compared to the original:
 Differences: a Horizon menu holds at most 256 slots, so with the most upgrades and tools the config allows (10 and 8), or filters of more than 10 slots, a tier's storage is cut to what still fits (138 instead of 154 with the defaults).
 
 
-## Changelog:
+## <img src="../.github/assets/headers/grass/changelog.svg" alt="Changelog">
 
 ### 1.0.0
 
@@ -82,7 +82,7 @@ Differences: a Horizon menu holds at most 256 slots, so with the most upgrades a
 - Added the config files, Mod Menu info, `/tb` commands, chest loot, mobs with backpacks, tools on the back and the worn backpack's icon in the inventory.
 
 
-## 📦Installation
+## <img src="../.github/assets/headers/grass/installation.svg" alt="Installation">
 
 Build the content mod with `cargo horizon-mod build` from `content/` and place the resulting `.hmod` in the game's mods folder.
 
@@ -91,7 +91,7 @@ Package the native mod using `tools/package.mjs` and place the resulting `.hnmod
 > Native mods are compiled into the game and are not sandboxed. Only build code you trust.
 
 
-## 🗂️Source layout
+## <img src="../.github/assets/headers/grass/source.svg" alt="Source layout">
 
 ```text
 content/                         Content mod, generated from the original checkout
@@ -111,7 +111,7 @@ tools/
 ```
 
 
-## ⚖️License
+## <img src="../.github/assets/headers/grass/license.svg" alt="License">
 
 Licensed under **GNU LGPL-3.0**, same as the original project.
 

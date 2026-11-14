@@ -2,7 +2,7 @@
   <img src="../.github/assets/stickers/accessories.png" height="64" alt=""> <img src="../.github/assets/stickers/accessoriesn.png" height="64" alt="">
 
 
-## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
+## <img src="../.github/assets/headers/planks/port.svg" alt="This is an independent port of the original project.">
 
 > It is not affiliated with, endorsed by, or officially associated with the original authors, Wisp Forest.
 >
@@ -11,7 +11,7 @@
 > Special thanks to [blodhgarm](https://github.com/Dragon-Seeker), [chyzman](https://github.com/chyzman), Dr.Zeal and all contributors for creating the original mod.
 
 
-## Current State
+## <img src="../.github/assets/headers/planks/state.svg" alt="Current State">
 
 0.2.1. Unplayable.
 
@@ -24,7 +24,7 @@ BOTH FILES ARE REQUIRED FOR THE MOD TO WORK
 I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
 
-## ✨Features
+## <img src="../.github/assets/headers/planks/features.svg" alt="Features">
 
 **Accessory slots.** Hat, face, necklace, cape, back, hands, rings, wrist, belt, anklet, shoes and charm. Data packs can add slots or change them, same format as the original.
 
@@ -37,7 +37,7 @@ I'll release an updated mod to the launcher as soon as Horizon rolls out an upda
 **Other features.** `/accessories` commands, the original's config file (`config/accessories.json5`), Mod Menu info. Works with [Traveler's Backpack](../travelersbackpack): the backpack goes in the Back slot. English and Russian.
 
 
-## 🚧Remaining work
+## <img src="../.github/assets/headers/planks/remaining.svg" alt="Remaining work">
 
 Not implemented compared to the original:
 
@@ -47,7 +47,7 @@ Not implemented compared to the original:
 Differences: the screen's player view always faces the cursor, so the second view isn't turned around.
 
 
-## Changelog:
+## <img src="../.github/assets/headers/planks/changelog.svg" alt="Changelog">
 
 ### 0.2.1
 
@@ -67,7 +67,7 @@ Differences: the screen's player view always faces the cursor, so the second vie
 - First release: slots from data, the accessories screen, equipping, drops on death, accessories on the player.
 
 
-## 📦Installation
+## <img src="../.github/assets/headers/planks/installation.svg" alt="Installation">
 
 Build the content mod with `cargo horizon-mod build` from `content/` and place the resulting `.hmod` in the game's mods folder.
 
@@ -76,7 +76,7 @@ Package the native mod using `tools/package.mjs` and place the resulting `.hnmod
 > Native mods are compiled into the game and are not sandboxed. Only build code you trust.
 
 
-## 🗂️Source layout
+## <img src="../.github/assets/headers/planks/source.svg" alt="Source layout">
 
 ```text
 content/                         Content mod, generated from the original checkout
@@ -95,7 +95,7 @@ tools/
 ```
 
 
-## ⚖️License
+## <img src="../.github/assets/headers/planks/license.svg" alt="License">
 
 Licensed under **MIT**, same as the original project.
 
