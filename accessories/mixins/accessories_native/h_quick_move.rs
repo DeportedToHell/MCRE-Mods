@@ -51,10 +51,11 @@ fn accessories_quick_move(view: &mut View<'_>, i: usize, rules: &dyn Rules) -> c
         if rule.cosmetic || rule.kind != m::Kind::Accessory || !view.enabled(k) || view.get(k).is_some() || !m::valid(&rule, &stack, rules.items()) {
             continue;
         }
-        let mut one = stack.clone();
-        one.count = 1;
-        view.set(k, Some(one));
-        stack.count -= 1;
+        let moved = stack.count.min(m::max_in_slot(&stack, rules.items()));
+        let mut put = stack.clone();
+        put.count = moved;
+        view.set(k, Some(put));
+        stack.count -= moved;
         view.set(i, (stack.count > 0).then_some(stack));
         return Break(());
     }

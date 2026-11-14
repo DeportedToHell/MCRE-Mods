@@ -1,6 +1,6 @@
 [mod]
 id = "accessories_native"
-version = "0.1.0"
+version = "0.2.0"
 priority = 100
 
 # Built for this Nightly: besides the hook points it opens a menu of the
@@ -112,6 +112,18 @@ bindings = [
   { name = "player", ty = "u128", value = "player" },
 ]
 
+# A totem in the accessory slots saves from death (`checkTotemDeathProtection`).
+[[injection]]
+id = "guest_die"
+target = "horizon_client::game::lan_actions::Game<'_>::guest_die"
+kind = "HEAD"
+cancellable = true
+helper = "h_guest_die.rs"
+bindings = [
+  { name = "host", ty = "&mut LanHost", value = "&mut *host" },
+  { name = "gi", ty = "usize", value = "gi" },
+]
+
 # An accessory used in the air goes on (`attemptEquipFromUse`).
 [[injection]]
 id = "use_item"
@@ -187,7 +199,55 @@ bindings = [
   { name = "rules", ty = "&dyn Rules", value = "rules" },
 ]
 
+# `/accessories` (`AccessoriesCommands`).
+[[injection]]
+id = "register_commands"
+hook = "register_commands"
+hook_version = 1
+kind = "HEAD"
+helper = "h_register_commands.rs"
+bindings = [
+  { name = "commands", ty = "&mut Vec<horizon_client::mod_api::NativeCommand>", value = "&mut *commands" },
+]
+
+[[injection]]
+id = "perform_command"
+hook = "perform_command"
+hook_version = 1
+kind = "HEAD"
+helper = "h_perform_command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "&horizon_client::mod_api::NativeServerPlayer", value = "player" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+# Accessories' item components (`AccessoriesDataComponents`).
+[[injection]]
+id = "component_types"
+hook = "component_types"
+hook_version = 1
+kind = "HEAD"
+helper = "h_component_types.rs"
+bindings = [
+  { name = "types", ty = "&mut Vec<String>", value = "&mut *types" },
+]
+
 # ---- the client ----
+
+# An item's tooltip: its slots, and what it gives when worn.
+[[injection]]
+id = "tooltip"
+hook = "tooltip"
+hook_version = 1
+kind = "HEAD"
+helper = "h_tooltip.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "stack", ty = "&horizon_client::items::ItemStack", value = "stack" },
+  { name = "lines", ty = "&mut Vec<(horizon_client::text::Text, u32)>", value = "&mut *lines" },
+]
 
 [[injection]]
 id = "screen"

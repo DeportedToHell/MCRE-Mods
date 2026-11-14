@@ -232,9 +232,148 @@ fn answer(id: &str, rule: &SlotRule, stack: &ItemStack, items: &crate::items::It
             };
             if worn { Answer::Valid } else { Answer::Irrelevant }
         }
-        // The component and attribute validators read Accessories' own item
-        // components, which no item has here.
+        // `accessories:slot_validation`: its invalid slots first, then its valid ones (or `any`).
+        "accessories:component" => {
+            let Some(Tag::Compound(c)) = component(stack, items, "accessories:slot_validation") else {
+                return Answer::Irrelevant;
+            };
+            if tag_strings(field(c, "invalid_slots")).iter().any(|s| *s == rule.slot) {
+                Answer::Invalid
+            } else if tag_strings(field(c, "valid_slots")).iter().any(|s| *s == rule.slot || s == "any") {
+                Answer::Valid
+            } else {
+                Answer::Irrelevant
+            }
+        }
+        // `accessories:attributes`: a modifier for this slot (or any) that is
+        // used in slot validation, of a real attribute (not a slot's size).
+        "accessories:attribute" => {
+            let (mods, _) = modifiers(stack, items);
+            if mods.iter().any(|m| m.validation && (m.slot == rule.slot || m.slot == "any") && !is_slot_attribute(&m.attribute)) {
+                Answer::Valid
+            } else {
+                Answer::Irrelevant
+            }
+        }
         _ => Answer::Irrelevant,
+    }
+}
+
+/// A stack's component `id` (`accessories:attributes`): its own, else its
+/// item's default (a content mod's item may carry one). None when removed.
+pub fn component<'a>(stack: &'a ItemStack, items: &'a crate::items::Items, id: &str) -> Option<&'a Tag> {
+    if let Some(d) = stack.data() {
+        if d.other(&format!("!{id}")).is_some() {
+            return None;
+        }
+        if let Some(v) = d.other(id) {
+            return Some(v);
+        }
+    }
+    items.get(&stack.item).and_then(|i| i.custom_components.get(id))
+}
+
+fn field<'a>(c: &'a horizon_world::nbt::Compound, key: &str) -> Option<&'a Tag> {
+    c.get(&horizon_world::nbt::JavaString::from(key))
+}
+
+fn tag_strings(tag: Option<&Tag>) -> Vec<String> {
+    match tag {
+        Some(Tag::List(list)) => list
+            .iter()
+            .filter_map(|t| match t {
+                Tag::String(s) => Some(String::from_utf16_lossy(&s.0)),
+                _ => None,
+            })
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
+fn tag_number(tag: Option<&Tag>) -> Option<f64> {
+    match tag? {
+        Tag::Byte(v) => Some(f64::from(*v)),
+        Tag::Short(v) => Some(f64::from(*v)),
+        Tag::Int(v) => Some(f64::from(*v)),
+        Tag::Long(v) => Some(*v as f64),
+        Tag::Float(v) => Some(f64::from(f32::from_bits(*v))),
+        Tag::Double(v) => Some(f64::from_bits(*v)),
+        _ => None,
+    }
+}
+
+fn tag_bool(tag: Option<&Tag>, default: bool) -> bool {
+    tag_number(tag).map_or(default, |v| v != 0.0)
+}
+
+fn tag_string(tag: Option<&Tag>) -> Option<String> {
+    match tag? {
+        Tag::String(s) => Some(String::from_utf16_lossy(&s.0)),
+        _ => None,
+    }
+}
+
+/// One entry of an `accessories:attributes` component
+/// (`AccessoryItemAttributeModifiers.Entry`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Modifier {
+    /// The attribute (`minecraft:max_health`), or a slot's size (`accessories:ring`).
+    pub attribute: String,
+    pub id: String,
+    pub amount: f64,
+    pub operation: String,
+    /// The slot it applies in, `any` for every slot.
+    pub slot: String,
+    pub stackable: bool,
+    pub validation: bool,
+}
+
+/// A stack's `accessories:attributes`: its modifiers, and whether its tooltip shows them.
+pub fn modifiers(stack: &ItemStack, items: &crate::items::Items) -> (Vec<Modifier>, bool) {
+    let Some(Tag::Compound(c)) = component(stack, items, "accessories:attributes") else {
+        return (Vec::new(), true);
+    };
+    let mut out = Vec::new();
+    if let Some(Tag::List(list)) = field(c, "modifiers") {
+        for entry in list {
+            let Tag::Compound(e) = entry else {
+                continue;
+            };
+            let (Some(attribute), Some(id)) = (tag_string(field(e, "type")), tag_string(field(e, "id"))) else {
+                continue;
+            };
+            out.push(Modifier {
+                attribute,
+                id,
+                amount: tag_number(field(e, "amount")).unwrap_or(0.0),
+                operation: tag_string(field(e, "operation")).unwrap_or_else(|| "add_value".into()),
+                slot: tag_string(field(e, "slot_name")).unwrap_or_else(|| "any".into()),
+                stackable: tag_bool(field(e, "is_stackable"), false),
+                validation: tag_bool(field(e, "used_in_slot_validation"), false),
+            });
+        }
+    }
+    (out, tag_bool(field(c, "show_in_tooltip"), true))
+}
+
+/// Whether a modifier is a slot's size (`SlotAttribute`, `accessories:<slot>`).
+pub fn is_slot_attribute(attribute: &str) -> bool {
+    attribute.starts_with("accessories:")
+}
+
+/// `AccessoryRegistry.getAccessory(..).maxStackSize`: how many of a stack one
+/// accessory slot holds (`accessories:stack_settings`; one without it).
+pub fn max_in_slot(stack: &ItemStack, items: &crate::items::Items) -> u32 {
+    let max = items.get(&stack.item).map_or(64, |i| i.max_stack).max(1);
+    match component(stack, items, "accessories:stack_settings") {
+        Some(Tag::Compound(c)) => {
+            if tag_bool(field(c, "use_stack_size"), false) {
+                max
+            } else {
+                (tag_number(field(c, "size_override")).unwrap_or(1.0) as u32).clamp(1, max)
+            }
+        }
+        _ => 1,
     }
 }
 

@@ -13,13 +13,15 @@ Based on Accessories 1.4.3-beta (Minecraft 1.21.11).
 >
 > Ported by DispatchedToHeaven, with DeportedToHell.
 
-## ✨Features (0.1.0, in progress)
+## ✨Features (0.2.0)
 
-> Tested in the game (Horizon Nightly fdc87ae, single player): the screen from the button and from H (H closes it),
-> banners into the hat and cape slots by dragging and by a right click, one item a slot, shift-clicked armour into its
-> slot and onto the player, the cosmetic switch, the render toggle hiding the hat's banner, drops on death and keeping
-> them with keepInventory, the banner worn on the head in third person, the row in Options > Mods. Not tested yet:
-> other players over LAN, data packs adding slots, scrolling a grid of more than 7 rows.
+> Tested in the game (Horizon Nightly fdc87ae, single player): the screen from the button and from H, equipping by
+> dragging, shift-click and right click, armour in the screen, the cosmetic switch, render toggles, death drops and
+> keepInventory, banners on the head, the settings panel (columns, unused slots, double view, widget position, dark
+> theme, scrolling), the item tooltips, `/accessories slot modifier` and `slot get`, `/accessories components` (slot
+> validation and attributes on the held item), attribute modifiers while worn and taken off, a totem saving from death
+> in the charm slot. Not tested yet: other players over LAN, data packs adding slots, the paginated grid's pages
+> (it pages past 21 slots).
 
 **Accessory slots from data.** Slot types, slot groups and entity bindings are read from
 `data/<namespace>/accessories/{slot,group,entity}/*.json`, the same files and formats as the original: the 12 built-in
@@ -27,37 +29,64 @@ slots (hat, face, necklace, cape, back, hand ×2, ring ×2, wrist, belt, anklet,
 player's binding. A data pack can add slots, change their amount, order, icon, validators and drop rule. Item tags
 `accessories:<slot>` and `accessories:any` make items fit a slot.
 
-**The accessories screen.** Opened with **H** or the small button in the inventory (also creative's inventory tab):
-the player in the middle with their armour and cosmetic armour, the accessories grid on the left (2 columns, scrolled
-past 7 rows), the group filter on the right, the inventory and off hand below. The cosmetic button switches the grid
-to the cosmetic slots; each slot has its render toggle. Light theme; slot icons, tooltips and the original's textures.
-H on the screen closes it, the back button returns to the inventory.
+**Item components.** Items carry Accessories' components from content mods' data or from `/accessories components`:
+`accessories:slot_validation` (valid and invalid slots), `accessories:attributes` (attribute modifiers while worn,
+stackable or not, slot sizes `accessories:<slot>`, slot validation), `accessories:stack_settings` (how many go in a
+slot), `accessories:nested_accessories` (accessories inside an accessory, worn too) and `accessories:mob_effects`
+(constant effects while worn, delayed ones again and again).
+
+**The accessories screen.** Opened with **H** or the small button in the inventory (creative's inventory tab too): the
+player with their armour and cosmetic armour, the accessories grid (scrolled past 7 rows, or paged), the group filter,
+the inventory and off hand. The cosmetic button switches the grid to the cosmetic slots or shows them beside; each slot
+has its render toggle; carrying a stack darkens the slots that won't take it. The settings panel (the wrench) sets the
+columns, scrollable or paginated, unused slots, the cosmetics' viewing mode, one or two views of the player, the grid's
+and the filter's sides, centring, the light or dark theme, and the "Equipped in" line. H closes the screen, the back
+button returns to the inventory.
+
+**Item tooltips.** An item that fits says where (`Slot: Ring`, `Slots: Any except …`) and what it gives when worn
+(`When Equipped:` or for each slot).
 
 **Equipping.** Drag items in, shift-click from the inventory (armour to its slot, a shield to the off hand, an
-accessory to its first free slot), or right-click an accessory in the air (without crouching), which takes the first
-free slot that fits or swaps with a worn one. The equip sound plays.
+accessory to its first free slot), or right-click an accessory in the air (`equipControl`: without crouching, with it,
+or never), which takes the first free slot that fits or swaps with a worn one. The equip sound plays.
 
 **Rules as in the original.** Banners go into the hat and cape slots; gliders and totems only where the config allows
-it (off by default). A curse of binding keeps an accessory on a survival player. On death each slot's drop rule
-applies: keepInventory keeps them, the curse of vanishing destroys, the rest drop.
+it (off by default; the totem validator answers as shipped). A curse of binding keeps an accessory on a survival
+player. On death each slot's drop rule applies: keepInventory keeps them, the curse of vanishing destroys, the rest
+drop. A totem in an accessory slot saves from death as one in the hand does.
 
-**On the player.** Accessories (or their cosmetics) are drawn on every player's model where the original's default
-renderer puts them (on the head, face, back, neck, belt, arms, wrists, hands, ankles and feet); the charm slot has no
-default place, as in the original. A banner in the hat slot is worn on the head as a vanilla banner on the head is;
-banners and gliders elsewhere are not drawn, as in the original. Every player sees the others' accessories.
+**On the player.** Accessories (or their cosmetics, `showCosmeticAccessories`) are drawn on every player's model where
+the original's default renderer puts them; `disabledDefaultRenders` turns that off per slot. A banner in the hat slot
+is worn on the head as a vanilla banner is; banners and gliders elsewhere are not drawn, as in the original.
 
-**Saved with the player** (their `accessories:inventory_holder` data) and given back when a slot shrinks or goes away.
+**Commands** (level 2): `/accessories feature (enable|disable) (banner|glider|totem)`, `edit [player]` (another
+player's accessories too), `dump (slots|groups|entity_bindings)`, `slot get <player> <slot> [scale]`,
+`slot modifier clear <player> [slot]`, `slot modifier <player> <slot> <id> (add <amount> <operation> | remove | get)`,
+`enchant <player> <enchantment> [level]`, `components slot (add|remove) (valid|invalid) <slot>`,
+`components stack-sizing (useStackSize <bool> | <size>)`, `components attribute <attribute> <id> (add <amount>
+<operation> <slot> <stackable> [validation] | remove | get)`, `components nest <item>`,
+`item replace entity <player> <slot>/<index> with <item> [count]`.
 
-## Not done yet (compared with the original)
+**Config:** `config/accessories.json5`, owo-config's file of the original (content, client and screen options, slot
+amount modifiers).
 
-- Attribute modifiers, mob effects, enchantments and nesting from Accessories' own item components
-  (`accessories:attributes`, `stack_settings`, `nested_accessories`, `mob_effects`).
-- Gliding with an elytra, saving from death with a totem, piglin/freeze/enderman protection from accessory slots.
-- The settings panel (columns, paginated grid, side by side cosmetics, double entity view, positions, dark theme), the
-  crafting grid on the screen, slot darkening, equip reasoning tooltips, the item tooltip's "Slot:" lines.
-- Cosmetic armour shown instead of the worn armour; banners and gliders through the vanilla layers; first-person arms.
-- The `/accessories` commands, the config file and screen, the `accessories.keepAccessoryInventory` game rule,
-  dispensers, other entities' accessories (armour stands, horses), the advancement criteria.
+**Saved with the player** (their `accessories:inventory_holder` data, slot size modifiers included) and given back
+when a slot shrinks or goes away.
+
+## Not done (compared with the original)
+
+These need hooks Horizon doesn't have at this Nightly:
+
+- Cosmetic armour drawn instead of the worn armour (the armour layers' items can't be swapped from a mod).
+- Gliding with an elytra in an accessory slot (Horizon's gliding asks the chest slot only).
+- The `accessories.keepAccessoryInventory` game rule (mods can't add game rules).
+- Piglin, freezing and enderman protection, and enchantments of worn accessories acting on the wearer.
+- The accessories drawn on the screen's player view, and its second view turned around (the view always faces the
+  pointer).
+
+Not done yet: the crafting grid on the screen, the equip reasoning lines in slot tooltips, the config screen in Mod Menu
+(the file and the settings panel stand in), dispensers, other entities' accessories (armour stands, horses), the
+advancement criteria, data-driven renderers, and `components effect` and the other `item` subcommands.
 
 ## 📦Installation
 
@@ -74,8 +103,8 @@ horizon-native.json                Native bundle manifest
 content/                           The content mod (horizon-mod.toml, assets/, data/), from tools/content.mjs
 mixins/accessories_native/
   horizon-mixin.toml               Modules and injections
-  glue.rs                          Data, holder, server tick, screen, renderer, Mod Menu
-  menu.rs                          The accessories menu on the server and the slots' rules
+  glue.rs                          Data, config, holder, server tick, commands, screen, renderer, Mod Menu
+  menu.rs                          The accessories menu on the server, the slots' rules and the item components
   screen_relayout.rs               The open screen laid out again
   h_*.rs                           Injection helpers
   data/icon.png                    The original's icon
