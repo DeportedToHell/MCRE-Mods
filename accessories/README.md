@@ -13,7 +13,7 @@
 
 
 ## 
-<img src="../.github/assets/headers/planks/state.svg" alt="Current State">
+<img src="../.github/assets/headers/planks/state.svg" alt="Current state">
 
 0.2.1. Unplayable.
 
