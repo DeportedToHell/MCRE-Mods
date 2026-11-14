@@ -373,7 +373,7 @@ fn toggle_worn_upgrade(game: &mut Game<'_>, uuid: u128, i: usize) {
 /// The native mod's id, for its key binding.
 const MOD_ID: &str = "travelersbackpack_native";
 /// The port's version (`horizon-native.json`).
-const VERSION: &str = "1.0.0";
+const VERSION: &str = "1.0.1";
 
 /// Accessories is installed: its item components are registered (both sides know them).
 fn accessories_present() -> bool {
@@ -714,7 +714,7 @@ fn unpack(game: &mut Game<'_>, dimension: &str, pos: [i32; 3]) {
     drops.push(backpack);
     let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + 1.5, f64::from(pos[2]) + 0.5];
     for stack in drops {
-        game.spawn_item(stack, at, super::dispenser::new_item_motion(), 10);
+        game.spawn_item_own(stack, at, 10);
     }
 }
 
@@ -793,7 +793,7 @@ fn place_on_death(game: &mut Game<'_>, uuid: u128, dimension: &str, at: [i32; 3]
         }
         None => {
             let at = at.map(|c| f64::from(c) + 0.5);
-            game.spawn_item(stack, at, super::dispenser::new_item_motion(), 40);
+            game.spawn_item_own(stack, at, 40);
         }
     }
 }
@@ -988,7 +988,7 @@ fn act(game: &mut Game<'_>, uuid: u128, action: Action, dimension: &str) {
             });
             if slot.is_none() {
                 let at = pos.map(|c| f64::from(c) + 0.5);
-                game.spawn_item(stack, at, super::dispenser::new_item_motion(), 10);
+                game.spawn_item_own(stack, at, 10);
             }
         }
     }
@@ -1191,7 +1191,7 @@ pub(super) fn destroy_block(game: &mut Game<'_>, pos: [i32; 3]) {
         set_item_dye(&mut stack, dye);
         set_item_tier(game, &mut stack, tier);
         let at = pos.map(|c| f64::from(c) + 0.5);
-        game.spawn_item(stack, at, super::dispenser::new_item_motion(), 10);
+        game.spawn_item_own(stack, at, 10);
         return;
     }
     with(|s| s.broken.insert(pos, (block, items, tier, bag, (settings, dye))));
@@ -1778,7 +1778,7 @@ fn change_bag(game: &mut Game<'_>, uuid: u128, dimension: &str, pos: [i32; 3]) {
     set_block_tanks(game, dimension, pos, tanks);
     if let Some(old) = bag_block(old) {
         let at = [f64::from(pos[0]) + 0.5, f64::from(pos[1]) + 1.0, f64::from(pos[2]) + 0.5];
-        game.spawn_item(ItemStack::new(&old, 1), at, super::dispenser::new_item_motion(), 10);
+        game.spawn_item_own(ItemStack::new(&old, 1), at, 10);
     }
     advance(game, uuid, "change_sleeping_bag");
 }
@@ -7274,7 +7274,7 @@ fn shear(game: &mut Game<'_>, uuid: u128, dimension: &str, pos: [i32; 3]) {
     stack.item = STANDARD.into();
     refresh_look(&mut stack);
     let at = pos.map(|c| f64::from(c) + 0.5);
-    game.spawn_item(stack, at, super::dispenser::new_item_motion(), 10);
+    game.spawn_item_own(stack, at, 10);
     play_near(game, uuid, "minecraft:entity.sheep.shear", "player", Some(at), 1.0, 1.0);
     if !creative {
         let broke = game
@@ -7310,13 +7310,14 @@ fn throw_potion(game: &mut Game<'_>, uuid: u128, potion: ItemStack) {
     };
     let pitch = 0.4 / (game.world.random.next_float() * 0.4 + 0.8);
     play_near(game, uuid, sound, "neutral", Some(eye), 0.5, pitch);
-    let (yaw, look) = (game.yaw.to_radians(), game.pitch.to_radians());
-    let dir = [-yaw.sin() * look.cos(), -(game.pitch - 20.0).to_radians().sin(), yaw.cos() * look.cos()].map(f64::from);
-    let l = dir.iter().map(|c| c * c).sum::<f64>().sqrt().max(1e-9);
-    let power = 0.5;
-    let v = horizon_core::geometry::Vec3::new(dir[0] / l * power, dir[1] / l * power, dir[2] / l * power);
-    let owner = Some(game.player_display_text());
-    game.launch_thrown(potion, horizon_core::geometry::Vec3::new(eye[0], eye[1] - 0.1, eye[2]), v, owner);
+    // `Projectile.shootFromRotation(xRot, yRot, -20, 0.5, 1.0)` with what the
+    // thrower last moved, as the game throws one (game/potions.rs).
+    let velocity = game.known_player_movement();
+    let on_ground = game.player.as_ref().is_some_and(|p| p.ground.on_ground);
+    let mut shot = super::potions::thrown_projectile(potion, horizon_core::geometry::Vec3::new(eye[0], eye[1] - 0.1, eye[2]), true);
+    shot.shoot_from_rotation(game.pitch, game.yaw, -20.0, 0.5, 1.0, velocity, on_ground);
+    shot.guest = game.lan_acting;
+    game.add_projectile(shot);
 }
 
 // ---- special abilities (`BackpackAbilities`) ------------------------------------------------------
@@ -7555,7 +7556,7 @@ fn ability_tick(game: &mut Game<'_>, uuid: u128, at: [f64; 3], design: &str, set
                 settings.cooldown = cooldown_ticks(design).unwrap_or(0);
                 if !just_put_on {
                     play_near(game, uuid, "minecraft:entity.chicken.egg", "ambient", Some(at), 1.0, 1.0);
-                    game.spawn_item(ItemStack::new("minecraft:egg", 1), [at[0], at[1] + 0.5, at[2]], super::dispenser::new_item_motion(), 10);
+                    game.spawn_item_own(ItemStack::new("minecraft:egg", 1), [at[0], at[1] + 0.5, at[2]], 10);
                 }
             }
             true
@@ -8049,7 +8050,7 @@ fn melon_broken(game: &mut Game<'_>, pos: [i32; 3]) {
         let count = game.world.random.next_int_bound(3).unwrap_or(0) as u32;
         if count > 0 {
             let at = pos.map(|c| f64::from(c) + 0.5);
-            game.spawn_item(ItemStack::new("minecraft:melon_slice", count), at, super::dispenser::new_item_motion(), 10);
+            game.spawn_item_own(ItemStack::new("minecraft:melon_slice", count), at, 10);
         }
     }
 }
@@ -8175,7 +8176,7 @@ fn fill_tank(game: &mut Game<'_>, uuid: u128, side: usize) {
             Some(slot) => g.inventory[slot] = Some(full),
             None => {
                 let at = g.position;
-                game.spawn_item(full, at, super::dispenser::new_item_motion(), 10);
+                game.spawn_item_own(full, at, 10);
             }
         }
     }
@@ -9811,7 +9812,7 @@ fn run_command(game: &mut Game<'_>, own: u128, position: [f64; 3], command: &str
             set_block_tanks(game, &dimension, at, false);
             let spot = at.map(|c| f64::from(c) + 0.5);
             for stack in drops {
-                game.spawn_item(stack, spot, super::dispenser::new_item_motion(), 10);
+                game.spawn_item_own(stack, spot, 10);
             }
             say(game, format!("Dropping contents of backpack placed at {}, {}, {}", at[0], at[1], at[2]), true);
         }
@@ -9839,7 +9840,7 @@ fn run_command(game: &mut Game<'_>, own: u128, position: [f64; 3], command: &str
             let at = game.lan.as_ref().and_then(|h| h.hub.guests.iter().find(|g| g.uuid == uuid)).map(|g| g.position).unwrap_or(position);
             let feet = at.map(|c| c.floor());
             for stack in drops {
-                game.spawn_item(stack, [feet[0] + 0.5, feet[1] + 0.5, feet[2] + 0.5], super::dispenser::new_item_motion(), 10);
+                game.spawn_item_own(stack, [feet[0] + 0.5, feet[1] + 0.5, feet[2] + 0.5], 10);
             }
             say(game, format!("Dropping contents of {name} backpack at {}, {}, {}", feet[0], feet[1], feet[2]), true);
         }

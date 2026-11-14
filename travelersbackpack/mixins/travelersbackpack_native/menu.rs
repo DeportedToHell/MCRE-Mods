@@ -49,6 +49,8 @@ pub fn open(
         sent_data: Vec::new(),
         hidden,
         mod_type: None,
+        craft: None,
+        links: Vec::new(),
     });
     hub.send_menu_content(i, items);
     hub.set_native_store(conn, NativeStore::Input(0..input.min(size)));

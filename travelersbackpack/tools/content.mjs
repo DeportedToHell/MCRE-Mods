@@ -514,7 +514,7 @@ for (const category of readdirSync(join(generated, "advancement/recipes"))) {
 
 const manifest = `id = "travelersbackpack"
 name = "Traveler's Backpack"
-version = "0.1.0"
+version = "1.0.1"
 description = "Unique and upgradeable backpacks with customisation."
 authors = ["Tiviacz1337"]
 api = "0.2"
