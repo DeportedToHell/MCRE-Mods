@@ -68,8 +68,8 @@ pub(super) fn draw(game: &mut Game<'_>, batch: &mut HudBatch) -> bool {
     let board = &game.score.board;
     let objective = board.display_objective(sb::SLOT_LIST);
     let up = |id: u128| upside_down.contains(&id);
-    let horizon = game.horizon_players(players.iter().map(|p| p.uuid));
-    let marked = |id: u128| horizon.contains(&id);
+    // A hook's mark before a name (Horizon's: they play Horizon), as the game's own list.
+    let marked = horizon_hooks::engine::player_mark;
     let background = tab_list::row_background(true, f64::from(game.settings.text_background_opacity));
     let inputs = TabInputs {
         players: &players,
@@ -80,7 +80,7 @@ pub(super) fn draw(game: &mut Game<'_>, batch: &mut HudBatch) -> bool {
         gui_ticks: game.visual_ticks() as i64,
         background,
         upside_down: &up,
-        horizon: &marked,
+        mark: &marked,
     };
     let draws = game.tab_list.layout(&inputs, &game.gui.atlas.font);
 
@@ -90,7 +90,7 @@ pub(super) fn draw(game: &mut Game<'_>, batch: &mut HudBatch) -> bool {
         horizon_client::hud_layout::paint(batch, &game.gui.atlas, &draws);
         return true;
     }
-    let row_marked: Vec<bool> = ids.iter().map(|id| horizon.contains(id)).collect();
+    let row_marked: Vec<bool> = ids.iter().map(|id| marked(*id).is_some()).collect();
     let (draws, places) = place(&draws, background, batch.width as i32, &game.gui.atlas.font, &row_icons, &row_marked);
     horizon_client::hud_layout::paint(batch, &game.gui.atlas, &draws);
     for ((x, y), icon) in places.into_iter().zip(row_icons) {

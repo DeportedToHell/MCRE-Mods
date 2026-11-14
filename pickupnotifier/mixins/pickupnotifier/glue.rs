@@ -166,11 +166,11 @@ fn taken(game: &Game<'_>, item: i32, player: i32, amount: i32) {
         item_entry(game, &cfg, &t.stack, amount)
     } else if let Some(orb) = game.orbs.iter().find(|o| o.id == id) {
         // `addExperienceEntry`: its points, or the number of orbs.
-        if !cfg.include_experience || orb.value == 0 {
+        if !cfg.include_experience || orb.value <= 0 {
             return;
         }
         let amount = if cfg.experience_value {
-            orb.value
+            orb.value as u32
         } else {
             amount
         };

@@ -13,7 +13,7 @@ use std::sync::Mutex;
 
 pub const ID: &str = "zoomify";
 pub const NAME: &str = "Zoomify";
-pub const VERSION: &str = "1.1.1";
+pub const VERSION: &str = "1.1.2";
 pub const UNBOUND: &str = "key.keyboard.unknown";
 /// The mod's keys: name and default (the original's C and F6; scroll keys
 /// unbound).

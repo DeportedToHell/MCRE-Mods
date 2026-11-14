@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "id": "plasmovoice",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "game": "26.3",
-  "horizon": "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca",
+  "horizon": "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0",
   "mixins": "5a64af938ec86b00d53d16a408aabc0038fb3e57"
 }

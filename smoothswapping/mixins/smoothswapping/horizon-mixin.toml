@@ -1,13 +1,13 @@
 [mod]
 id = "smoothswapping"
-version = "1.1.2"
+version = "1.1.3"
 priority = 100
 
 # Built for this Nightly: besides the hook points it uses the inventory
 # screen's own drawing (its slots, a slot's item, the sort buttons' place)
 # and hides the Options screen under its config screen (`draw_options`).
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 [[module]]
 id = "runtime"
@@ -78,7 +78,7 @@ bindings = [
 # `HandledScreen.render` HEAD).
 [[injection]]
 id = "detect"
-target = "horizon_client::game::Game<'_>::draw_inventory_slots"
+target = "horizon_client::game::inventory_slots::Game<'_>::draw_inventory_slots"
 kind = "HEAD"
 helper = "detect.rs"
 bindings = [
@@ -88,7 +88,7 @@ bindings = [
 # A slot's item (the original's `DrawContext.drawItem` HEAD).
 [[injection]]
 id = "slot"
-target = "horizon_client::game::Game<'_>::draw_slot_item"
+target = "horizon_client::game::inventory_slots::Game<'_>::draw_slot_item"
 kind = "HEAD"
 cancellable = true
 helper = "slot.rs"
@@ -105,7 +105,7 @@ bindings = [
 # tooltips: where the screen draws its sort buttons.
 [[injection]]
 id = "draw"
-target = "horizon_client::game::tweaks::Game<'_>::draw_sort_buttons"
+target = "horizon_client::game::extras::sorting::Game<'_>::draw_sort_buttons"
 kind = "HEAD"
 helper = "draw.rs"
 bindings = [

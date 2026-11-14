@@ -30,7 +30,7 @@ use std::time::Instant;
 
 pub(super) const ID: &str = "emotecraft";
 pub(super) const NAME: &str = "Emotecraft";
-pub(super) const VERSION: &str = "1.0.1";
+pub(super) const VERSION: &str = "1.0.2";
 const UNBOUND: &str = "key.keyboard.unknown";
 
 /// The mod's keys in Options > Mods (`EmotecraftClientMod`'s key mappings).

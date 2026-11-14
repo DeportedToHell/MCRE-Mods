@@ -382,7 +382,7 @@ pub(super) fn off_hand_arm(game: &Game<'_>, partial: f32, out: &mut Vec<horizon_
     }
     // hand_geometry's own conditions: the hands drawn at all, the off hand
     // shown and empty.
-    if game.studio_replay.is_some()
+    if game.studio.flying()
         || !game.ui.hands_drawn(
             game.spectator(),
             game.sleeping.is_some(),

@@ -1,12 +1,12 @@
 [mod]
 id = "firstpersonmodel"
-version = "1.0.2"
+version = "1.0.3"
 priority = 100
 
 # Built for this Nightly: besides the hook points it draws the player's own
 # body in first person, inside the game's player and hand rendering.
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 # The settings, the toggle and the original's LogicHandler.
 [[module]]

@@ -1,12 +1,12 @@
 [mod]
 id = "zoomify"
-version = "1.1.1"
+version = "1.1.2"
 priority = 100
 
 # Built for this Nightly: besides the hook points it changes what the mouse
 # reads, the hand's field of view and the spyglass overlay, inside the game.
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 [[module]]
 id = "runtime"

@@ -1,13 +1,13 @@
 [mod]
 id = "particlerain"
-version = "1.0.1"
+version = "1.0.2"
 priority = 100
 
 # Built for this Nightly: besides its modules in the atlas (hud.rs), the particle engine
 # (particles.rs) and the sound cache (audio.rs), it hooks the atlas packing, the particle pass,
 # the client's particle tick, the game's weather columns and the options screen.
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 # ---- modules ----
 
@@ -149,7 +149,7 @@ bindings = [
 
 [[injection]]
 id = "columns"
-target = "horizon_client::game::Game<'_>::weather_geometry"
+target = "horizon_client::game::frame_geometry::Game<'_>::weather_geometry"
 kind = "HEAD"
 cancellable = true
 helper = "h_columns.rs"

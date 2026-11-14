@@ -1,8 +1,8 @@
-<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/modmenu/hero-phone.svg"><img src="../.github/releases/modmenu/hero.svg" alt="Mod Menu 1.1.2" width="640"></picture></p>
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/modmenu/hero-phone.svg"><img src="../.github/releases/modmenu/hero.svg" alt="Mod Menu 1.1.3" width="640"></picture></p>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/modmenu-1.1.2/modmenu-1.1.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/modmenu/download-phone.svg"><img src="../.github/releases/modmenu/download.svg" alt="Download modmenu-1.1.2.hnmod" width="500"></picture></a><br>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/modmenu-1.1.3/modmenu-1.1.3.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/modmenu/download-phone.svg"><img src="../.github/releases/modmenu/download.svg" alt="Download modmenu-1.1.3.hnmod" width="500"></picture></a><br>
 <a href="https://playhorizon.dev/mods/modmenu"><picture><source media="(max-width: 700px)" srcset="../.github/releases/modmenu/catalog-phone.svg"><img src="../.github/releases/modmenu/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
-<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/modmenu-1.1.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/modmenu/github-phone.svg"><img src="../.github/releases/modmenu/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/modmenu-1.1.3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/modmenu/github-phone.svg"><img src="../.github/releases/modmenu/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
 
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 

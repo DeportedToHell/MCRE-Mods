@@ -14,7 +14,7 @@
 /// The mod's id (its settings folder), name, version and command.
 pub const ID: &str = "pickupnotifier";
 pub const NAME: &str = "Pick Up Notifier";
-pub const VERSION: &str = "1.1.0";
+pub const VERSION: &str = "1.1.1";
 pub const COMMAND: &str = "pickupnotifier";
 pub const DESCRIPTION: &str = "Items, experience and arrows you pick up, listed in a corner of the screen. /pickupnotifier opens the settings.";
 

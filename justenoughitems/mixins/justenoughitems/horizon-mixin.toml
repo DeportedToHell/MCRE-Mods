@@ -1,13 +1,13 @@
 [mod]
 id = "justenoughitems"
-version = "1.1.3"
+version = "1.1.4"
 priority = 100
 
 # Built for this Nightly: besides the hook points it draws in place of the
 # game's item panel (`draw_mod_browser`) and uses the game's own inventory,
 # recipe and tooltip code.
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 [[module]]
 id = "runtime"

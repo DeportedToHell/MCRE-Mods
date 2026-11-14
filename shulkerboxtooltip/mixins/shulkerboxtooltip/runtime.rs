@@ -8,7 +8,7 @@
 pub const ID: &str = "shulkerboxtooltip";
 /// `fabric.mod.json`'s name.
 pub const NAME: &str = "Shulker Box Tooltip";
-pub const VERSION: &str = "1.0.1";
+pub const VERSION: &str = "1.0.2";
 /// The file ShulkerBoxTooltip keeps its configuration in, in `config/`.
 pub const CONFIG_FILE: &str = "shulkerboxtooltip.json5";
 /// A key that is not bound (`InputConstants.UNKNOWN`).

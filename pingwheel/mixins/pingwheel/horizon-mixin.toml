@@ -1,6 +1,6 @@
 [mod]
 id = "pingwheel"
-version = "1.0.1"
+version = "1.0.2"
 priority = 100
 
 # Nightly fdc87ae (nightly-source/2026-11-08-fdc87ae). The server half hears guests' plugin
@@ -8,7 +8,7 @@ priority = 100
 # `native_console_line`, which aren't in the hook catalog yet, and modules sit beside the sound
 # cache (audio.rs) and the language (lang.rs), so the mod is pinned to this commit.
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 # What doesn't touch the game: the packets on Java's byte layout, Java's String.hashCode, the
 # server's relay and rate limiter, the config files in Gson's layout (core/, `pingwheel_core`,

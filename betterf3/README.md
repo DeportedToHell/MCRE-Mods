@@ -1,8 +1,8 @@
-<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/hero-phone.svg"><img src="../.github/releases/betterf3/hero.svg" alt="BetterF3 1.0.2" width="640"></picture></p>
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/hero-phone.svg"><img src="../.github/releases/betterf3/hero.svg" alt="BetterF3 1.0.3" width="640"></picture></p>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/betterf3-1.0.2/betterf3-1.0.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/download-phone.svg"><img src="../.github/releases/betterf3/download.svg" alt="Download betterf3-1.0.2.hnmod" width="500"></picture></a><br>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/betterf3-1.0.3/betterf3-1.0.3.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/download-phone.svg"><img src="../.github/releases/betterf3/download.svg" alt="Download betterf3-1.0.3.hnmod" width="500"></picture></a><br>
 <a href="https://playhorizon.dev/mods/betterf3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/catalog-phone.svg"><img src="../.github/releases/betterf3/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
-<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/betterf3-1.0.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/github-phone.svg"><img src="../.github/releases/betterf3/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/betterf3-1.0.3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/betterf3/github-phone.svg"><img src="../.github/releases/betterf3/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
 
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
@@ -105,7 +105,7 @@ tools/check.sh                 stages the mod on the pinned Horizon source and c
 tools/package.mjs              makes the .hnmod
 ```
 
-Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` and horizon-mixins
+Built for Horizon `9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0` and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
 
 </details>

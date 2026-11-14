@@ -1,8 +1,8 @@
-<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/hero-phone.svg"><img src="../.github/releases/zoomify/hero.svg" alt="Zoomify 1.1.1" width="640"></picture></p>
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/hero-phone.svg"><img src="../.github/releases/zoomify/hero.svg" alt="Zoomify 1.1.2" width="640"></picture></p>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/zoomify-1.1.1/zoomify-1.1.1.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/download-phone.svg"><img src="../.github/releases/zoomify/download.svg" alt="Download zoomify-1.1.1.hnmod" width="500"></picture></a><br>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/zoomify-1.1.2/zoomify-1.1.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/download-phone.svg"><img src="../.github/releases/zoomify/download.svg" alt="Download zoomify-1.1.2.hnmod" width="500"></picture></a><br>
 <a href="https://playhorizon.dev/mods/zoomify"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/catalog-phone.svg"><img src="../.github/releases/zoomify/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
-<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/zoomify-1.1.1"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/github-phone.svg"><img src="../.github/releases/zoomify/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/zoomify-1.1.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/zoomify/github-phone.svg"><img src="../.github/releases/zoomify/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
 
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
@@ -72,7 +72,7 @@ tools/                         check.sh (build into Horizon), package.mjs (make 
 
 Tests: `rustc --edition 2024 --test mixins/zoomify/runtime.rs` (Rust 1.99.1).
 
-Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
+Built for Horizon `9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0` (Nightly 2026-11-08) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
 
 </details>

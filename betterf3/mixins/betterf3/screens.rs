@@ -292,10 +292,14 @@ fn leave(game: &mut Game<'_>, h: Host, all: bool) {
         }
         Host::Page { row, modmenu: false } => {
             if all {
-                if game.title.is_none() {
-                    game.options_to_game = true;
-                }
+                // Escape goes all the way back to the game (Horizon no longer has
+                // `options_to_game`: closing Options from a world opens the pause menu).
+                let to_game = game.title.is_none();
                 let _ = game.handle_option_events(vec![horizon_client::options_ui::Event::Close]);
+                if to_game && game.screen == Screen::Paused {
+                    game.screen = Screen::Playing;
+                    game.capture(true);
+                }
             } else {
                 game.native_settings_refresh(row);
             }

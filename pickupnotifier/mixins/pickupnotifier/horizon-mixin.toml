@@ -1,13 +1,13 @@
 [mod]
 id = "pickupnotifier"
-version = "1.1.0"
+version = "1.1.1"
 priority = 100
 
 # Nightly fdc87ae (nightly-source/2026-11-08-fdc87ae). The glue reads game
 # fields (the dropped items, orbs, arrows, the player's inventory), so the mod
 # is pinned to this commit rather than to a hooks version.
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 # The logic and its tests: `crate::game::pickupnotifier`.
 [[module]]
