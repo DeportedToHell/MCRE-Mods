@@ -2,7 +2,7 @@
   <img src="../.github/assets/stickers/accessories.png" height="64" alt="">
 </h1>
 
-**Version 0.2.1** — the work is still ongoing, but the mod is already fully playable. Remaining work is listed below.
+**Version 0.2.1** — the work is still ongoing. Slots, the screen and equipping already work, but few items can be worn without other mods. Remaining work is listed below.
 
 **!!! Two files are needed: the content mod `accessories.hmod` and the native mod `accessories_native.hnmod`. One alone does not work.**
 
