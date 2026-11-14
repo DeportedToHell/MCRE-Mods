@@ -39,13 +39,9 @@ Differences: Horizon keeps an experience orb as a value and a count, so the port
 
 ## Changelog:
 
-### 1.0.2
+### 1.0.1-1.0.2
 
-- The port author is DispatchedToHeaven (the new nickname of Kastromovskiy).
-
-### 1.0.1
-
-- Kastromovskiy is credited as the port's only author.
+- Nothing special
 
 ### 1.0.0
 
