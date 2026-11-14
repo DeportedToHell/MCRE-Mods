@@ -15,7 +15,7 @@
 
 ## Current State
 
-Fully playable.
+1.0.2. Fully playable.
 
 
 
