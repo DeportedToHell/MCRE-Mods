@@ -12,6 +12,13 @@
 >
 > Special thanks to [Kreezxil](https://gitlab.com/kreezxil) and all contributors for the original mod.
 
+
+## Current State
+
+Fully playable.
+
+
+
 ## ✨Features
 
 **Sound control.** Silences Wither spawn and death, wandering trader and llama ambient sounds, Ender Dragon death and lightning thunder. Each category has its own toggle. Custom sound events can also be muted individually through the config.
