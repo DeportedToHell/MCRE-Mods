@@ -3,8 +3,6 @@
   <img src="../.github/assets/stickers/clumps.png" height="64" alt="">
 </h1>
 
-Based on Clumps 26.3.
-
 
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
 
