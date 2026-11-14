@@ -10,7 +10,7 @@ set -euo pipefail
 
 here=$(cd "$(dirname "$0")/.." && pwd)
 launcher="$APPDATA/horizon-launcher"
-rev=fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca
+rev=9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0
 source="$launcher/native/source/$rev"
 mixins="$launcher/native/tools/5a64af938ec8/bin/horizon-mixins.exe"
 rust="$launcher/rust/1.99.1-x86_64-pc-windows-gnu"

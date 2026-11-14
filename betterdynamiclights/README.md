@@ -1,8 +1,8 @@
-<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/hero-phone.svg"><img src="../.github/releases/dynamiclights/hero.svg" alt="Better Dynamic Lights 1.0.3" width="640"></picture></p>
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/hero-phone.svg"><img src="../.github/releases/dynamiclights/hero.svg" alt="Better Dynamic Lights 1.0.4" width="640"></picture></p>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/dynamiclights-1.0.3/dynamiclights-1.0.3.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/download-phone.svg"><img src="../.github/releases/dynamiclights/download.svg" alt="Download dynamiclights-1.0.3.hnmod" width="500"></picture></a><br>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/dynamiclights-1.0.4/dynamiclights-1.0.4.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/download-phone.svg"><img src="../.github/releases/dynamiclights/download.svg" alt="Download dynamiclights-1.0.4.hnmod" width="500"></picture></a><br>
 <a href="https://playhorizon.dev/mods/dynamiclights"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/catalog-phone.svg"><img src="../.github/releases/dynamiclights/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
-<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/dynamiclights-1.0.3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/github-phone.svg"><img src="../.github/releases/dynamiclights/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/dynamiclights-1.0.4"><picture><source media="(max-width: 700px)" srcset="../.github/releases/dynamiclights/github-phone.svg"><img src="../.github/releases/dynamiclights/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
 
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
@@ -115,7 +115,7 @@ The `.hnmod` file is a zip of `horizon-native.json` and `mixins/`.
 
 Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
-Built for Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` (Nightly 2026-11-08) and horizon-mixins
+Built for Horizon `9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0` (Nightly 2026-11-13) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
 
 </details>

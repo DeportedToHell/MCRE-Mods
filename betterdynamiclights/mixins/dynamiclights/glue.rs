@@ -241,6 +241,8 @@ fn collect(game: &Game<'_>, s: &dl::Settings, alpha: f64, push: &mut impl FnMut(
         let (kind, lift) = match &p.kind {
             ProjectileKind::LargeFireball { .. } => (Some(dl::Glow::LargeFireball), 0.5),
             ProjectileKind::SmallFireball => (Some(dl::Glow::SmallFireball), 0.15),
+            // The dragon's fireballs are level projectiles since Nightly 2026-11-13.
+            ProjectileKind::DragonFireball => (Some(dl::Glow::DragonFireball), 0.5),
             ProjectileKind::WitherSkull { .. } => (Some(dl::Glow::WitherSkull), 0.15),
             ProjectileKind::ShulkerBullet { .. } => (Some(dl::Glow::ShulkerBullet), 0.15),
             ProjectileKind::Arrow { .. } if p.is_spectral_arrow() => (Some(dl::Glow::SpectralArrow), 0.25),
@@ -250,11 +252,6 @@ fn collect(game: &Game<'_>, s: &dl::Settings, alpha: f64, push: &mut impl FnMut(
         let on_fire = p.fire_ticks > 0 || p.arrow.as_ref().is_some_and(|a| a.on_fire());
         let own = kind.map_or(0, |g| glow(g, at));
         push(Source { at, level: own.max(fire(on_fire)) });
-    }
-    for f in game.dragon_fireballs.iter() {
-        let c = f.previous.lerp(f.position, alpha);
-        let at = DVec3::new(c.x, c.y + 0.5, c.z);
-        push(Source { at, level: glow(dl::Glow::DragonFireball, at) });
     }
     for r in game.rockets.iter() {
         let c = r.previous.lerp(r.position, alpha);
