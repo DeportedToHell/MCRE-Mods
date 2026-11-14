@@ -12,7 +12,7 @@
 > Special thanks to [Kreezxil](https://gitlab.com/kreezxil) and all contributors for the original mod.
 
 
-## 
+
 <img src="../.github/assets/headers/button/state.svg" alt="Current State">
 
 1.0.3. Fully playable.
