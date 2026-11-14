@@ -1,7 +1,5 @@
 
-  <img src="../.github/assets/stickers/clumps.gif" height="64" alt=""><img src="../.github/assets/stickers/clumps.png" height="64" alt="">
-
-  
+  <img src="../.github/assets/stickers/clumps.gif" height="64" alt=""> <img src="../.github/assets/stickers/clumps.png" height="64" alt="">
 
 
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
@@ -15,7 +13,7 @@
 
 ## Current State
 
-iforgot version. Fully playable.
+1.0.2. Fully playable.
 
 
 ## ✨Features
@@ -28,6 +26,32 @@ iforgot version. Fully playable.
 
 **Server-side.** Works wherever the world runs: singleplayer, hosted LAN worlds and servers with the mod installed. On other servers, the server determines the behaviour. Changes made in Options → Mods take effect when the world is loaded again.
 
+
+## 🚧Remaining work
+
+Not implemented compared to the original:
+
+- **API events.** Clumps' `ValueEvent` and `RepairEvent` for other mods have no equivalent in Horizon yet.
+- **Pickup delay.** The original lets a player collect an orb every tick. Horizon keeps the vanilla two-tick delay and gives mods no way to change it. In practice, nearby orbs usually merge before reaching the player.
+
+Differences: Horizon keeps an experience orb as a value and a count, so the port tracks the merged orb's total XP instead of each orb's own value. The result is the same, although Mending may pick a different item to repair.
+
+
+## Changelog:
+
+### 1.0.2
+
+- The port author is DispatchedToHeaven (the new nickname of Kastromovskiy).
+
+### 1.0.1
+
+- Kastromovskiy is credited as the port's only author.
+
+### 1.0.0
+
+- First release: merging orbs, picking up the whole orb, Mending, Mod Menu info.
+
+
 ## 📦Installation
 
 Find **Clumps** in the launcher's Mods section, select Install, then run **Native build → Build**.
@@ -36,23 +60,16 @@ For manual installation, place `clumps-<version>.hnmod` in `<game folder>/horizo
 
 > Native mods are compiled into the game and are not sandboxed. Only build code you trust.
 
-## 🔧Differences from the Java mod
-
-Horizon represents experience orbs using a value and a count, so the port tracks their combined XP rather than preserving the individual values of merged orbs. The result is effectively the same, although Mending may select a slightly different item to repair.
-
-The original Clumps removes the player's pickup delay, allowing an orb to be collected every tick. Horizon currently retains the vanilla two-tick delay and provides no way for mods to change it. In practice, nearby orbs usually merge before reaching the player.
-
-Clumps' API events (`ValueEvent`, `RepairEvent`) have no equivalent in Horizon yet.
 
 ## 🗂️Source layout
 
-```text id="clumps"
+```text
 horizon-native.json              Native bundle manifest
 mixins/clumps/
   horizon-mixin.toml             Modules and injections
   runtime.rs                     Names and XP calculations
   glue.rs                        Merging, pickup and Mod Menu integration
-  h_*.rs                          Injection helpers
+  h_*.rs                         Injection helpers
   data/icon.png                  Original Clumps icon
 tools/
   check.sh                       Checks and builds against pinned Horizon source
@@ -61,6 +78,7 @@ Cargo.toml                       Rust project and tests
 ```
 
 Tests: `cargo test` (Rust 1.99.1, edition 2024).
+
 
 ## ⚖️License
 
