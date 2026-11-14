@@ -13,7 +13,7 @@
 
 
 ## 
-<img src="../.github/assets/headers/grass/state.svg" alt="Current State">
+<img src="../.github/assets/headers/grass/state.svg" alt="Current state">
 
 1.0.0. Fully playable.
 
