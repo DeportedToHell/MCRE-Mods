@@ -2,7 +2,8 @@
   <img src="../.github/assets/stickers/bwncr.png" height="72" alt=""> <img src="../.github/assets/stickers/bwncrn.png" height="50" alt="">
 
 
-## <img src="../.github/assets/headers/button/port.svg" alt="This is an independent port of the original project.">
+## 
+<img src="../.github/assets/headers/button/port.svg" alt="This is an independent port of the original project.">
 
 > It is not affiliated with, endorsed by, or officially associated with the original authors.
 >
@@ -11,12 +12,14 @@
 > Special thanks to [Kreezxil](https://gitlab.com/kreezxil) and all contributors for the original mod.
 
 
-## <img src="../.github/assets/headers/button/state.svg" alt="Current State">
+## 
+<img src="../.github/assets/headers/button/state.svg" alt="Current State">
 
 1.0.3. Fully playable.
 
 
-## <img src="../.github/assets/headers/button/features.svg" alt="Features">
+## 
+<img src="../.github/assets/headers/button/features.svg" alt="Features">
 
 **Quieter world.** Turns off the loud sounds: the Wither spawning and dying, the Ender Dragon dying, thunder, wandering traders and llamas. Each one has its own toggle, and you can mute any other sound by its ID.
 
@@ -26,7 +29,8 @@
 
 **Client-side.** Only changes what you hear, on any server.
 
-## <img src="../.github/assets/headers/button/changelog.svg" alt="Changelog">
+## 
+<img src="../.github/assets/headers/button/changelog.svg" alt="Changelog">
 
 ### 1.0.1-1.0.3
 
@@ -37,7 +41,8 @@
 - First release: muted sounds, custom sound list, `/bwncr listen`, debug mode, config screen.
 
 
-## <img src="../.github/assets/headers/button/installation.svg" alt="Installation">
+## 
+<img src="../.github/assets/headers/button/installation.svg" alt="Installation">
 
 Find **Bad Wither No Cookie - Reloaded** in the launcher's Mods section, select Install, then run **Native build → Build**.
 
@@ -46,7 +51,8 @@ For manual installation, place `bwncr-<version>.hnmod` in `<game folder>/horizon
 > Native mods are compiled into the game and are not sandboxed. Only build code you trust.
 
 
-## <img src="../.github/assets/headers/button/source.svg" alt="Source layout">
+## 
+<img src="../.github/assets/headers/button/source.svg" alt="Source layout">
 
 ```text
 horizon-native.json              Native bundle manifest
@@ -69,7 +75,8 @@ Cargo.toml                       Rust project and tests
 Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
 
-## <img src="../.github/assets/headers/button/license.svg" alt="License">
+## 
+<img src="../.github/assets/headers/button/license.svg" alt="License">
 
 The original project is licensed under **MIT**.
 

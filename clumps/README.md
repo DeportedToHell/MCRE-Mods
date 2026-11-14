@@ -2,7 +2,8 @@
   <img src="../.github/assets/stickers/clumps.gif" height="64" alt=""> <img src="../.github/assets/stickers/clumps.png" height="64" alt="">
 
 
-## <img src="../.github/assets/headers/inventory/port.svg" alt="This is an independent port of the original project.">
+## 
+<img src="../.github/assets/headers/inventory/port.svg" alt="This is an independent port of the original project.">
 
 > It is not affiliated with, endorsed by, or officially associated with the original author, Jaredlll08.
 >
@@ -11,12 +12,14 @@
 > Special thanks to [Jaredlll08](https://github.com/jaredlll08) for creating the original mod.
 
 
-## <img src="../.github/assets/headers/inventory/state.svg" alt="Current State">
+## 
+<img src="../.github/assets/headers/inventory/state.svg" alt="Current State">
 
 1.0.2. Fully playable.
 
 
-## <img src="../.github/assets/headers/inventory/features.svg" alt="Features">
+## 
+<img src="../.github/assets/headers/inventory/features.svg" alt="Features">
 
 **Experience orbs.** Nearby orbs merge into a single orb containing their combined XP. New XP drops also merge into existing nearby orbs, reducing entity count and lag.
 
@@ -27,7 +30,8 @@
 **Server-side.** Works wherever the world runs: singleplayer, hosted LAN worlds and servers with the mod installed. On other servers, the server determines the behaviour. Changes made in Options → Mods take effect when the world is loaded again.
 
 
-## <img src="../.github/assets/headers/inventory/remaining.svg" alt="Remaining work">
+## 
+<img src="../.github/assets/headers/inventory/remaining.svg" alt="Remaining work">
 
 Not implemented compared to the original:
 
@@ -37,7 +41,8 @@ Not implemented compared to the original:
 Differences: Horizon keeps an experience orb as a value and a count, so the port tracks the merged orb's total XP instead of each orb's own value. The result is the same, although Mending may pick a different item to repair.
 
 
-## <img src="../.github/assets/headers/inventory/changelog.svg" alt="Changelog">
+## 
+<img src="../.github/assets/headers/inventory/changelog.svg" alt="Changelog">
 
 ### 1.0.1-1.0.2
 
@@ -48,7 +53,8 @@ Differences: Horizon keeps an experience orb as a value and a count, so the port
 - First release: merging orbs, picking up the whole orb, Mending, Mod Menu info.
 
 
-## <img src="../.github/assets/headers/inventory/installation.svg" alt="Installation">
+## 
+<img src="../.github/assets/headers/inventory/installation.svg" alt="Installation">
 
 Find **Clumps** in the launcher's Mods section, select Install, then run **Native build → Build**.
 
@@ -57,7 +63,8 @@ For manual installation, place `clumps-<version>.hnmod` in `<game folder>/horizo
 > Native mods are compiled into the game and are not sandboxed. Only build code you trust.
 
 
-## <img src="../.github/assets/headers/inventory/source.svg" alt="Source layout">
+## 
+<img src="../.github/assets/headers/inventory/source.svg" alt="Source layout">
 
 ```text
 horizon-native.json              Native bundle manifest
@@ -76,7 +83,8 @@ Cargo.toml                       Rust project and tests
 Tests: `cargo test` (Rust 1.99.1, edition 2024).
 
 
-## <img src="../.github/assets/headers/inventory/license.svg" alt="License">
+## 
+<img src="../.github/assets/headers/inventory/license.svg" alt="License">
 
 Licensed under **MIT**, same as the original project.
 
