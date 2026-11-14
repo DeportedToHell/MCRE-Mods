@@ -11,6 +11,15 @@ Thanks to TeamCoFH for the original idea (CoFH Core, Minecraft 1.6).
 The original's assets (All Rights Reserved) are not used. The experience orb
 and tooltip sprites are drawn from the player's own Minecraft resources.
 
+The original's client takes pickups from ClientboundTakeItemEntityPacket, and
+its server half sends ClientboundTakeItemMessage (and on NeoForge
+ClientboundTakeItemStackMessage). Horizon's server can announce a pickup of an
+entity it never sent the client (one that comes and goes within a tick: the
+experience a furnace's output gives, an item that drops at the player's feet),
+so this port's server half (glue.rs, in single player and on Horizon servers
+that run the mod) tells the client what such an entity was, on the plugin
+channel pickupnotifier:take_entity; the client lists each entity once.
+
 Made for Horizon (https://github.com/horizon-rust/horizon, MIT) with
 horizon-mixins (https://github.com/horizon-rust/horizon-mixins, MIT).
 Minecraft is a trademark of Mojang Synergies AB.

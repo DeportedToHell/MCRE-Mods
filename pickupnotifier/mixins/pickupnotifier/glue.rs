@@ -1,7 +1,9 @@
 // Pick Up Notifier's game side (`game::pickupnotifier_glue`): what the hooks
 // call. It reads the pickups the server announces (`ClientboundTakeItemEntity`,
 // as the original's `ClientPacketListenerMixin`), ticks the list with the
-// client and draws it after the effects layer of the HUD. The logic is in
+// client and draws it after the effects layer of the HUD. Its server half
+// tells a client what an entity it took was (`pun::TAKE_CHANNEL`), for the
+// entities Horizon's server takes before it ever sent them. The logic is in
 // `runtime.rs` (`game::pickupnotifier`).
 //
 // This Source Code Form is subject to the terms of the Mozilla Public License,
@@ -12,9 +14,11 @@ use super::Game;
 use super::pickupnotifier as pun;
 use horizon_client::hud::{HudBatch, rgba};
 use horizon_client::items::ItemStack;
-use horizon_client::mod_api::{ClientboundPlayPacket, NativeMod};
+use horizon_client::mod_api::{ClientboundPlayPacket, NativeMod, ServerboundPlayPacket};
 use horizon_client::text::{Style, Text};
+use horizon_protocol::packets::configuration::CustomPayload;
 use std::cell::RefCell;
+use std::sync::{Mutex, MutexGuard};
 
 /// What an entry draws: the stack and its name, or the orb's name.
 #[derive(Clone, Debug)]
@@ -31,6 +35,11 @@ struct Player {
     gui_height: f32,
     /// The partial tick of the last unpaused frame (it stops while paused).
     partial: f32,
+    /// Pickups of entities this client never had, and the server half's
+    /// word on what they were.
+    unseen: pun::Unseen<pun::Described>,
+    /// Whether the server was told this client takes `pun::TAKE_CHANNEL`.
+    registered: bool,
 }
 
 impl Default for Player {
@@ -39,6 +48,8 @@ impl Default for Player {
             log: pun::Log::default(),
             gui_height: 240.0,
             partial: 0.0,
+            unseen: pun::Unseen::default(),
+            registered: false,
         }
     }
 }
@@ -127,62 +138,121 @@ pub(super) fn packet(game: &mut Game<'_>, packet: &ClientboundPlayPacket) {
             }
         }
         ClientboundPlayPacket::TakeItemEntity(p) => taken(game, p.item, p.player, p.amount),
+        ClientboundPlayPacket::CustomPayload(CustomPayload { channel, data })
+            if channel == pun::TAKE_CHANNEL =>
+        {
+            described(game, data)
+        }
         _ => {}
     }
 }
 
+/// What a picked-up entity was: from this client's own entity, or from the
+/// server half's description.
+enum Found {
+    Item(ItemStack),
+    /// `AbstractArrow.getPickupItemStackOrigin` (a trident's too).
+    Arrow(ItemStack),
+    /// The orb's value and age (its icon's colour).
+    Experience { value: i32, ticks: u32 },
+}
+
 /// `AddEntriesHandler.onEntityPickup`: `player` took `amount` of entity
-/// `item`; only this client's player's pickups are listed.
+/// `item`; only this client's player's pickups are listed. An entity this
+/// client never had waits for the server half's word on what it was.
 fn taken(game: &Game<'_>, item: i32, player: i32, amount: i32) {
     if !game.native_on(pun::ID) || !game.remote.as_ref().is_some_and(|r| r.entity_id == player) {
         return;
     }
+    let id = item as u32;
+    let amount = amount.max(0) as u32;
+    let found = if let Some(d) = game.dropped.iter().find(|d| d.id == id) {
+        Some(Found::Item(d.stack.clone()))
+    } else if let Some(shot) = game.creatures.projectiles.iter().find(|s| s.id == id) {
+        // Another projectile is listed as nothing.
+        shot.arrow.as_ref().map(|a| Found::Arrow(a.pickup_item.clone()))
+    } else if let Some(t) = game.tridents.iter().find(|t| t.id == id) {
+        Some(Found::Arrow(t.stack.clone()))
+    } else if let Some(orb) = game.orbs.iter().find(|o| o.id == id) {
+        Some(Found::Experience {
+            value: orb.value,
+            ticks: orb.ticks,
+        })
+    } else {
+        let Some((d, amount)) = with_player(player, |p| p.unseen.take(id, amount)) else {
+            return;
+        };
+        return list(game, player, from_description(d), amount);
+    };
+    with_player(player, |p| p.unseen.seen(id));
+    if let Some(found) = found {
+        list(game, player, found, amount);
+    }
+}
+
+/// The server half's word on what an entity this client's player took was:
+/// listed with the pickup it waited for (or that waits for it).
+fn described(game: &Game<'_>, data: &[u8]) {
+    if !game.native_on(pun::ID) {
+        return;
+    }
+    let (Some(player), Some((id, d))) = (me(game), pun::decode_described(data)) else {
+        return;
+    };
+    if let Some((d, amount)) = with_player(player, |p| p.unseen.describe(id, d)) {
+        list(game, player, from_description(d), amount);
+    }
+}
+
+/// A description as what it describes.
+fn from_description(d: pun::Described) -> Found {
+    match d {
+        pun::Described::Item {
+            item,
+            count,
+            components,
+        } => {
+            let tag = horizon_world::nbt::read_network(&components, Default::default())
+                .ok()
+                .map(|(tag, _)| tag);
+            let (damage, extra) = horizon_client::item_data::decode_components(tag.as_ref());
+            Found::Item(ItemStack {
+                item: item.into(),
+                count,
+                damage,
+                extra,
+            })
+        }
+        pun::Described::Experience { value } => Found::Experience { value, ticks: 0 },
+    }
+}
+
+/// `onEntityPickup`'s entry for what was found, as the options allow.
+fn list(game: &Game<'_>, player: i32, found: Found, amount: u32) {
     let cfg = config(game);
     // `addEntry`: nothing logged in creative mode when the option says so.
     if cfg.disable_in_creative && game.creative {
         return;
     }
-    let id = item as u32;
-    let amount = amount.max(0) as u32;
-    let entry = if let Some(d) = game.dropped.iter().find(|d| d.id == id) {
-        if !cfg.include_items {
-            return;
-        }
-        item_entry(game, &cfg, &d.stack, amount)
-    } else if let Some(shot) = game.creatures.projectiles.iter().find(|s| s.id == id) {
-        // `AbstractArrow.getPickupItemStackOrigin`.
-        let Some(arrow) = shot.arrow.as_ref() else {
-            return;
-        };
-        if !cfg.include_arrows {
-            return;
-        }
-        item_entry(game, &cfg, &arrow.pickup_item, amount)
-    } else if let Some(t) = game.tridents.iter().find(|t| t.id == id) {
-        // A trident is an `AbstractArrow` too.
-        if !cfg.include_arrows {
-            return;
-        }
-        item_entry(game, &cfg, &t.stack, amount)
-    } else if let Some(orb) = game.orbs.iter().find(|o| o.id == id) {
+    let entry = match found {
+        Found::Item(stack) if cfg.include_items => item_entry(game, &cfg, &stack, amount),
+        Found::Arrow(stack) if cfg.include_arrows => item_entry(game, &cfg, &stack, amount),
         // `addExperienceEntry`: its points, or the number of orbs.
-        if !cfg.include_experience || orb.value <= 0 {
-            return;
+        Found::Experience { value, ticks } if cfg.include_experience && value > 0 => {
+            let amount = if cfg.experience_value {
+                value as u32
+            } else {
+                amount
+            };
+            let name = Text::translate("entity.minecraft.experience_orb", &[]);
+            Some(pun::Entry::experience(
+                amount,
+                ticks,
+                &cfg,
+                Shown::Experience(name),
+            ))
         }
-        let amount = if cfg.experience_value {
-            orb.value as u32
-        } else {
-            amount
-        };
-        let name = Text::translate("entity.minecraft.experience_orb", &[]);
-        Some(pun::Entry::experience(
-            amount,
-            orb.ticks,
-            &cfg,
-            Shown::Experience(name),
-        ))
-    } else {
-        None
+        _ => None,
     };
     let Some(entry) = entry else {
         return;
@@ -279,7 +349,9 @@ fn inventory_count(game: &Game<'_>, item: &str) -> u32 {
 // ---------------------------------------------------------------------------
 
 /// The end of a client tick (`ClientTickEvent.Post`): time runs unless the
-/// game is paused; nothing is kept out of a world.
+/// game is paused; nothing is kept out of a world. In a world the server is
+/// told once that this client takes the server half's word
+/// (`minecraft:register`, as a Fabric client registers its channels).
 pub(super) fn tick(game: &mut Game<'_>) {
     let Some(id) = me(game) else {
         return;
@@ -288,11 +360,115 @@ pub(super) fn tick(game: &mut Game<'_>) {
         forget(id);
         return;
     }
+    if !with_player(id, |p| p.registered) {
+        let register = ServerboundPlayPacket::CustomPayload(CustomPayload {
+            channel: "minecraft:register".into(),
+            data: pun::TAKE_CHANNEL.as_bytes().to_vec(),
+        });
+        let sent = game.native_send_packet(register).is_ok();
+        with_player(id, |p| p.registered = sent);
+    }
     if game.pause {
         return;
     }
     let display_time = config(game).display_time;
-    with_player(id, |p| p.log.tick(display_time));
+    with_player(id, |p| {
+        p.log.tick(display_time);
+        p.unseen.tick();
+    });
+}
+
+// ---------------------------------------------------------------------------
+// The server half
+// ---------------------------------------------------------------------------
+
+/// The players whose clients take `pun::TAKE_CHANNEL`, on this process's
+/// server (single player's own, a LAN host's or a dedicated one), which runs
+/// on a thread of its own.
+static LISTENERS: Mutex<Vec<u128>> = Mutex::new(Vec::new());
+
+fn listeners() -> MutexGuard<'static, Vec<u128>> {
+    LISTENERS.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// A server's game with the mod on (not a window's).
+fn serving(game: &Game<'_>) -> bool {
+    game.window.is_none() && game.native_on(pun::ID)
+}
+
+/// Whether `player`'s client is told what it takes.
+fn listening(game: &Game<'_>, player: u128) -> bool {
+    serving(game) && listeners().contains(&player)
+}
+
+/// A client registered or unregistered plugin channels.
+pub(super) fn channels(game: &Game<'_>, player: u128, channels: &[String], register: bool) {
+    if game.window.is_some() || !channels.iter().any(|c| c == pun::TAKE_CHANNEL) {
+        return;
+    }
+    let mut l = listeners();
+    l.retain(|p| *p != player);
+    if register {
+        l.push(player);
+    }
+}
+
+/// A player left.
+pub(super) fn logged_out(player: u128) {
+    listeners().retain(|p| *p != player);
+}
+
+fn tell(game: &mut Game<'_>, player: u128, entity: u32, d: &pun::Described) {
+    let data = pun::encode_described(entity, d);
+    let _ = game.native_send_custom_payload_to_player(player, pun::TAKE_CHANNEL, &data);
+}
+
+/// `player` is about to take the stack of the item entity at `position`
+/// (the original's `ClientboundTakeItemStackMessage`, by the entity's id).
+pub(super) fn item_picked_up(
+    game: &mut Game<'_>,
+    player: u128,
+    stack: &ItemStack,
+    position: [f64; 3],
+) {
+    if !listening(game, player) {
+        return;
+    }
+    let Some(entity) = game
+        .dropped
+        .iter()
+        .find(|d| [d.position.x, d.position.y, d.position.z] == position && d.stack == *stack)
+        .map(|d| d.id)
+    else {
+        return;
+    };
+    let components = horizon_client::item_data::encode_components(stack)
+        .and_then(|tag| horizon_world::nbt::write_network(&tag, Default::default()).ok())
+        .unwrap_or_default();
+    let d = pun::Described::Item {
+        item: stack.item.to_string(),
+        count: stack.count,
+        components,
+    };
+    tell(game, player, entity, &d);
+}
+
+/// Orb pickups are heard while a client takes the server half's word.
+pub(super) fn orb_listened(game: &Game<'_>, listened: &mut bool) {
+    if serving(game) && !listeners().is_empty() {
+        *listened = true;
+    }
+}
+
+/// `player` is about to take experience orb `orb`.
+pub(super) fn orb_picked_up(game: &mut Game<'_>, player: u128, orb: u32) {
+    if !listening(game, player) {
+        return;
+    }
+    let Some(value) = game.orbs.iter().find(|o| o.id == orb).map(|o| o.value) else {
+        return;
+    };
+    tell(game, player, orb, &pun::Described::Experience { value });
 }
 
 // ---------------------------------------------------------------------------

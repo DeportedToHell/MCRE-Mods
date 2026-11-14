@@ -14,7 +14,7 @@
 /// The mod's id (its settings folder), name, version and command.
 pub const ID: &str = "pickupnotifier";
 pub const NAME: &str = "Pick Up Notifier";
-pub const VERSION: &str = "1.1.1";
+pub const VERSION: &str = "1.1.2";
 pub const COMMAND: &str = "pickupnotifier";
 pub const DESCRIPTION: &str = "Items, experience and arrows you pick up, listed in a corner of the screen. /pickupnotifier opens the settings.";
 
@@ -1388,6 +1388,195 @@ pub fn help(ru: bool) -> &'static str {
     }
 }
 
+// ---------------------------------------------------------------------------
+// The server half: what a picked-up entity was
+// ---------------------------------------------------------------------------
+
+/// The plugin channel on which the mod's server half (single player's own
+/// server, a LAN host, a dedicated Horizon server) tells a player's client
+/// what the entity it picked up was, as the original's server half sends
+/// `ClientboundTakeItemMessage` and `ClientboundTakeItemStackMessage`.
+/// Horizon's server can announce a pickup (`ClientboundTakeItemEntityPacket`)
+/// of an entity it never sent the client: one that came and went within a
+/// tick, like the experience a furnace's output gives or an item that drops
+/// at the player's feet. The client registers the channel
+/// (`minecraft:register`); the server sends only to clients that did.
+pub const TAKE_CHANNEL: &str = "pickupnotifier:take_entity";
+/// How long, in client ticks, a pickup and its description wait for each
+/// other, and an entity already listed stays known.
+pub const UNSEEN_TICKS: u8 = 40;
+
+/// What a picked-up entity was, as the server half describes it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Described {
+    /// An item entity's stack: its item, count and components (network NBT,
+    /// empty for none).
+    Item {
+        item: String,
+        count: u32,
+        components: Vec<u8>,
+    },
+    /// An experience orb's `DATA_VALUE`.
+    Experience { value: i32 },
+}
+
+fn write_varint(out: &mut Vec<u8>, mut v: u32) {
+    loop {
+        let byte = (v & 0x7F) as u8;
+        v >>= 7;
+        if v == 0 {
+            out.push(byte);
+            return;
+        }
+        out.push(byte | 0x80);
+    }
+}
+
+fn read_varint(data: &[u8], at: &mut usize) -> Option<u32> {
+    let mut v = 0u32;
+    for shift in (0..35).step_by(7) {
+        let byte = *data.get(*at)?;
+        *at += 1;
+        v |= u32::from(byte & 0x7F) << shift;
+        if byte & 0x80 == 0 {
+            return Some(v);
+        }
+    }
+    None
+}
+
+/// The message: the entity id (VarInt), then 0 and the item (VarInt length,
+/// UTF-8), count (VarInt) and components (the rest), or 1 and the orb's value
+/// (VarInt).
+pub fn encode_described(entity: u32, d: &Described) -> Vec<u8> {
+    let mut out = Vec::new();
+    write_varint(&mut out, entity);
+    match d {
+        Described::Item {
+            item,
+            count,
+            components,
+        } => {
+            out.push(0);
+            write_varint(&mut out, item.len() as u32);
+            out.extend_from_slice(item.as_bytes());
+            write_varint(&mut out, *count);
+            out.extend_from_slice(components);
+        }
+        Described::Experience { value } => {
+            out.push(1);
+            write_varint(&mut out, *value as u32);
+        }
+    }
+    out
+}
+
+/// [`encode_described`]'s message back; None when it doesn't read.
+pub fn decode_described(data: &[u8]) -> Option<(u32, Described)> {
+    let mut at = 0;
+    let entity = read_varint(data, &mut at)?;
+    let kind = *data.get(at)?;
+    at += 1;
+    let d = match kind {
+        0 => {
+            let len = read_varint(data, &mut at)? as usize;
+            let item = std::str::from_utf8(data.get(at..at.checked_add(len)?)?).ok()?;
+            at += len;
+            let count = read_varint(data, &mut at)?;
+            Described::Item {
+                item: item.to_owned(),
+                count,
+                components: data[at..].to_vec(),
+            }
+        }
+        1 => {
+            let value = read_varint(data, &mut at)? as i32;
+            if at != data.len() {
+                return None;
+            }
+            Described::Experience { value }
+        }
+        _ => return None,
+    };
+    Some((entity, d))
+}
+
+/// Pickups of entities the client hasn't got and the server half's
+/// descriptions, matched by entity id whichever comes first; the ids already
+/// listed are kept so that nothing is listed twice (the original's
+/// `addHandledEntity` and `isItemEntityHandled`).
+#[derive(Debug)]
+pub struct Unseen<D> {
+    /// Entity, amount, age.
+    takes: Vec<(u32, u32, u8)>,
+    described: Vec<(u32, D, u8)>,
+    handled: Vec<(u32, u8)>,
+}
+
+impl<D> Default for Unseen<D> {
+    fn default() -> Self {
+        Unseen {
+            takes: Vec::new(),
+            described: Vec::new(),
+            handled: Vec::new(),
+        }
+    }
+}
+
+impl<D> Unseen<D> {
+    fn handle(&mut self, entity: u32) {
+        self.handled.retain(|(e, _)| *e != entity);
+        self.handled.push((entity, 0));
+    }
+    /// A pickup of an entity the client has, which the caller lists: a
+    /// description of it is left out.
+    pub fn seen(&mut self, entity: u32) {
+        self.described.retain(|(e, ..)| *e != entity);
+        self.handle(entity);
+    }
+    /// A pickup of an entity the client hasn't got: its description and the
+    /// amount when the description came first, else it waits for one.
+    pub fn take(&mut self, entity: u32, amount: u32) -> Option<(D, u32)> {
+        if let Some(i) = self.described.iter().position(|(e, ..)| *e == entity) {
+            let (_, d, _) = self.described.remove(i);
+            self.handle(entity);
+            return Some((d, amount));
+        }
+        self.takes.push((entity, amount, 0));
+        None
+    }
+    /// The server half's description: with the pickup waiting for it, the
+    /// two to list; nothing for an entity already listed; else it waits.
+    pub fn describe(&mut self, entity: u32, d: D) -> Option<(D, u32)> {
+        if self.handled.iter().any(|(e, _)| *e == entity) {
+            return None;
+        }
+        if let Some(i) = self.takes.iter().position(|(e, ..)| *e == entity) {
+            let (_, amount, _) = self.takes.remove(i);
+            self.handle(entity);
+            return Some((d, amount));
+        }
+        self.described.retain(|(e, ..)| *e != entity);
+        self.described.push((entity, d, 0));
+        None
+    }
+    /// A client tick: what waited [`UNSEEN_TICKS`] goes.
+    pub fn tick(&mut self) {
+        for (_, _, age) in &mut self.takes {
+            *age += 1;
+        }
+        for (_, _, age) in &mut self.described {
+            *age += 1;
+        }
+        for (_, age) in &mut self.handled {
+            *age += 1;
+        }
+        self.takes.retain(|t| t.2 < UNSEEN_TICKS);
+        self.described.retain(|d| d.2 < UNSEEN_TICKS);
+        self.handled.retain(|h| h.1 < UNSEEN_TICKS);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1824,5 +2013,59 @@ mod tests {
         assert_eq!(parse_command("pickupnotifier what"), Some(Command::Help));
         assert_eq!(parse_command("pickup"), None);
         assert_eq!(parse_command("tp 0 0 0"), None);
+    }
+
+    #[test]
+    fn descriptions_round_trip() {
+        let item = Described::Item {
+            item: "minecraft:diamond".into(),
+            count: 300,
+            components: vec![10, 1, 2, 0],
+        };
+        let data = encode_described(70000, &item);
+        assert_eq!(decode_described(&data), Some((70000, item)));
+        let orb = Described::Experience { value: 7 };
+        assert_eq!(encode_described(5, &orb), vec![5, 1, 7]);
+        assert_eq!(decode_described(&[5, 1, 7]), Some((5, orb)));
+        let none = Described::Item {
+            item: "minecraft:stone".into(),
+            count: 1,
+            components: Vec::new(),
+        };
+        assert_eq!(decode_described(&encode_described(1, &none)), Some((1, none)));
+        assert_eq!(decode_described(&[]), None);
+        assert_eq!(decode_described(&[5, 2]), None);
+        assert_eq!(decode_described(&[5, 0, 40, b'a']), None);
+        assert_eq!(decode_described(&[5, 1, 7, 0]), None);
+    }
+
+    #[test]
+    fn pickups_and_descriptions_meet_either_way_once() {
+        let mut u: Unseen<&str> = Unseen::default();
+        // The pickup first, then what it was.
+        assert_eq!(u.take(1, 3), None);
+        assert_eq!(u.describe(1, "orb"), Some(("orb", 3)));
+        assert_eq!(u.describe(1, "orb"), None);
+        // The description first.
+        assert_eq!(u.describe(2, "item"), None);
+        assert_eq!(u.take(2, 5), Some(("item", 5)));
+        // An entity the client had: its description is left out.
+        u.seen(3);
+        assert_eq!(u.describe(3, "item"), None);
+        assert_eq!(u.describe(4, "item"), None);
+        u.seen(4);
+        assert_eq!(u.take(4, 1), None);
+        // Nothing waits for ever.
+        assert_eq!(u.take(5, 2), None);
+        for _ in 0..UNSEEN_TICKS {
+            u.tick();
+        }
+        assert_eq!(u.describe(5, "late"), None);
+        assert_eq!(u.take(5, 2), Some(("late", 2)));
+        for _ in 0..UNSEEN_TICKS {
+            u.tick();
+        }
+        assert_eq!(u.describe(3, "again"), None);
+        assert_eq!(u.take(3, 1), Some(("again", 1)));
     }
 }

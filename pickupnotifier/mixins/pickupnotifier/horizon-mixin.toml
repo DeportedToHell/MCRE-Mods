@@ -1,9 +1,9 @@
 [mod]
 id = "pickupnotifier"
-version = "1.1.1"
+version = "1.1.2"
 priority = 100
 
-# Nightly fdc87ae (nightly-source/2026-11-08-fdc87ae). The glue reads game
+# Nightly 2026-11-13 (9f42064). The glue reads game
 # fields (the dropped items, orbs, arrows, the player's inventory), so the mod
 # is pinned to this commit rather than to a hooks version.
 [compatibility]
@@ -235,4 +235,64 @@ cancellable = true
 helper = "h_options_cover.rs"
 bindings = [
   { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+]
+
+# ---- The server half (single player's own server, a LAN host, a dedicated ----
+# ---- Horizon server): it tells a client what the entity it took was.      ----
+
+# A client registered or unregistered plugin channels.
+[[injection]]
+id = "channels"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_player_register_channels"
+helper = "h_channels.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "channels", ty = "&[String]", value = "channels" },
+  { name = "register", ty = "bool", value = "register" },
+]
+
+[[injection]]
+id = "logged_out"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_player_logged_out"
+helper = "h_logged_out.rs"
+bindings = [
+  { name = "player", ty = "u128", value = "player" },
+]
+
+# An item entity's stack is about to be taken (`ItemEntityPickupEvent.Pre`).
+[[injection]]
+id = "picked_up"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_item_picked_up_v2"
+helper = "h_picked_up.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "stack", ty = "&horizon_client::items::ItemStack", value = "stack" },
+  { name = "position", ty = "[f64; 3]", value = "position" },
+]
+
+[[injection]]
+id = "orb_listened"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_experience_orb_pickup_listened"
+helper = "h_orb_listened.rs"
+bindings = [
+  { name = "game", ty = "&crate::game::Game<'_>", value = "&*self" },
+  { name = "listened", ty = "&mut bool", value = "&mut *listened" },
+]
+
+# An experience orb is about to be taken.
+[[injection]]
+id = "orb_picked_up"
+kind = "HEAD"
+target = "horizon_client::game::native_hooks::Game<'_>::native_experience_orb_pickup"
+helper = "h_orb_picked_up.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "u128", value = "player" },
+  { name = "orb", ty = "u32", value = "orb" },
 ]

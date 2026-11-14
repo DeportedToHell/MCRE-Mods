@@ -1,8 +1,8 @@
-<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/hero-phone.svg"><img src="../.github/releases/pickupnotifier/hero.svg" alt="Pick Up Notifier 1.1.1" width="640"></picture></p>
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/hero-phone.svg"><img src="../.github/releases/pickupnotifier/hero.svg" alt="Pick Up Notifier 1.1.2" width="640"></picture></p>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/pickupnotifier-1.1.1/pickupnotifier-1.1.1.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/download-phone.svg"><img src="../.github/releases/pickupnotifier/download.svg" alt="Download pickupnotifier-1.1.1.hnmod" width="500"></picture></a><br>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/pickupnotifier-1.1.2/pickupnotifier-1.1.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/download-phone.svg"><img src="../.github/releases/pickupnotifier/download.svg" alt="Download pickupnotifier-1.1.2.hnmod" width="500"></picture></a><br>
 <a href="https://playhorizon.dev/mods/pickupnotifier"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/catalog-phone.svg"><img src="../.github/releases/pickupnotifier/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
-<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/pickupnotifier-1.1.1"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/github-phone.svg"><img src="../.github/releases/pickupnotifier/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/pickupnotifier-1.1.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/github-phone.svg"><img src="../.github/releases/pickupnotifier/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
 
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 
@@ -27,6 +27,7 @@ A port of [Pick Up Notifier](https://github.com/Fuzss/pickupnotifier) by Fuzs to
 - Entries combined always, never, or except named items; how long they stay, how they move out (sideways, up/down, both or not at all) and fade.
 - The item's sprite, its name in its rarity colour or a colour of your choice, the amount as a sprite count, text or both, and how many you now have in your inventory.
 - Any of nine screen positions with offsets, a maximum height and a scale; no background, the chat's or a tooltip's.
+- Also what Horizon's server takes before your game ever sees it, like the experience from a furnace or an item that drops at your feet: the mod's server half tells your game what it was (single player, and Horizon servers that run the mod).
 - Pick Up Notifier's settings: Options > Mods > Pick Up Notifier, Mod Menu's Configure, or `/pickupnotifier`. English and Russian.
 
 </details>
