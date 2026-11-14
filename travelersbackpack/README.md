@@ -1,13 +1,7 @@
-<h1 align="left">
-  <img src="../.github/assets/stickers/travelersbackpack.gif" height="64" alt="">
-  <img src="../.github/assets/stickers/travelersbackpack.png" height="64" alt="">
-</h1>
 
-**Version 1.0.0** — all original features implemented, including the back slot with [Accessories](../accessories). Remaining work is listed below.
+  <img src="../.github/assets/stickers/travelersbackpack.gif" height="64" alt=""> <img src="../.github/assets/stickers/travelersbackpack.png" height="64" alt="">
+  
 
-**!!! Two files are needed: the content mod `travelersbackpack.hmod` and the native mod `travelersbackpack_native.hnmod`. One alone does not work.**
-
-I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
 
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
@@ -17,6 +11,17 @@ I'll release an updated mod to the launcher as soon as Horizon rolls out an upda
 > Original mod: https://github.com/Tiviacz1337/Travelers-Backpack
 >
 > Special thanks to [Tiviacz1337](https://github.com/Tiviacz1337) for creating the original mod.
+
+
+## Current State
+
+1.0.0. Fully playable.
+
+BOTH FILES NEEDED TO WORK
+| travelersbackpack.hmod
+| travelersbackpack_native.hnmod
+
+I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
 
 ## ✨Features
