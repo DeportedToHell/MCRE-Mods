@@ -1,0 +1,24 @@
+Universal Graves for Horizon
+A port of Universal Graves to Horizon (Minecraft: Java Edition 26.3 rewritten
+in Rust) as a native mod (mixins/universalgraves).
+
+Universal Graves
+Copyright (c) Patbox
+https://github.com/Patbox/UniversalGraves (branch main, 3.13.0+26.3)
+Licensed under the GNU Lesser General Public License v3.0.
+
+The language files in mixins/universalgraves/data/lang/ and the icon in
+mixins/universalgraves/data/icon.png come from the original mod
+(src/main/resources/data/universal_graves/lang/, assets/logo.png). The skin
+textures of the menu heads (defaults.rs) are the original's (IconItem.Texture).
+The config's defaults (defaults.rs) follow the original's Config class.
+
+This port, by DispatchedToHeaven, rewrites Universal Graves' Java code in Rust
+for Horizon's native mod API. It uses no code from the original's libraries
+(Polymer, sgui, Placeholder API, Predicate API, Common Protection API): the
+grave model, the menus and the text format are written for this port.
+
+This is an independent port of the original project. It is not affiliated
+with, endorsed by, or officially associated with the original author, Patbox.
+All original credits and attributions belong to their respective authors. This
+port is developed independently. Not affiliated with Mojang or Microsoft.

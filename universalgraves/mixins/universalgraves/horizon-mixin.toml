@@ -1,0 +1,256 @@
+[mod]
+id = "universalgraves"
+version = "1.0.0"
+# Before Accessories (100) at the level tick: a grave takes a dead player's
+# accessories before Accessories drops them.
+priority = 200
+
+# Built for this Nightly: besides the hook points it hears a player's death
+# inside the game's own `guest_die` (who dies, with their experience and the
+# blow), fills the grave at the start of `drop_inventory` so nothing drops,
+# keeps the death's experience out of `spawn_orbs`, and reads the death
+# message from `native_player_died_v2`.
+[compatibility]
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
+
+[[module]]
+id = "defaults"
+file = "crates/horizon-client/src/game.rs"
+name = "universalgraves_defaults"
+source = "defaults.rs"
+
+[[module]]
+id = "text"
+file = "crates/horizon-client/src/game.rs"
+name = "universalgraves_text"
+source = "text.rs"
+
+[[module]]
+id = "glue"
+file = "crates/horizon-client/src/game.rs"
+name = "universalgraves"
+source = "glue.rs"
+
+# ---- deaths ----
+
+# Who is dying, at the start of `ServerPlayer.die` (`guest_die`).
+[[injection]]
+id = "guest_die"
+target = "horizon_client::game::lan_actions::Game<'_>::guest_die"
+kind = "HEAD"
+helper = "h_guest_die.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "host", ty = "&mut LanHost", value = "&mut *host" },
+  { name = "gi", ty = "usize", value = "gi" },
+  { name = "conn", ty = "u32", value = "conn" },
+]
+
+# The death message, as the game made it.
+[[injection]]
+id = "died_message"
+target = "horizon_client::game::native_hooks::Game<'_>::native_player_died_v2"
+kind = "HEAD"
+helper = "h_died_message.rs"
+bindings = [
+  { name = "player", ty = "u128", value = "player" },
+  { name = "message", ty = "&horizon_client::text::Text", value = "message" },
+]
+
+# `dropAllDeathLoot`, before `dropEquipment`: the grave takes the inventory.
+[[injection]]
+id = "drop_inventory"
+target = "horizon_client::game::item_entities::Game<'_>::drop_inventory"
+kind = "HEAD"
+helper = "h_drop_inventory.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "who", ty = "(u128, i32)", value = "who" },
+]
+
+# The death's experience, kept by the grave.
+[[injection]]
+id = "spawn_orbs"
+target = "horizon_client::game::item_entities::Game<'_>::spawn_orbs"
+kind = "HEAD"
+cancellable = true
+helper = "h_spawn_orbs.rs"
+bindings = []
+
+# ---- the server ----
+
+# Each level's tick: graves placed, their models, timers, menus, actions.
+[[injection]]
+id = "level_tick"
+hook = "level_tick_post"
+hook_version = 1
+kind = "HEAD"
+helper = "h_level_tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "world_saved"
+hook = "world_saved"
+hook_version = 1
+kind = "HEAD"
+helper = "h_world_saved.rs"
+bindings = []
+
+[[injection]]
+id = "right_click_block"
+hook = "right_click_block"
+hook_version = 1
+kind = "HEAD"
+helper = "h_right_click_block.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "pos", ty = "[i32; 3]", value = "pos" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "destroy_block"
+hook = "destroy_block"
+hook_version = 1
+kind = "HEAD"
+helper = "h_destroy_block.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "pos", ty = "[i32; 3]", value = "pos" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "left_click_block"
+hook = "left_click_block"
+hook_version = 1
+kind = "HEAD"
+helper = "h_left_click_block.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "pos", ty = "[i32; 3]", value = "pos" },
+  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "explosion"
+hook = "explosion_detonate"
+hook_version = 1
+kind = "HEAD"
+helper = "h_explosion.rs"
+bindings = [
+  { name = "dimension", ty = "&str", value = "dimension" },
+  { name = "blocks", ty = "&mut Vec<[i32; 3]>", value = "&mut *blocks" },
+]
+
+[[injection]]
+id = "use_item"
+hook = "use_item"
+hook_version = 1
+kind = "HEAD"
+helper = "h_use_item.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "stack", ty = "&horizon_client::items::ItemStack", value = "stack" },
+]
+
+[[injection]]
+id = "respawned"
+hook = "player_respawned"
+hook_version = 1
+kind = "HEAD"
+helper = "h_respawned.rs"
+bindings = [
+  { name = "player", ty = "u128", value = "player" },
+]
+
+[[injection]]
+id = "menu_clicked"
+hook = "menu_clicked"
+hook_version = 1
+kind = "HEAD"
+helper = "h_menu_clicked.rs"
+bindings = [
+  { name = "uuid", ty = "u128", value = "uuid" },
+  { name = "window", ty = "i32", value = "window" },
+  { name = "slot", ty = "i32", value = "slot" },
+]
+
+[[injection]]
+id = "menu_closed"
+hook = "menu_closed"
+hook_version = 1
+kind = "HEAD"
+helper = "h_menu_closed.rs"
+bindings = [
+  { name = "uuid", ty = "u128", value = "uuid" },
+  { name = "window", ty = "i32", value = "window" },
+]
+
+[[injection]]
+id = "register_commands"
+hook = "register_commands"
+hook_version = 1
+kind = "HEAD"
+helper = "h_register_commands.rs"
+bindings = [
+  { name = "commands", ty = "&mut Vec<horizon_client::mod_api::NativeCommand>", value = "&mut *commands" },
+]
+
+[[injection]]
+id = "perform_command"
+hook = "perform_command"
+hook_version = 1
+kind = "HEAD"
+helper = "h_perform_command.rs"
+bindings = [
+  { name = "player", ty = "&horizon_client::mod_api::NativeServerPlayer", value = "player" },
+  { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
+]
+
+# Accessories' slot files, for their drop rules.
+[[injection]]
+id = "reload_listeners"
+hook = "add_server_reload_listeners"
+hook_version = 1
+kind = "HEAD"
+helper = "h_reload_listeners.rs"
+bindings = [
+  { name = "listeners", ty = "&mut Vec<crate::game::native_reload_listeners::NativeReloadListener>", value = "&mut *listeners" },
+]
+
+[[injection]]
+id = "reload_apply"
+hook = "server_reload_listener_apply"
+hook_version = 1
+kind = "HEAD"
+helper = "h_reload_apply.rs"
+bindings = [
+  { name = "listener", ty = "&crate::game::native_reload_listeners::NativeReloadListener", value = "listener" },
+  { name = "files", ty = "&[(String, serde_json::Value)]", value = "files" },
+]
+
+# ---- the client: Options > Mods and Mod Menu ----
+
+[[injection]]
+id = "list"
+hook = "mods"
+hook_version = 1
+kind = "HEAD"
+helper = "h_list.rs"
+bindings = [
+  { name = "mods", ty = "&mut Vec<crate::game::native_hooks::NativeMod>", value = "&mut *mods" },
+]
+
+[[injection]]
+id = "frame"
+hook = "frame"
+hook_version = 1
+kind = "HEAD"
+helper = "h_frame.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
