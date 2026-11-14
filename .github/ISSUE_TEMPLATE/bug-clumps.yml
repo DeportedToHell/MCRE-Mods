@@ -26,7 +26,7 @@ body:
     attributes:
       label: 🚀 Horizon version / Версия Horizon
       description: The launcher shows it. / Видна в лаунчере.
-      placeholder: "Nightly 2026-11-08"
+      placeholder: "Nightly 2026-11-13"
   - type: textarea
     id: what
     attributes:

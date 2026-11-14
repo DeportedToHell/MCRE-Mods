@@ -15,6 +15,7 @@ body:
       label: 🔢 Plasmo Voice version / Версия Plasmo Voice
       description: Mod Menu or Options > Mods shows it. Newest first. / Видна в Mod Menu или в Настройки > Моды. Новые сверху.
       options:
+        - "1.0.3"
         - "1.0.2"
         - "1.0.1"
         - "1.0.0"
@@ -26,7 +27,7 @@ body:
     attributes:
       label: 🚀 Horizon version / Версия Horizon
       description: The launcher shows it. / Видна в лаунчере.
-      placeholder: "Nightly 2026-11-08"
+      placeholder: "Nightly 2026-11-13"
   - type: textarea
     id: what
     attributes:
