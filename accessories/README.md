@@ -2,14 +2,6 @@
   <img src="../.github/assets/stickers/accessories.png" height="64" alt=""> <img src="../.github/assets/stickers/accessoriesn.png" height="64" alt="">
 
 
-
-**Version 0.2.1** — the work is still ongoing. Slots, the screen and equipping already work, but few items can be worn without other mods. Remaining work is listed below.
-
-**!!! Two files are needed: the content mod `accessories.hmod` and the native mod `accessories_native.hnmod`. One alone does not work.**
-
-I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
-
-
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
 
 > It is not affiliated with, endorsed by, or officially associated with the original authors, Wisp Forest.
@@ -17,6 +9,15 @@ I'll release an updated mod to the launcher as soon as Horizon rolls out an upda
 > Original mod: https://github.com/wisp-forest/accessories
 >
 > Special thanks to [blodhgarm](https://github.com/Dragon-Seeker), [chyzman](https://github.com/chyzman), Dr.Zeal and all contributors for creating the original mod.
+
+
+##  Current State
+
+**Version 0.2.1** — the work is still ongoing. Slots, the screen and equipping already work, but few items can be worn without other mods. Remaining work is listed below.
+
+**!!! Two files are needed: the content mod `accessories.hmod` and the native mod `accessories_native.hnmod`. One alone does not work.**
+
+I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
 
 ## ✨Features
