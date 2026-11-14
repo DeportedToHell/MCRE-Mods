@@ -15,7 +15,7 @@
 ## 
 <img src="../.github/assets/headers/grass/state.svg" alt="Current state">
 
-1.0.0. Fully playable.
+1.0.1. Fully playable.
 
 BOTH FILES ARE REQUIRED FOR THE MOD TO WORK
 
@@ -57,6 +57,10 @@ Differences: a Horizon menu holds at most 256 slots, so with the most upgrades a
 
 ## 
 <img src="../.github/assets/headers/grass/changelog.svg" alt="Changelog">
+
+### 1.0.1
+
+- Works on the newest Horizon Nightly (2026-11-13).
 
 ### 1.0.0
 

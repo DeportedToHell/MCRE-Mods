@@ -1,6 +1,6 @@
 [mod]
 id = "travelersbackpack_native"
-version = "1.0.0"
+version = "1.0.1"
 priority = 100
 
 # Built for this Nightly: besides the hook points it opens a menu of the
@@ -9,7 +9,7 @@ priority = 100
 # mod's screen on the client (`open_native_screen`), which Horizon does only
 # for a block's menu.
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 [[module]]
 id = "spider"
@@ -860,7 +860,7 @@ bindings = [
 # The creative tab's button with its tanks full (`createTabStack`).
 [[injection]]
 id = "tab_icon"
-target = "horizon_client::game::Game<'_>::draw_item"
+target = "horizon_client::game::inventory_slots::Game<'_>::draw_item"
 kind = "HEAD"
 cancellable = true
 helper = "h_tab_icon.rs"
@@ -954,7 +954,7 @@ bindings = [
 # swapping it into the other hand (its menu would copy what it holds).
 [[injection]]
 id = "drop_held"
-target = "horizon_client::game::Game<'_>::drop_held"
+target = "horizon_client::game::item_entities::Game<'_>::drop_held"
 kind = "HEAD"
 cancellable = true
 helper = "h_drop_held.rs"
