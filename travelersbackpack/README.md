@@ -3,7 +3,7 @@
   <img src="../.github/assets/stickers/travelersbackpack.png" height="64" alt="">
 </h1>
 
-**Version 1.0.0** — the original's features, and its back slot with [Accessories](../accessories). Remaining work is listed below.
+**Version 1.0.0** — all original features implemented, including the back slot with [Accessories](../accessories). Remaining work is listed below.
 
 **!!! Two files are needed: the content mod `travelersbackpack.hmod` and the native mod `travelersbackpack_native.hnmod`. One alone does not work.**
 
@@ -29,12 +29,14 @@ I'll release an updated mod to the launcher as soon as Horizon rolls out an upda
 
 **World.** Backpacks and tier upgrades in structure chests, zombies, skeletons and other mobs that sometimes spawn wearing a backpack, and tools shown on the wearer's back.
 
-**Back slot (Accessories).** With our [Accessories](../accessories) port installed and `backSlotIntegration` on (the default), a backpack is worn in Accessories' Back slot, as the original does with Trinkets: put on and taken off there (not by a right click, nor the screen's equip buttons, nor `/tb clear` and `/tb unpack`), opened with the key, drawn on the back by this mod, its abilities on; on death it follows the slot's rules instead of being placed. A backpack still worn the old way goes into the inventory.
+**Back slot.** With [Accessories](../accessories) installed, backpacks are worn in its Back slot, as the original does with Trinkets and Accessories. The key, upgrades, abilities and the model on the back work as usual, and on death the backpack follows the slot's rules. Can be turned off with `backSlotIntegration` in the config.
 
 **Other features.** Dynamic lighting, tool radial menu, advancements, wandering trader trade, creative tab and keybinds. The original's config files (`config/travelersbackpack-{common,server,client}.toml`), Mod Menu info, the `/tb` commands (`access`, `remove`, `clear`, `restore`, `unpack`) with backups made on death, and `/tb_client`. English and Russian translations.
 
 
 ## 🚧Remaining work
+
+1.1.0 - Universal Graves integration.
 
 Not implemented compared to the original:
 
@@ -47,8 +49,8 @@ Differences: a Horizon menu holds at most 256 slots, so with the most upgrades a
 
 ### 1.0.0
 
-- The back slot with [Accessories](../accessories) (`backSlotIntegration`, as the original's Trinkets one): backpacks go into its Back slot only, the worn backpack is the one there (key, abilities, upgrades, model, other players), the screen's equip and unequip buttons, right-click unequip, the inventory icon, `/tb clear` and `/tb unpack` are off with it, and death follows the slot's rules. Tested in the game.
-- Checked in the game: the attribute abilities (emerald luck, enderman reach, warden health, fox speed), the effect ones (dragon, magma cube, squid) and the creeper's save, worn in the Back slot.
+- Back slot integration with [Accessories](../accessories) (`backSlotIntegration`): backpacks are worn in its Back slot, as in the original. The equip and unequip buttons, right-click unequip, the inventory icon, `/tb clear` and `/tb unpack` are turned off with it, as in the original.
+- Checked in the game: the armor, luck, reach, health, speed and effect abilities, and the creeper saving its wearer.
 
 ### 0.9.9
 
