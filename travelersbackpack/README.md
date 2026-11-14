@@ -18,8 +18,10 @@
 1.0.0. Fully playable.
 
 BOTH FILES NEEDED TO WORK
-| travelersbackpack.hmod
-| travelersbackpack_native.hnmod
+
+! travelersbackpack.hmod
+
+! travelersbackpack_native.hnmod
 
 I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
