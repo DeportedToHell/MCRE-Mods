@@ -1,7 +1,7 @@
-<h1 align="left">
+
   <img src="../.github/assets/stickers/clumps.gif" height="64" alt="">
   <img src="../.github/assets/stickers/clumps.png" height="64" alt="">
-</h1>
+
 
 
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
