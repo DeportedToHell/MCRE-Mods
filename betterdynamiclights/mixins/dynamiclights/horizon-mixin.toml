@@ -1,6 +1,6 @@
 [mod]
 id = "dynamiclights"
-version = "1.0.3"
+version = "1.0.4"
 priority = 100
 
 # Built for this Nightly: besides the hook points it replaces the gathering of
@@ -8,7 +8,7 @@ priority = 100
 # lists, and hides the Options screen under its settings screen
 # (`draw_options`).
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 [[module]]
 id = "runtime"

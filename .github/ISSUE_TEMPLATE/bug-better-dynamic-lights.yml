@@ -15,6 +15,7 @@ body:
       label: 🔢 Better Dynamic Lights version / Версия Better Dynamic Lights
       description: Mod Menu or Options > Mods shows it. Newest first. / Видна в Mod Menu или в Настройки > Моды. Новые сверху.
       options:
+        - "1.0.4"
         - "1.0.3"
         - "1.0.2"
         - "1.0.1"
