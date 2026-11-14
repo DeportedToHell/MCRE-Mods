@@ -1,6 +1,6 @@
 id = "accessories"
 name = "Accessories"
-version = "0.2.0"
+version = "0.2.1"
 description = "An extendable and data-driven Accessory Mod for Minecraft."
 authors = ["blodhgarm", "chyzman", "Dr.Zeal"]
 api = "0.2"

@@ -373,13 +373,64 @@ fn toggle_worn_upgrade(game: &mut Game<'_>, uuid: u128, i: usize) {
 /// The native mod's id, for its key binding.
 const MOD_ID: &str = "travelersbackpack_native";
 /// The port's version (`horizon-native.json`).
-const VERSION: &str = "0.9.9";
+const VERSION: &str = "1.0.0";
+
+/// Accessories is installed: its item components are registered (both sides know them).
+fn accessories_present() -> bool {
+    horizon_protocol::item::custom::id("accessories:slot_validation").is_some()
+}
+
+/// `TravelersBackpack.enableIntegration`: with Accessories installed and
+/// `backSlotIntegration` on, the backpack is worn in Accessories' Back slot
+/// (put on and taken off there), not on the mod's own back.
+fn integrated() -> bool {
+    cfg().back_slot_integration && accessories_present()
+}
+
+/// Accessories' containers in a player's saved data (`accessories:inventory_holder`).
+const ACCESSORIES_HOLDER: &str = "accessories:inventory_holder";
+
+/// The first backpack in the player's accessory slots
+/// (`AccessoriesCapability.getFirstEquipped`): its container, its `Slot`, the stack.
+fn accessory_backpack(data: &Compound) -> Option<(horizon_world::nbt::JavaString, i32, ItemStack)> {
+    let Some(Tag::Compound(h)) = data.get(&horizon_world::nbt::JavaString::from(ACCESSORIES_HOLDER)) else {
+        return None;
+    };
+    let Some(Tag::Compound(containers)) = h.get(&horizon_world::nbt::JavaString::from("accessories_containers")) else {
+        return None;
+    };
+    for (name, tag) in containers {
+        let Tag::Compound(c) = tag else {
+            continue;
+        };
+        let Some(Tag::List(items)) = c.get(&horizon_world::nbt::JavaString::from("items")) else {
+            continue;
+        };
+        for item in items {
+            let Tag::Compound(e) = item else {
+                continue;
+            };
+            let slot = match e.get(&horizon_world::nbt::JavaString::from("Slot")) {
+                Some(Tag::Int(i)) => *i,
+                Some(Tag::Byte(b)) => i32::from(*b),
+                _ => continue,
+            };
+            if let Some(stack) = horizon_items::item_nbt::item_from_nbt(item).filter(|s| tb::is_backpack(&s.item)) {
+                return Some((name.clone(), slot, stack));
+            }
+        }
+    }
+    None
+}
 
 /// The backpack `uuid` wears, if any.
 fn worn(game: &Game<'_>, uuid: u128) -> Option<ItemStack> {
     let Some(Tag::Compound(data)) = game.native_player_persistent_data(uuid) else {
         return None;
     };
+    if integrated() {
+        return accessory_backpack(&data).map(|(_, _, s)| s);
+    }
     data.get(&horizon_world::nbt::JavaString::from(WORN))
         .and_then(horizon_items::item_nbt::item_from_nbt)
         .filter(|s| tb::is_backpack(&s.item))
@@ -393,6 +444,44 @@ fn set_worn(game: &mut Game<'_>, uuid: u128, stack: Option<&ItemStack>) -> bool 
         Some(_) => Compound::new(),
         None => return false,
     };
+    if integrated() {
+        // The backpack in the accessory slot changes in place (or goes).
+        let Some((container, slot, _)) = accessory_backpack(&data) else {
+            return false;
+        };
+        let key = |k: &str| horizon_world::nbt::JavaString::from(k);
+        let Some(Tag::Compound(h)) = data.get_mut(&key(ACCESSORIES_HOLDER)) else {
+            return false;
+        };
+        let Some(Tag::Compound(containers)) = h.get_mut(&key("accessories_containers")) else {
+            return false;
+        };
+        let Some(Tag::Compound(c)) = containers.get_mut(&container) else {
+            return false;
+        };
+        let Some(Tag::List(items)) = c.get_mut(&key("items")) else {
+            return false;
+        };
+        let at = items.iter().position(|t| match t {
+            Tag::Compound(e) => matches!(e.get(&key("Slot")), Some(Tag::Int(i)) if *i == slot) || matches!(e.get(&key("Slot")), Some(Tag::Byte(b)) if i32::from(*b) == slot),
+            _ => false,
+        });
+        let Some(at) = at else {
+            return false;
+        };
+        match stack {
+            Some(stack) => {
+                if let Tag::Compound(mut e) = horizon_items::item_nbt::item_to_nbt(stack) {
+                    e.insert(key("Slot"), Tag::Int(slot));
+                    items[at] = Tag::Compound(e);
+                }
+            }
+            None => {
+                items.remove(at);
+            }
+        }
+        return game.native_set_player_persistent_data(uuid, Tag::Compound(data));
+    }
     match stack {
         Some(stack) => {
             data.insert(WORN.into(), horizon_items::item_nbt::item_to_nbt(stack));
@@ -402,6 +491,36 @@ fn set_worn(game: &mut Game<'_>, uuid: u128, stack: Option<&ItemStack>) -> bool 
         }
     }
     game.native_set_player_persistent_data(uuid, Tag::Compound(data))
+}
+
+thread_local! {
+    /// What each player wore in their accessory slots at the last tick, to tell the others of a change.
+    static LAST_WORN: RefCell<HashMap<u128, String>> = RefCell::new(HashMap::new());
+}
+
+/// With the integration: a backpack still on the mod's own back goes into the
+/// inventory ("can be retrieved from the player's inventory"), and a change in
+/// the accessory slots is told to everyone, for the model.
+fn integration_tick(game: &mut Game<'_>) {
+    if !integrated() {
+        return;
+    }
+    let players: Vec<u128> = game.lan.as_ref().map(|h| h.hub.guests.iter().filter(|g| g.placed).map(|g| g.uuid).collect()).unwrap_or_default();
+    for uuid in players {
+        let Some(Tag::Compound(mut data)) = game.native_player_persistent_data(uuid) else {
+            continue;
+        };
+        if let Some(stack) = data.remove(&horizon_world::nbt::JavaString::from(WORN)).and_then(|t| horizon_items::item_nbt::item_from_nbt(&t)) {
+            if game.native_set_player_persistent_data(uuid, Tag::Compound(data)) {
+                give_back(game, uuid, stack);
+            }
+        }
+        let now = worn(game, uuid).map(|s| horizon_world::snbt_text::to_snbt(&horizon_items::item_nbt::item_to_nbt(&s))).unwrap_or_default();
+        let changed = LAST_WORN.with(|l| l.borrow_mut().insert(uuid, now.clone()) != Some(now));
+        if changed {
+            tell_worn(game, uuid);
+        }
+    }
 }
 
 /// Tells every player what `uuid` wears now (`AttachmentUtils.synchronise`),
@@ -477,6 +596,9 @@ fn give_back(game: &mut Game<'_>, uuid: u128, stack: ItemStack) {
 /// `ServerActions.equipBackpack`: the backpack in inventory slot `slot` goes
 /// on the back; one worn already comes into that slot (`swapBackpack`).
 fn equip(game: &mut Game<'_>, uuid: u128, slot: usize) {
+    if integrated() {
+        return;
+    }
     let old = worn(game, uuid);
     let Some(host) = game.lan.as_mut() else {
         return;
@@ -503,6 +625,9 @@ fn equip(game: &mut Game<'_>, uuid: u128, slot: usize) {
 /// `ServerActions.unequipBackpack`: the worn backpack comes into the
 /// inventory, when it has room.
 fn unequip(game: &mut Game<'_>, uuid: u128) {
+    if integrated() {
+        return;
+    }
     let Some(stack) = worn(game, uuid) else {
         return;
     };
@@ -603,6 +728,9 @@ fn replaceable(block: &str) -> bool {
 /// wearer died (the first free block up from there, then around), holding
 /// what it held; dropped when there's no room.
 fn place_on_death(game: &mut Game<'_>, uuid: u128, dimension: &str, at: [i32; 3]) {
+    if integrated() {
+        return;
+    }
     let Some(stack) = worn(game, uuid) else {
         return;
     };
@@ -1129,6 +1257,7 @@ pub(super) fn server_tick(game: &mut Game<'_>) {
     // This level's own: its items, its players, its placed backpacks' menus.
     run_commands(game);
     protect_dropped(game);
+    integration_tick(game);
     tick_worn(game);
     tick_abilities(game);
     sync_open_menus(game);
@@ -4708,11 +4837,14 @@ fn widgets(menu: &str, data: &[i32]) -> Vec<(Widget, [f32; 4])> {
     let (x, y) = (layout.additions(), layout.middle_bar());
     let at = |w: Widget, dx: f32| (w, [x + dx, y, 12.0, 12.0]);
     match opened {
-        tb::Opened::Held => out.push(at(Widget::Equip, 157.0)),
+        tb::Opened::Held if !integrated() => out.push(at(Widget::Equip, 157.0)),
+        tb::Opened::Held => {}
         tb::Opened::Worn => {
             out.push(at(Widget::More, 157.0));
             if live.more {
-                out.push(at(Widget::Unequip, 145.0));
+                if !integrated() {
+                    out.push(at(Widget::Unequip, 145.0));
+                }
                 if layout.info.bag {
                     out.push(at(Widget::SleepingBag, 133.0));
                 }
@@ -9424,7 +9556,7 @@ fn draw_inventory_extras(game: &Game<'_>, batch: &mut horizon_client::hud::HudBa
             }
         }
     }
-    if !own_inventory(game, screen) || !icon_shown() {
+    if !own_inventory(game, screen) || !icon_shown() || integrated() {
         return;
     }
     let Some(stack) = worn_icon_stack(game) else {
@@ -9453,7 +9585,7 @@ fn draw_inventory_extras(game: &Game<'_>, batch: &mut horizon_client::hud::HudBa
 /// A click on the worn backpack's icon: the left button opens it, shift and
 /// the right one tells how to hide the icon.
 pub(super) fn inventory_icon_press(game: &Game<'_>, screen: &horizon_client::mod_api::NativeScreenView<'_>, button: i32, canceled: &mut bool) {
-    if *canceled || !own_inventory(game, screen) || !icon_shown() || worn_icon_stack(game).is_none() {
+    if *canceled || !own_inventory(game, screen) || !icon_shown() || integrated() || worn_icon_stack(game).is_none() {
         return;
     }
     if !inside(icon_rect(screen), screen.mouse) {
@@ -9617,6 +9749,7 @@ fn run_command(game: &mut Game<'_>, own: u128, position: [f64; 3], command: &str
             }
             _ => say(game, "Can't access backpack".into(), false),
         },
+        ["remove" | "clear", ..] if integrated() => say(game, "The backpack is worn in the Back accessory slot (backSlotIntegration)".into(), false),
         ["remove" | "clear", args @ ..] => {
             let clear = rest[0] == "clear";
             let Some((uuid, name)) = command_player(game, args.first().copied(), own) else {
@@ -9682,6 +9815,7 @@ fn run_command(game: &mut Game<'_>, own: u128, position: [f64; 3], command: &str
             }
             say(game, format!("Dropping contents of backpack placed at {}, {}, {}", at[0], at[1], at[2]), true);
         }
+        ["unpack", _] if integrated() => say(game, "The backpack is worn in the Back accessory slot (backSlotIntegration)".into(), false),
         ["unpack", target] => {
             let Some((uuid, name)) = command_player(game, Some(target), own) else {
                 say(game, "No player was found".into(), false);
@@ -9867,7 +10001,7 @@ pub(super) fn hand_menu_open(player: u128) -> bool {
 /// default): sneaking, the main hand empty, a right click on a block (not a
 /// backpack) places the worn backpack against its face, facing the player.
 pub(super) fn quick_unequip(game: &mut Game<'_>, pos: [i32; 3], face: [i32; 3], main: bool, cancel: &mut bool) {
-    if *cancel || !cfg().right_click_unequip || !main || !game.native_sneaking() {
+    if *cancel || !cfg().right_click_unequip || integrated() || !main || !game.native_sneaking() {
         return;
     }
     let uuid = game.native_acting_id();

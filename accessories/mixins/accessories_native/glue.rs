@@ -24,7 +24,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 /// The native mod's id (`horizon-native.json`): its key's line and its folder.
 const MOD_ID: &str = "accessories_native";
 /// The port's version.
-const VERSION: &str = "0.2.0";
+const VERSION: &str = "0.2.1";
 /// The content mod's menu type for the accessories screen.
 const MENU: &str = "accessories:accessories_menu";
 /// Where a player's accessories are kept in their saved data
@@ -1404,6 +1404,7 @@ fn sync_open(game: &mut Game<'_>, uuid: u128) {
     let Some(mut open) = with(|s| s.open.get(&uuid).cloned()) else {
         return;
     };
+    let holder = read_holder(game, open.owner).map(|(h, _)| h);
     let Some(host) = game.lan.as_mut() else {
         return;
     };
@@ -1414,6 +1415,26 @@ fn sync_open(game: &mut Game<'_>, uuid: u128) {
         return;
     };
     let mut resend = false;
+    // A slot the menu left alone that changed in the holder (another mod's
+    // backpack worn in the Back slot) shows what the holder has now.
+    let mut mirrored = false;
+    if let Some(holder) = &holder {
+        for (j, e) in open.entries.iter().enumerate() {
+            let Entry::Slot(name, i, cosmetic) = e else {
+                continue;
+            };
+            let Some(c) = holder.get(name) else {
+                continue;
+            };
+            let kept = if *cosmetic { c.cosmetics.get(*i) } else { c.items.get(*i) }.cloned().flatten();
+            if items.get(j) == open.last.get(j) && items.get(j).is_some_and(|now| *now != kept) {
+                items[j] = kept.clone();
+                open.last[j] = kept;
+                resend = true;
+                mirrored = true;
+            }
+        }
+    }
     if let Some(g) = host.hub.guests.iter_mut().find(|g| g.uuid == open.owner) {
         for (j, e) in open.entries.iter().enumerate() {
             let worn = match e {
@@ -1445,7 +1466,7 @@ fn sync_open(game: &mut Game<'_>, uuid: u128) {
             }
         });
     }
-    if items != open.last {
+    if items != open.last || mirrored {
         write_back(game, open.owner, &open, &items);
         open.last = items;
         with(|s| {
@@ -1465,7 +1486,12 @@ fn write_back(game: &mut Game<'_>, uuid: u128, open: &Open, items: &[Option<Item
         give_back(game, uuid, stack);
     }
     let before = holder.clone();
-    for (e, stack) in open.entries.iter().zip(items) {
+    // Only the slots the menu changed since last seen: what changed in the
+    // holder meanwhile (another mod's backpack in the Back slot) stays.
+    for ((e, stack), was) in open.entries.iter().zip(items).zip(open.last.iter().chain(std::iter::repeat(&None))) {
+        if stack == was {
+            continue;
+        }
         match e {
             Entry::Armor(_) | Entry::Offhand => {}
             Entry::Slot(name, i, cosmetic) => {
@@ -1523,9 +1549,19 @@ fn closed_menu(game: &mut Game<'_>, open: &Open, items: &[Option<ItemStack>]) {
 /// whose accessory may come off. Some(slot, index) when it found one.
 fn equip_target(game: &Game<'_>, holder: &Holder, stack: &ItemStack, creative: bool) -> Option<(String, usize)> {
     let items = game.items();
-    // `canEquipFromUse`: an equippable item only when swappable.
-    if items.get(&stack.item).is_some_and(|i| i.equip_slot.is_some() && !i.swappable) {
-        return None;
+    // `canEquipFromUse`: its `stack_settings` say (false unless set), else an
+    // equippable item only when swappable.
+    match menu::component(stack, items, "accessories:stack_settings") {
+        Some(Tag::Compound(c)) => {
+            if !matches!(c.get(&jkey("can_equip_from_use")), Some(Tag::Byte(1..))) {
+                return None;
+            }
+        }
+        _ => {
+            if items.get(&stack.item).is_some_and(|i| i.equip_slot.is_some() && !i.swappable) {
+                return None;
+            }
+        }
     }
     with_data(|d| {
         let candidates: Vec<&SlotType> = d.player.iter().filter_map(|n| d.slot(n)).filter(|t| !t.unique).collect();
@@ -4039,6 +4075,10 @@ pub(super) fn mob_layer(
     };
     let disabled = config().disabled_default_renders;
     for (slot, index, stack) in worn {
+        // `custom_renderer`: drawn by its own renderer (none here), not the default one.
+        if menu::component(&stack, game.items(), "accessories:custom_renderer").is_some() {
+            continue;
+        }
         let block = game.items().get(&stack.item).is_some_and(|i| i.block.is_some());
         if disabled.iter().any(|(s, t)| *s == slot && (t == "ALL" || (t == "BLOCK") == block)) {
             continue;

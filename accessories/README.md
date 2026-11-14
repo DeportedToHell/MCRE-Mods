@@ -13,7 +13,7 @@ Based on Accessories 1.4.3-beta (Minecraft 1.21.11).
 >
 > Ported by DispatchedToHeaven, with DeportedToHell.
 
-## ✨Features (0.2.0)
+## ✨Features (0.2.1)
 
 > Tested in the game (Horizon Nightly fdc87ae, single player): the screen from the button and from H, equipping by
 > dragging, shift-click and right click, armour in the screen, the cosmetic switch, render toggles, death drops and
@@ -66,6 +66,11 @@ player's accessories too), `dump (slots|groups|entity_bindings)`, `slot get <pla
 `components stack-sizing (useStackSize <bool> | <size>)`, `components attribute <attribute> <id> (add <amount>
 <operation> <slot> <stackable> [validation] | remove | get)`, `components nest <item>`,
 `item replace entity <player> <slot>/<index> with <item> [count]`.
+
+**Other mods.** `accessories:custom_renderer` keeps the default renderer off an item (its own mod draws it), and
+`stack_settings`' `can_equip_from_use` decides a right click, as in the original: [Traveler's Backpack](../travelersbackpack)
+uses both for its Back slot. The screen writes back only the slots it changed, so another mod changing a worn item
+meanwhile (a backpack's contents) keeps its change.
 
 **Config:** `config/accessories.json5`, owo-config's file of the original (content, client and screen options, slot
 amount modifiers).

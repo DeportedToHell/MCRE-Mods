@@ -33,6 +33,8 @@ pub(crate) struct Config {
     pub backpack_force_death_place: bool,
     pub quick_sleeping_bag: bool,
     pub enable_sleeping_bag_spawn_point: bool,
+    /// `backSlotIntegration`: with Accessories installed, the backpack is worn in its Back slot.
+    pub back_slot_integration: bool,
     // server.backpackUpgrades
     pub enable_sleeping_bag: bool,
     /// Upgrades turned off, by item path (`tanks_upgrade`).
@@ -117,6 +119,8 @@ const SERVER: &str = r#"
 		#Enables quick sleeping bag (sleeping without unequipping the backpack)
 		quickSleepingBag = true
 		enableSleepingBagSpawnPoint = false
+		#Backpacks can only be equipped in the Curios/Accessories 'Back' slot, provided those mods are installed. If set to false, backpacks can only be equipped by clicking the button in the Backpack GUI. This setting can be changed without unequipping the backpack. An already equipped backpack will not disappear and can be retrieved from the player's inventory.
+		backSlotIntegration = true
 
 		#Leather Tier Backpack Settings
 		[server.backpackSettings.leatherTierBackpack]
@@ -446,6 +450,7 @@ fn load(dir: Option<&Path>) -> Config {
         backpack_force_death_place: s.flag(&b("backpackForceDeathPlace")),
         quick_sleeping_bag: s.flag(&b("quickSleepingBag")),
         enable_sleeping_bag_spawn_point: s.flag(&b("enableSleepingBagSpawnPoint")),
+        back_slot_integration: s.flag(&b("backSlotIntegration")),
         enable_sleeping_bag: s.flag(&u("enableSleepingBag")),
         disabled_upgrades,
         feeding_tick_rate: s.int(&u("feedingUpgradeSettings.tickRate"), 1, 1000) as u64,

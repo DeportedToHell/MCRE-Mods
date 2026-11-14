@@ -1,6 +1,6 @@
 [mod]
 id = "travelersbackpack_native"
-version = "0.9.9"
+version = "1.0.0"
 priority = 100
 
 # Built for this Nightly: besides the hook points it opens a menu of the
@@ -188,6 +188,18 @@ helper = "h_block_entity_container.rs"
 bindings = [
   { name = "block", ty = "&str", value = "block" },
   { name = "container", ty = "&mut Option<horizon_client::containers::ModContainer>", value = "&mut *container" },
+]
+
+# `backSlotIntegration`: a backpack's place in Accessories' Back slot, as item defaults.
+[[injection]]
+id = "default_components"
+hook = "modify_default_components"
+hook_version = 1
+kind = "HEAD"
+helper = "h_default_components.rs"
+bindings = [
+  { name = "item", ty = "&str", value = "item" },
+  { name = "components", ty = "&mut serde_json::Map<String, serde_json::Value>", value = "&mut *components" },
 ]
 
 # The tier's item component.
