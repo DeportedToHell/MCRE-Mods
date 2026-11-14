@@ -12,7 +12,7 @@ use std::sync::Mutex;
 
 pub const ID: &str = "mousetweaks";
 pub const NAME: &str = "Mouse Tweaks";
-pub const VERSION: &str = "1.1.0";
+pub const VERSION: &str = "1.1.1";
 
 pub fn russian(language: &str) -> bool {
     language.starts_with("ru")

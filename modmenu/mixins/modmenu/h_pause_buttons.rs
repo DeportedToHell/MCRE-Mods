@@ -5,7 +5,7 @@ fn modmenu_pause_buttons(
     h: f32,
     links: bool,
     additions: bool,
-    split: bool,
+    rows: &[(&'static str, u8)],
 ) -> Vec<(f32, f32, f32, &'static str, u8, bool)> {
-    crate::game::modmenu::pause_buttons(buttons, w, h, u8::from(links || additions) + u8::from(split))
+    crate::game::modmenu::pause_buttons(buttons, w, h, u8::from(links || additions) + rows.len() as u8)
 }

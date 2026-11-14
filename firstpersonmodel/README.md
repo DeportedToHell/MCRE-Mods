@@ -1,8 +1,8 @@
-<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/hero-phone.svg"><img src="../.github/releases/firstpersonmodel/hero.svg" alt="First-person Model 1.0.2" width="640"></picture></p>
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/hero-phone.svg"><img src="../.github/releases/firstpersonmodel/hero.svg" alt="First-person Model 1.0.3" width="640"></picture></p>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/firstpersonmodel-1.0.2/firstpersonmodel-1.0.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/download-phone.svg"><img src="../.github/releases/firstpersonmodel/download.svg" alt="Download firstpersonmodel-1.0.2.hnmod" width="500"></picture></a><br>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/firstpersonmodel-1.0.3/firstpersonmodel-1.0.3.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/download-phone.svg"><img src="../.github/releases/firstpersonmodel/download.svg" alt="Download firstpersonmodel-1.0.3.hnmod" width="500"></picture></a><br>
 <a href="https://playhorizon.dev/mods/firstpersonmodel"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/catalog-phone.svg"><img src="../.github/releases/firstpersonmodel/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
-<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/firstpersonmodel-1.0.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/github-phone.svg"><img src="../.github/releases/firstpersonmodel/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/firstpersonmodel-1.0.3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/firstpersonmodel/github-phone.svg"><img src="../.github/releases/firstpersonmodel/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
 
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 

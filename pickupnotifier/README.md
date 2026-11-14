@@ -1,8 +1,8 @@
-<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/hero-phone.svg"><img src="../.github/releases/pickupnotifier/hero.svg" alt="Pick Up Notifier 1.1.0" width="640"></picture></p>
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/hero-phone.svg"><img src="../.github/releases/pickupnotifier/hero.svg" alt="Pick Up Notifier 1.1.1" width="640"></picture></p>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/pickupnotifier-1.1.0/pickupnotifier-1.1.0.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/download-phone.svg"><img src="../.github/releases/pickupnotifier/download.svg" alt="Download pickupnotifier-1.1.0.hnmod" width="500"></picture></a><br>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/pickupnotifier-1.1.1/pickupnotifier-1.1.1.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/download-phone.svg"><img src="../.github/releases/pickupnotifier/download.svg" alt="Download pickupnotifier-1.1.1.hnmod" width="500"></picture></a><br>
 <a href="https://playhorizon.dev/mods/pickupnotifier"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/catalog-phone.svg"><img src="../.github/releases/pickupnotifier/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
-<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/pickupnotifier-1.1.0"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/github-phone.svg"><img src="../.github/releases/pickupnotifier/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/pickupnotifier-1.1.1"><picture><source media="(max-width: 700px)" srcset="../.github/releases/pickupnotifier/github-phone.svg"><img src="../.github/releases/pickupnotifier/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
 
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 

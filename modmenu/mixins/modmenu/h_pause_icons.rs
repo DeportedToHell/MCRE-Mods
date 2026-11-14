@@ -5,7 +5,7 @@ fn modmenu_pause_icons(
     h: f32,
     links: bool,
     additions: bool,
-    split: bool,
+    rows: &[(&'static str, u8)],
 ) -> [(f32, f32, &'static str); 4] {
-    crate::game::modmenu::pause_icons(icons, w, h, u8::from(links || additions) + u8::from(split))
+    crate::game::modmenu::pause_icons(icons, w, h, u8::from(links || additions) + rows.len() as u8)
 }

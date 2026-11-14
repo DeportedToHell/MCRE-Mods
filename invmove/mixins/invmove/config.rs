@@ -15,7 +15,7 @@ use std::path::PathBuf;
 pub(super) const ID: &str = "invmove";
 pub(super) const NAME: &str = "InvMove";
 /// This port's version; the original it follows is InvMove 0.9.6.
-pub(super) const VERSION: &str = "1.0.0";
+pub(super) const VERSION: &str = "1.0.1";
 /// The toggle key's name among the mod's keys (`keybind.invmove.toggleMove`),
 /// unbound at first.
 pub(super) const TOGGLE_KEY: &str = "toggleMove";

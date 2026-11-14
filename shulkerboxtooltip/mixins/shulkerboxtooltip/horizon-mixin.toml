@@ -1,6 +1,6 @@
 [mod]
 id = "shulkerboxtooltip"
-version = "1.0.1"
+version = "1.0.2"
 priority = 100
 
 # Built for this Nightly: besides the hook points it draws the item tooltip
@@ -10,7 +10,7 @@ priority = 100
 # shulker box's lore out of tooltips (`container_lines`, `lore_texts`) and
 # hides the Options screen under its config screen (`draw_options`).
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 [[module]]
 id = "runtime"
@@ -176,7 +176,7 @@ bindings = [
 
 [[injection]]
 id = "slot_at"
-target = "horizon_client::game::Game<'_>::slot_at"
+target = "horizon_client::game::inventory_slots::Game<'_>::slot_at"
 kind = "HEAD"
 cancellable = true
 helper = "h_slot_at.rs"

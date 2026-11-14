@@ -1,8 +1,8 @@
-<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/hero-phone.svg"><img src="../.github/releases/roughlyenoughitems/hero.svg" alt="Roughly Enough Items 1.1.2" width="640"></picture></p>
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/hero-phone.svg"><img src="../.github/releases/roughlyenoughitems/hero.svg" alt="Roughly Enough Items 1.1.3" width="640"></picture></p>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/roughlyenoughitems-1.1.2/roughlyenoughitems-1.1.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/download-phone.svg"><img src="../.github/releases/roughlyenoughitems/download.svg" alt="Download roughlyenoughitems-1.1.2.hnmod" width="500"></picture></a><br>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/roughlyenoughitems-1.1.3/roughlyenoughitems-1.1.3.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/download-phone.svg"><img src="../.github/releases/roughlyenoughitems/download.svg" alt="Download roughlyenoughitems-1.1.3.hnmod" width="500"></picture></a><br>
 <a href="https://playhorizon.dev/mods/roughlyenoughitems"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/catalog-phone.svg"><img src="../.github/releases/roughlyenoughitems/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
-<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/roughlyenoughitems-1.1.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/github-phone.svg"><img src="../.github/releases/roughlyenoughitems/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/roughlyenoughitems-1.1.3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/roughlyenoughitems/github-phone.svg"><img src="../.github/releases/roughlyenoughitems/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
 
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 

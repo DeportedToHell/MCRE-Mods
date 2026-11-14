@@ -11,7 +11,7 @@ use std::sync::Mutex;
 
 pub const ID: &str = "smoothswapping";
 pub const NAME: &str = "Smooth Swapping";
-pub const VERSION: &str = "1.1.2";
+pub const VERSION: &str = "1.1.3";
 
 pub fn russian(language: &str) -> bool {
     language.starts_with("ru")

@@ -1,8 +1,8 @@
-<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/plasmovoice/hero-phone.svg"><img src="../.github/releases/plasmovoice/hero.svg" alt="Plasmo Voice 1.0.2" width="640"></picture></p>
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/plasmovoice/hero-phone.svg"><img src="../.github/releases/plasmovoice/hero.svg" alt="Plasmo Voice 1.0.3" width="640"></picture></p>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/plasmovoice-1.0.2/plasmovoice-1.0.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/plasmovoice/download-phone.svg"><img src="../.github/releases/plasmovoice/download.svg" alt="Download plasmovoice-1.0.2.hnmod" width="500"></picture></a><br>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/plasmovoice-1.0.3/plasmovoice-1.0.3.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/plasmovoice/download-phone.svg"><img src="../.github/releases/plasmovoice/download.svg" alt="Download plasmovoice-1.0.3.hnmod" width="500"></picture></a><br>
 <a href="https://playhorizon.dev/mods"><picture><source media="(max-width: 700px)" srcset="../.github/releases/plasmovoice/catalog-phone.svg"><img src="../.github/releases/plasmovoice/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
-<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/plasmovoice-1.0.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/plasmovoice/github-phone.svg"><img src="../.github/releases/plasmovoice/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/plasmovoice-1.0.3"><picture><source media="(max-width: 700px)" srcset="../.github/releases/plasmovoice/github-phone.svg"><img src="../.github/releases/plasmovoice/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
 
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 

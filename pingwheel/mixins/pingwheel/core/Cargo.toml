@@ -4,7 +4,7 @@
 # Dependencies are the versions in Horizon's Cargo.lock (docs/native-mods.md, "The mod's crate").
 [package]
 name = "pingwheel-core"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2024"
 license = "MIT"
 publish = false

@@ -317,7 +317,7 @@ fn pause_extras(game: &Game<'_>, batch: &mut HudBatch, s: &State) {
         let label = match i {
             0 => Text::translate("menu.reportBugs", &[]),
             1 => Text::translate("menu.sendFeedback", &[]),
-            2 if game.friends_view().shown => Text::literal(horizon_client::friends_screen::title()),
+            2 if game.friends_view().shown => Text::literal(horizon_client::lang::get_or("horizon.friends.title", "Play with Friends")),
             3 => Text::translate("menu.playerReporting", &[]),
             _ => return,
         };

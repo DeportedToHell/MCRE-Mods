@@ -11,7 +11,7 @@ use horizon_client::blocks::BlockFacts;
 use horizon_client::collisions::SceneCollisions;
 use horizon_core::geometry::{Aabb, ShapeOp, Vec3, VoxelShape};
 use horizon_core::position::BlockPos;
-use horizon_world::collision_context::{CollisionContext, CollisionEntity, CollisionItem};
+use horizon_world::collision_context::{CollisionContext, CollisionEntity, CollisionItem, EntityContextKind};
 use horizon_world::entity_obstruction::EntityIdentity;
 use horizon_world::registry::BlockStateId;
 use horizon_world::world_ray::{RayBlockMode, RayFluidMode, RayWorld, clip_world};
@@ -124,7 +124,7 @@ impl Game<'_> {
         let start = v(eye);
         let end = v([eye[0] + dir[0] * distance, eye[1] + dir[1] * distance, eye[2] + dir[2] * distance]);
         let context = CollisionContext::for_entity(
-            CollisionEntity { identity: EntityIdentity(0), y: eye[1], descending: crouching, main_hand: Some(CollisionItem::EMPTY) },
+            CollisionEntity { identity: EntityIdentity(0), kind: EntityContextKind::Player, y: eye[1], descending: crouching, main_hand: Some(CollisionItem::EMPTY) },
             false,
         );
         let mut rays = Rays {

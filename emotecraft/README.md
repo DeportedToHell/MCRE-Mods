@@ -1,8 +1,8 @@
-<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/hero-phone.svg"><img src="../.github/releases/emotecraft/hero.svg" alt="Emotecraft 1.0.1" width="640"></picture></p>
+<p align="center"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/hero-phone.svg"><img src="../.github/releases/emotecraft/hero.svg" alt="Emotecraft 1.0.2" width="640"></picture></p>
 
-<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/emotecraft-1.0.1/emotecraft-1.0.1.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/download-phone.svg"><img src="../.github/releases/emotecraft/download.svg" alt="Download emotecraft-1.0.1.hnmod" width="500"></picture></a><br>
+<p align="center"><a href="https://github.com/DeportedToHell/MCRE-Mods/releases/download/emotecraft-1.0.2/emotecraft-1.0.2.hnmod"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/download-phone.svg"><img src="../.github/releases/emotecraft/download.svg" alt="Download emotecraft-1.0.2.hnmod" width="500"></picture></a><br>
 <a href="https://playhorizon.dev/mods"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/catalog-phone.svg"><img src="../.github/releases/emotecraft/catalog.svg" alt="Horizon catalog" width="500"></picture></a><br>
-<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/emotecraft-1.0.1"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/github-phone.svg"><img src="../.github/releases/emotecraft/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
+<a href="https://github.com/DeportedToHell/MCRE-Mods/releases/tag/emotecraft-1.0.2"><picture><source media="(max-width: 700px)" srcset="../.github/releases/emotecraft/github-phone.svg"><img src="../.github/releases/emotecraft/github.svg" alt="Add from GitHub" width="500"></picture></a></p>
 
 <p align="center"><img src="../.github/releases/common/title-features.svg" alt="Features" width="640"></p>
 

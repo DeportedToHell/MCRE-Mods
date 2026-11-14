@@ -12,7 +12,7 @@ use std::collections::{HashMap, HashSet};
 pub(super) const ID: &str = "particlerain";
 pub(super) const NAME: &str = "Particle Rain";
 /// The port's version (the original's is 4.0.3).
-pub(super) const VERSION: &str = "1.0.1";
+pub(super) const VERSION: &str = "1.0.2";
 /// `ConfigData.configVersion`: an older file is replaced by the defaults.
 const CONFIG_VERSION: i64 = 8;
 

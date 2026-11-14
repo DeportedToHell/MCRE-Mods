@@ -9,7 +9,7 @@ use horizon_client::hud::HudBatch;
 use horizon_client::items::{ItemStack, Items};
 use horizon_client::menu::Input;
 use horizon_client::mod_api::{NativeMod, NativeScreenView};
-use horizon_client::sound_engine::{Attenuation, MASTER, SoundEngine, SoundInstance, Sounds as _};
+use horizon_client::sound_engine::{Attenuation, MASTER, SoundInstance, Sounds as _};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -93,7 +93,7 @@ fn view(game: &Game<'_>, batch: &HudBatch) -> Option<View> {
     let (window, menu) = game.remote_menu();
     // The menus Horizon's own inventory tweaks click in: the player's
     // inventory, chest-like containers, furnaces and crafting tables.
-    if !super::tweaks::tweak_menu(&menu) {
+    if !super::extras::mouse_tweaks::tweak_menu(&menu) {
         return None;
     }
     let slots = game.slots();
@@ -395,7 +395,7 @@ fn play_sound(game: &mut Game<'_>, settings: &cs::Settings, pitch: f32) {
         MASTER,
         settings.sound_volume,
         pitch,
-        SoundEngine::unseeded(),
+        horizon_client::random_source::create(),
         false,
         0,
         Attenuation::None,

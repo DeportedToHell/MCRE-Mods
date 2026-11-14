@@ -13,7 +13,7 @@ use std::sync::Mutex;
 
 pub const ID: &str = "clientsort";
 pub const NAME: &str = "ClientSort";
-pub const VERSION: &str = "1.2.1";
+pub const VERSION: &str = "1.2.2";
 
 /// No key: Options > Mods shows it unbound.
 pub const UNBOUND: &str = "key.keyboard.unknown";

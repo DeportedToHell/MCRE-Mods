@@ -3,7 +3,7 @@
 # Dependencies are the versions in Horizon's Cargo.lock (docs/native-mods.md, "The mod's crate").
 [package]
 name = "emotecraft-engine"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2024"
 license = "GPL-3.0-only"
 publish = false

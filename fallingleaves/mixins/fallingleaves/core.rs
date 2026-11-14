@@ -18,7 +18,7 @@ use std::sync::{Mutex, RwLock};
 
 pub const ID: &str = "fallingleaves";
 pub const NAME: &str = "Falling Leaves";
-pub const VERSION: &str = "1.0.1";
+pub const VERSION: &str = "1.0.2";
 /// `ConfigDefaults.DEFAULT_SPAWN_CHANCE`: vanilla's 1%.
 pub const DEFAULT_SPAWN_CHANCE: f32 = 0.01;
 pub const CONFIG_FILE: &str = "fallingleaves2.json";

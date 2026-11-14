@@ -221,6 +221,8 @@ fn classify_screen(game: &Game<'_>, loading: bool) -> Option<ScreenInfo> {
             info(&format!("{owner}:Screen"), None, true)
         }
         Screen::HudEditor => info("horizon:HudEditorScreen", None, true),
+        // Studio's script windows: the world runs and they may take typing, like chat.
+        Screen::Studio => info("horizon:StudioScreen", Some(Vanilla::Disable), false),
     }
 }
 

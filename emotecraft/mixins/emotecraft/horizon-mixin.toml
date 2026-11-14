@@ -1,6 +1,6 @@
 [mod]
 id = "emotecraft"
-version = "1.0.1"
+version = "1.0.2"
 # Below First-person Model (100): its HEAD on the elytra's geometry (hiding the own body's layers
 # in first person) runs first, then Emotecraft's.
 priority = 50
@@ -11,7 +11,7 @@ priority = 50
 # messages past vanilla's 32767-byte payload limit on both sides, and hears guests' plugin
 # messages and completions by their paths: it is pinned to this commit.
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 # The emote engine: animations (PlayerAnimationLibrary's), Molang, the controller, the formats,
 # the protocol, the songs, the config and the server's logic (engine/, `emotecraft_engine`).
@@ -163,7 +163,7 @@ bindings = [
 # key as in Java, and Horizon's wheel stays shut.
 [[injection]]
 id = "horizon_wheel"
-target = "horizon_client::game::emote_wheel::Game<'_>::open_emote_wheel"
+target = "horizon_client::game::cosmetics::emote_wheel::Game<'_>::open_emote_wheel"
 kind = "HEAD"
 cancellable = true
 helper = "h_horizon_wheel.rs"

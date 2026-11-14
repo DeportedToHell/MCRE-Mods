@@ -1,6 +1,6 @@
 [mod]
 id = "modmenu"
-version = "1.1.2"
+version = "1.1.3"
 # Above Roughly Enough Items and Just Enough Items: while the mods screen is
 # open its input hooks run first and take every event.
 priority = 200
@@ -9,7 +9,7 @@ priority = 200
 # title screen's and the pause menu's own button lists and hides those screens
 # under its own.
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 [[module]]
 id = "runtime"
@@ -271,7 +271,7 @@ bindings = [
   { name = "h", ty = "f32", value = "h" },
   { name = "links", ty = "bool", value = "links" },
   { name = "additions", ty = "bool", value = "additions" },
-  { name = "split", ty = "bool", value = "split" },
+  { name = "rows", ty = "&[(&'static str, u8)]", value = "rows" },
 ]
 
 # The pause menu's icon row, moved for the Mods icon.
@@ -286,7 +286,7 @@ bindings = [
   { name = "h", ty = "f32", value = "h" },
   { name = "links", ty = "bool", value = "links" },
   { name = "additions", ty = "bool", value = "additions" },
-  { name = "split", ty = "bool", value = "split" },
+  { name = "rows", ty = "&[(&'static str, u8)]", value = "rows" },
 ]
 
 # The pause menu's Mods button pressed.

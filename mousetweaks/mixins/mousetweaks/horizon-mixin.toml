@@ -1,6 +1,6 @@
 [mod]
 id = "mousetweaks"
-version = "1.1.0"
+version = "1.1.1"
 priority = 100
 
 # Built for this Nightly: besides the hook points it uses the game's own
@@ -9,7 +9,7 @@ priority = 100
 # engine's predicted clicks and slot rules) and hides the Options screen
 # under its options screen (`draw_options`).
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 [[module]]
 id = "runtime"
@@ -80,7 +80,7 @@ bindings = [
 # outside the window had theirs).
 [[injection]]
 id = "press"
-target = "horizon_client::game::tweaks::Game<'_>::tweak_press"
+target = "horizon_client::game::extras::mouse_tweaks::Game<'_>::tweak_press"
 kind = "HEAD"
 cancellable = true
 helper = "press.rs"
@@ -93,7 +93,7 @@ bindings = [
 # `mouseDragged`: every cursor move over a container screen.
 [[injection]]
 id = "drag"
-target = "horizon_client::game::Game<'_>::inventory_drag_move"
+target = "horizon_client::game::inventory_input::Game<'_>::inventory_drag_move"
 kind = "HEAD"
 helper = "drag.rs"
 bindings = [
@@ -103,7 +103,7 @@ bindings = [
 # `mouseReleased`.
 [[injection]]
 id = "release"
-target = "horizon_client::game::Game<'_>::inventory_mouse_release"
+target = "horizon_client::game::inventory_input::Game<'_>::inventory_mouse_release"
 kind = "HEAD"
 helper = "release.rs"
 bindings = [
@@ -114,7 +114,7 @@ bindings = [
 # `mouseScrolled`, after a bundle under the cursor had its turn.
 [[injection]]
 id = "scroll"
-target = "horizon_client::game::tweaks::Game<'_>::tweak_scroll"
+target = "horizon_client::game::extras::mouse_tweaks::Game<'_>::tweak_scroll"
 kind = "HEAD"
 cancellable = true
 helper = "scroll.rs"

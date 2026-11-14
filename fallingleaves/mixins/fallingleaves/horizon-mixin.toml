@@ -1,13 +1,13 @@
 [mod]
 id = "fallingleaves"
-version = "1.0.1"
+version = "1.0.2"
 priority = 100
 
 # Built for this Nightly: besides the hook points it adds to the particle
 # engine and the ambient block tick, hooks the particle tick and the player's
 # block breaking, and hides the Options screen under its settings screen.
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0"
 
 # The leaf particle, inside the particle engine (its roll and sprite).
 [[module]]

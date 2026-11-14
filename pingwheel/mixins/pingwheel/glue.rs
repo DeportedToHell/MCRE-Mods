@@ -32,7 +32,7 @@ use std::time::Instant;
 
 pub(super) const ID: &str = "pingwheel";
 pub(super) const NAME: &str = "Ping Wheel";
-pub(super) const VERSION: &str = "1.0.1";
+pub(super) const VERSION: &str = "1.0.2";
 /// `gradle.properties`' description.
 const DESCRIPTION: &str = "Mark locations similar to the ping mechanism found in modern co-op multiplayer games.";
 const DESCRIPTION_RU: &str = "Отмечайте места метками, как пингами в современных кооперативных играх.";
