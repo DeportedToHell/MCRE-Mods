@@ -11,13 +11,14 @@
 > Special thanks to [blodhgarm](https://github.com/Dragon-Seeker), [chyzman](https://github.com/chyzman), Dr.Zeal and all contributors for creating the original mod.
 
 
-##  Current State
+## Current State
 
 0.2.1. Unplayable.
 
 BOTH FILES ARE REQUIRED FOR THE MOD TO WORK
 
-`accessories.hmod` 
+`accessories.hmod`
+
 `accessories_native.hnmod`
 
 I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
@@ -25,27 +26,23 @@ I'll release an updated mod to the launcher as soon as Horizon rolls out an upda
 
 ## ✨Features
 
-**Accessory slots.** The original's 12 slots in 7 groups: hat, face, necklace, cape, back, two hand slots, two rings, wrist, belt, anklet, shoes and charm. Slots, groups and the player's set are loaded from data packs in the original format, so a data pack can add slots or change their amount, order, icon, rules and what happens to them on death.
+**Accessory slots.** Hat, face, necklace, cape, back, hands, rings, wrist, belt, anklet, shoes and charm. Data packs can add slots or change them, same format as the original.
 
-**Accessories screen.** Opened with **H** or the small button in the inventory. The player in the middle with armour and cosmetic armour, the accessory grid, a group filter, the inventory and the off hand. Cosmetic slots, a render toggle on every slot, and slots that won't take the carried item darken.
+**Accessories screen.** Press **H** or the button in the inventory. Cosmetic slots, a show/hide toggle on every slot, and a settings panel for the layout and a dark theme.
 
-**Screen settings.** Columns, scrolling or pages, unused slots, cosmetics instead of or beside the accessories, one or two player views, where the grid and the filter go, centring, light or dark theme. Everything is saved per player.
+**Equipping.** Drag, shift-click or right-click an accessory. Curses of binding and vanishing work, and keepInventory keeps accessories.
 
-**Equipping.** Drag, shift-click, or right-click an accessory in the air. Banners go on the head and the back as cape, gliders and totems only when the config allows it, as in the original. A curse of binding keeps an accessory on, a curse of vanishing destroys it on death, keepInventory keeps them.
+**For other mods.** Items can give attributes, effects and extra slots while worn, and a totem works from an accessory slot. Accessories are drawn on the player, and other players see them.
 
-**Accessory items.** The original's item components: valid slots, attribute modifiers while worn, slot size bonuses, stack size in a slot, accessories inside accessories and mob effects. Item tooltips show the slots and what an accessory gives. A totem in an accessory slot saves from death.
-
-**On the player.** Accessories are drawn on the player's model where the original puts them, and every player sees the others' accessories.
-
-**Other features.** The `/accessories` commands (`feature`, `edit`, `dump`, `slot`, `enchant`, `components`, `item replace`), the original's config file (`config/accessories.json5`), Mod Menu info and keybind. Works with [Traveler's Backpack](../travelersbackpack): its backpack is worn in the Back slot. English and Russian translations.
+**Other features.** `/accessories` commands, the original's config file (`config/accessories.json5`), Mod Menu info. Works with [Traveler's Backpack](../travelersbackpack): the backpack goes in the Back slot. English and Russian.
 
 
 ## 🚧Remaining work
 
 Not implemented compared to the original:
 
-- **Needs Horizon hooks.** Cosmetic armour drawn instead of the worn one, elytra gliding from an accessory slot, the `keepAccessoryInventory` game rule, piglin, freezing and enderman protection, enchantments of worn accessories, accessories on the screen's player view.
-- **Not done yet.** The crafting grid on the screen, the equip reasons in slot tooltips, the config screen in Mod Menu, dispensers, accessories on armour stands and horses, advancement criteria and data-driven renderers.
+- **Needs Horizon hooks.** Cosmetic armor drawn instead of the worn one, elytra gliding from an accessory slot, the `keepAccessoryInventory` game rule, piglin, freezing and enderman protection, enchantments of worn accessories, accessories on the screen's player view.
+- **Not done yet.** The crafting grid on the screen, equip reasons in slot tooltips, the config screen in Mod Menu, dispensers, accessories on armor stands and horses, advancement criteria and data-driven renderers.
 
 Differences: the screen's player view always faces the cursor, so the second view isn't turned around.
 
@@ -54,20 +51,20 @@ Differences: the screen's player view always faces the cursor, so the second vie
 
 ### 0.2.1
 
-- [Traveler's Backpack](../travelersbackpack) is worn in the Back slot (its `backSlotIntegration`).
-- An item can have its own renderer and refuse a right-click equip, as in the original.
-- The screen saves only the slots that were changed, so a backpack worn in the Back slot keeps what goes into it meanwhile.
+- [Traveler's Backpack](../travelersbackpack) goes in the Back slot.
+- Items can have their own renderer and turn off right-click equipping.
+- Fixed items getting lost when a worn backpack changed while the screen was open.
 
 ### 0.2.0
 
 - Item components: valid slots, attributes, stack size, nested accessories and mob effects.
-- Slot sizes change with worn items and with `/accessories slot modifier`, by the original's formula.
-- Item tooltips (`Slot`, `When Equipped`), the config file, the screen settings panel, pages, cosmetics beside the accessories, dark theme and slot darkening.
-- The `/accessories` commands and the totem in an accessory slot.
+- Slot sizes change with worn items and `/accessories slot modifier`.
+- Item tooltips, the config file, the screen settings panel, pages, dark theme.
+- `/accessories` commands and totems in accessory slots.
 
 ### 0.1.0
 
-- Slots from data, the accessories screen, equipping, drops on death and accessories on the player's model.
+- First release: slots from data, the accessories screen, equipping, drops on death, accessories on the player.
 
 
 ## 📦Installation

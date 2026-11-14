@@ -1,7 +1,5 @@
 
   <img src="../.github/assets/stickers/travelersbackpack.gif" height="64" alt=""> <img src="../.github/assets/stickers/travelersbackpack.png" height="64" alt="">
-  
-
 
 
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
@@ -19,26 +17,26 @@
 
 BOTH FILES ARE REQUIRED FOR THE MOD TO WORK
 
-`travelersbackpack.hmod `
+`travelersbackpack.hmod`
 
-`travelersbackpack_native.hnmod `
+`travelersbackpack_native.hnmod`
 
 I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
 
 ## ✨Features
 
-**Backpacks.** All 44 original designs and five tiers, from leather to netherite. Backpacks can be opened, placed as blocks or worn on the player's back. Other players can see them, and dying while wearing one places it as a block.
+**Backpacks.** All 44 designs and five tiers, from leather to netherite. Open one from your hand, place it as a block or wear it on your back. Other players see it, and if you die wearing one, it's placed where you died.
 
-**Inventory and upgrades.** The original backpack menu, sorting, quick stacking, tool slots and settings. Upgrades include crafting, furnaces, pickup, magnet, void, feeding, refill, tanks, jukebox and lantern, with configurable filters and toggles.
+**Upgrades.** Crafting, furnaces, pickup, magnet, void, feeding, refill, tanks, jukebox and lantern, with filters and on/off switches. Sorting, quick stacking and tool slots.
 
-**Fluids and abilities.** Tanks support water, lava, milk and potions. The hose can suck, spill and drink fluids. Original design-specific abilities are implemented, alongside the sleeping bag, dyeing, cauldron washing and backpack restoration.
+**Tanks and abilities.** Tanks hold water, lava, milk and potions, and the hose sucks, spills and drinks them. Each design has its own ability. Sleeping bags, dyeing and cleaning in a cauldron.
 
-**World.** Backpacks and tier upgrades in structure chests, zombies, skeletons and other mobs that sometimes spawn wearing a backpack, and tools shown on the wearer's back.
+**In the world.** Backpacks in chest loot, and mobs that sometimes spawn wearing one.
 
-**Back slot.** With [Accessories](../accessories) installed, backpacks are worn in its Back slot, as the original does with Trinkets and Accessories. The key, upgrades, abilities and the model on the back work as usual, and on death the backpack follows the slot's rules. Can be turned off with `backSlotIntegration` in the config.
+**Back slot.** With [Accessories](../accessories) installed, the backpack goes in its Back slot. Turn it off with `backSlotIntegration` in the config.
 
-**Other features.** Dynamic lighting, tool radial menu, advancements, wandering trader trade, creative tab and keybinds. The original's config files (`config/travelersbackpack-{common,server,client}.toml`), Mod Menu info, the `/tb` commands (`access`, `remove`, `clear`, `restore`, `unpack`) with backups made on death, and `/tb_client`. English and Russian translations.
+**Other features.** Dynamic lighting, a radial tool menu, advancements, a wandering trader trade, a creative tab and keybinds. The original's config files, `/tb` commands with backups made on death, Mod Menu info. English and Russian.
 
 
 ## 🚧Remaining work
@@ -47,47 +45,41 @@ I'll release an updated mod to the launcher as soon as Horizon rolls out an upda
 
 Not implemented compared to the original:
 
-- **Other mods' integration.** The deeper part of JEI / EMI / REI (moving a recipe into the crafting upgrade, dragging items into filters; their recipe screens do show the smithing upgrades), Crafting Tweaks, Polymorph, Comforts, grave mods (Pneumono Gravestones, Universal Graves), Tough As Nails, Trash Slot, VinURL and Entity Model Features. Dynamic lighting works without LambDynamicLights.
-- **Supporter badge.** The star on the backpacks of the original's supporters needs their list from the internet; the port makes no network requests.
+- **Other mods' integration.** Moving JEI / EMI / REI recipes into the crafting upgrade, Crafting Tweaks, Polymorph, Comforts, grave mods, Trash Slot, VinURL and Entity Model Features.
+- **Supporter badge.** It needs the supporters' list from the internet, and the port makes no network requests.
 
 Differences: a Horizon menu holds at most 256 slots, so with the most upgrades and tools the config allows (10 and 8), or filters of more than 10 slots, a tier's storage is cut to what still fits (138 instead of 154 with the defaults).
+
 
 ## Changelog:
 
 ### 1.0.0
 
-- Back slot integration with [Accessories](../accessories) (`backSlotIntegration`): backpacks are worn in its Back slot, as in the original. The equip and unequip buttons, right-click unequip, the inventory icon, `/tb clear` and `/tb unpack` are turned off with it, as in the original.
-- Checked in the game: the armor, luck, reach, health, speed and effect abilities, and the creeper saving its wearer.
+- Back slot with [Accessories](../accessories).
 
 ### 0.9.9
 
-- Filter sizes from the config (`filterSlotCount` 1–20, `slotsInRow` 1–5) for the void, pickup, magnet, feeding and refill upgrades: their tabs grow to fit, as the original's.
+- Filter sizes from the config.
 
 ### 0.9.8
 
-- Tier sizes from the config (`inventorySlotCount`, `upgradeSlotCount`, `toolSlotCount`), kept in each backpack as the original does: a new backpack takes its tier's, a tier upgrade at the smithing table the next tier's.
-- A jukebox upgrade in a carried or worn backpack plays a song that follows the player.
-- The tool radial menu's icons grow in with it; tool swaps, ability and upgrade sounds are heard by the players around.
-- Fluid in the tanks of a backpack item rises smoothly.
-- Smithing table tier upgrades are one recipe a design, as the original's: recipe viewers (JEI, REI and others) show each design staying itself.
+- Tier sizes from the config.
+- The jukebox song follows the player.
+- Tool swaps, abilities and upgrades are heard by players nearby.
+- JEI and REI show the smithing upgrades.
 
 ### 0.9.7
 
-- The creeper design saves its wearer from a blow that kills after armor and effects, as the original (before, from any blow bigger than their health).
-- A placed backpack's refill upgrade refills the players within 3 blocks; an item on the cursor counts as carried.
-- Sleeping bags laid out from a worn backpack are remembered in the world and taken up after a restart, never dropped.
-- Hoppers put no backpack into a shulker box.
+- The creeper design saves you only from a blow that would really kill you.
+- A placed backpack's refill upgrade works for players within 3 blocks.
+- Sleeping bags from a worn backpack are cleaned up after a restart.
+- Hoppers can't put a backpack into a shulker box.
 
 ### 0.9.6
 
-- Fixed item duplication with placed backpacks in multiplayer: only one player can have a placed backpack open, and taking, breaking, shearing or unpacking it closes that menu first.
-- Fixed duplication by dropping or swapping a backpack while its menu is open, and by dying with the menu open.
-- The smithing table keeps upgrades and tools in their slots after a tier upgrade, and only accepts backpacks.
-- A bottle is one third of a bucket, as in the original; thrown potions no longer return a bottle.
-- Ability cooldowns, the cactus design, feeding across dimensions, upgrade keys, pickup with the menu open and furnace progress now behave as in the original; a jukebox upgrade stops playing when taken out or when its backpack is broken or picked up.
-- Menus of placed backpacks close at more than 8 blocks or in another dimension; the server tick runs once per dimension.
-- Backpacks, shulker boxes and blacklisted items can't be put into any backpack slot.
-- Added the config files, Mod Menu info, `/tb` commands, chest loot, mobs with backpacks, tools on the back, the worn backpack's icon in the inventory and right-click insertion into the backpack.
+- Fixed item duplication with placed backpacks in multiplayer, and by dropping or swapping a backpack with its menu open.
+- Abilities, the smithing table, bottles, feeding and furnaces work like the original.
+- Added the config files, Mod Menu info, `/tb` commands, chest loot, mobs with backpacks, tools on the back and the worn backpack's icon in the inventory.
 
 
 ## 📦Installation
@@ -110,7 +102,7 @@ mixins/travelersbackpack_native/
   glue.rs                        Main mod implementation
   config.rs                      The original's config files
   menu.rs, spider.rs, screen_relayout.rs
-                                  Additional modules
+                                 Additional modules
   h_*.rs                         Injection helpers
 tools/
   content.mjs                    Generates content/ from the original checkout

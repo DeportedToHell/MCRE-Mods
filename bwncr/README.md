@@ -2,8 +2,6 @@
   <img src="../.github/assets/stickers/bwncr.png" height="72" alt=""> <img src="../.github/assets/stickers/bwncrn.png" height="50" alt="">
 
 
-
-
 ## <img src="../.github/assets/stickers/info.png" height="20" alt=""> This is an independent port of the original project.
 
 > It is not affiliated with, endorsed by, or officially associated with the original authors.
@@ -15,19 +13,44 @@
 
 ## Current State
 
-1.0.2. Fully playable.
-
+1.0.3. Fully playable.
 
 
 ## ✨Features
 
-**Sound control.** Silences Wither spawn and death, wandering trader and llama ambient sounds, Ender Dragon death and lightning thunder. Each category has its own toggle. Custom sound events can also be muted individually through the config.
+**Quieter world.** Turns off the loud sounds: the Wither spawning and dying, the Ender Dragon dying, thunder, wandering traders and llamas. Each one has its own toggle, and you can mute any other sound by its ID.
 
-**Sound identification.** Use `/bwncr listen` to display sound event IDs in chat, making it easy to find sounds to mute. Debug Mode logs sound events and the mod's handling of them.
+**Find a sound's ID.** `/bwncr listen` shows the IDs of sounds in chat as they play.
 
-**Config screen.** Full configuration UI with toggles, editable sound lists, search, reset and save options. Accessible through Options → Mods or Mod Menu. Settings are stored in `config/bwncr.toml`, using the original Fabric format.
+**Config screen.** In Options → Mods or Mod Menu. Settings are saved to `config/bwncr.toml`, same format as the original.
 
-**Client-side only.** Changes what you hear, regardless of the server you're playing on.
+**Client-side.** Only changes what you hear, on any server.
+
+
+## 🚧Remaining work
+
+Nothing, all of the original's features are in.
+
+
+## Changelog:
+
+### 1.0.1-1.0.3
+
+- Nothing special
+
+### 1.0.0
+
+- First release: muted sounds, custom sound list, `/bwncr listen`, debug mode, config screen.
+
+
+## 📦Installation
+
+Find **Bad Wither No Cookie - Reloaded** in the launcher's Mods section, select Install, then run **Native build → Build**.
+
+For manual installation, place `bwncr-<version>.hnmod` in `<game folder>/horizon-native-mods/`, add `mod.bwncr:true` to `horizon-mods.txt`, then run **Native build → Build** in the launcher.
+
+> Native mods are compiled into the game and are not sandboxed. Only build code you trust.
+
 
 ## 🗂️Source layout
 
@@ -40,7 +63,7 @@ mixins/bwncr/
   glue.rs                        Main implementation
   config.rs, cloth.rs            Configuration screen
   cloth_sprites.rs               Cloth Config textures
-  h_*.rs                          Injection helpers
+  h_*.rs                         Injection helpers
   data/icon.png                  Mod icon
 tools/
   check.sh                       Checks and builds against pinned Horizon source
@@ -50,6 +73,7 @@ Cargo.toml                       Rust project and tests
 ```
 
 Tests: `cargo test` (Rust 1.99.1, edition 2024).
+
 
 ## ⚖️License
 
