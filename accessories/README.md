@@ -13,9 +13,12 @@
 
 ##  Current State
 
-**Version 0.2.1** — the work is still ongoing. Slots, the screen and equipping already work, but few items can be worn without other mods. Remaining work is listed below.
+0.2.1. Unplayable.
 
-**!!! Two files are needed: the content mod `accessories.hmod` and the native mod `accessories_native.hnmod`. One alone does not work.**
+BOTH FILES ARE REQUIRED FOR THE MOD TO WORK
+
+`accessories.hmod` 
+`accessories_native.hnmod`
 
 I'll release an updated mod to the launcher as soon as Horizon rolls out an update that merges `.hnmod` into `.hmod`.
 
