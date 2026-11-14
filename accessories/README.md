@@ -1,6 +1,6 @@
 <h1 align="left">
   <img src="../.github/assets/stickers/accessories.png" height="64" alt="">
-  <img src="../.github/assets/stickers/accessoriesn.png" height="64" alt="">
+  <img src="../.github/assets/stickers/accessoriesn.png" height="128" alt="">
 </h1>
 
 **Version 0.2.1** — the work is still ongoing. Slots, the screen and equipping already work, but few items can be worn without other mods. Remaining work is listed below.
