@@ -26,12 +26,6 @@
 
 **Client-side.** Only changes what you hear, on any server.
 
-
-## 🚧Remaining work
-
-Nothing, all of the original's features are in.
-
-
 ## Changelog:
 
 ### 1.0.1-1.0.3
