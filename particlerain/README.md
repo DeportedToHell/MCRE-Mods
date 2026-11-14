@@ -113,7 +113,7 @@ tools/                         generate.mjs (lang.rs, defaults.rs, textures.rs f
 
 The `.hnmod` file is a zip of `horizon-native.json` and `mixins/`.
 
-Built for Horizon `9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0` (Nightly 2026-11-08) and horizon-mixins
+Built for Horizon `9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0` (Nightly 2026-11-13) and horizon-mixins
 `5a64af938ec86b00d53d16a408aabc0038fb3e57`.
 
 </details>
