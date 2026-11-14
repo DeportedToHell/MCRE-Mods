@@ -13,6 +13,11 @@
 > Special thanks to [Jaredlll08](https://github.com/jaredlll08) for creating the original mod.
 
 
+## Current State
+
+iforgot version. Fully playable.
+
+
 ## ✨Features
 
 **Experience orbs.** Nearby orbs merge into a single orb containing their combined XP. New XP drops also merge into existing nearby orbs, reducing entity count and lag.
